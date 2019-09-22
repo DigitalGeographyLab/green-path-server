@@ -40,16 +40,6 @@ def get_exposures(line_noises):
         noise_dict[int(key)] = tot_len
     return noise_dict
 
-def get_exposures_for_geom(line_geom, noise_polys):
-    line_noises = get_exposure_lines(line_geom, noise_polys)
-    return get_exposures(line_noises)
-
-def get_exposure_times(d: 'dict of db: length', speed: 'float: m/s', minutes: bool):
-    exp_t_d = {}
-    for key in d.keys():
-        exp_t_d[key] = round((d[key]/speed)/(60 if minutes else 1), (4 if minutes else 1))
-    return exp_t_d
-
 def get_th_exposures(noise_dict, ths):
     th_count = len(ths)
     th_lens = [0] * len(ths)
@@ -93,13 +83,6 @@ def get_noise_attrs_to_split_lines(gdf, noise_polys):
         split_line_noises = split_line_noises.drop_duplicates(subset=['split_line_index'], keep='first')
     return split_line_noises
 
-def get_noise_dict_for_geom(geom, noise_polys):
-    noise_lines = get_exposure_lines(geom, noise_polys)
-    if (noise_lines.empty):
-        return {}
-    else:
-        return get_exposures(noise_lines)
-
 def aggregate_line_noises(split_line_noises, uniq_id):
     row_accumulator = []
     grouped = split_line_noises.groupby(uniq_id)
@@ -108,18 +91,6 @@ def aggregate_line_noises(split_line_noises, uniq_id):
         row_d['noises'] = get_exposures(values)
         row_accumulator.append(row_d)
     return pd.DataFrame(row_accumulator)
-
-def add_noise_exposures_to_gdf(line_gdf, uniq_id, noise_polys):
-    # add noises to lines as list
-    line_gdf['split_lines'] = [geom_utils.get_split_lines_list(line_geom, noise_polys) for line_geom in line_gdf['geometry']]
-    # explode new rows from split lines column
-    split_lines = geom_utils.explode_lines_to_split_lines(line_gdf, uniq_id)
-    # join noises to split lines
-    split_line_noises = get_noise_attrs_to_split_lines(split_lines, noise_polys)
-    # aggregate noises back to segments
-    line_noises = aggregate_line_noises(split_line_noises, uniq_id)
-    line_gdf = line_gdf.drop(['split_lines'], axis=1)
-    return pd.merge(line_gdf, line_noises, how='inner', on=uniq_id)
 
 def aggregate_exposures(exp_list):
     exps = {}

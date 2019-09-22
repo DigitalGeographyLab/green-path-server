@@ -7,17 +7,11 @@ from shapely.ops import split, snap, transform
 from functools import partial
 from fiona.crs import from_epsg
 
-def get_etrs_crs():
-    return from_epsg(3879)
-
 def get_lat_lon_from_coords(coords):
     return {'lat': coords[1], 'lon': coords[0] }
 
 def get_lat_lon_from_geom(geom):
     return {'lat': round(geom.y, 6), 'lon': round(geom.x,6) }
-
-def get_lat_lon_from_row(row):
-    return {'lat': row['geometry'].y, 'lon': row['geometry'].x }
 
 def get_coords_from_lat_lon(latLon):
     return [latLon['lon'], latLon['lat']]
@@ -57,20 +51,6 @@ def get_xy_from_lat_lon(latLon):
     point_proj = project_to_etrs(point)
     return get_xy_from_geom(point_proj)
 
-def clip_polygons_with_polygon(clippee, clipper):
-    poly = clipper
-    poly_bbox = poly.bounds
-
-    spatial_index = clippee.sindex
-    sidx = list(spatial_index.intersection(poly_bbox))
-    clippee_sub = clippee.iloc[sidx]
-
-    clipped = clippee_sub.copy()
-    clipped['geometry'] = clippee_sub.intersection(poly)
-    clipped_final = clipped[clipped.geometry.notnull()]
-
-    return clipped_final
-
 def get_closest_point_on_line(line, point):
     projected = line.project(point)
     closest_point = line.interpolate(projected)
@@ -89,29 +69,6 @@ def get_inters_points(inters_line):
         point_geom = Point(coords)
         point_geoms.append(point_geom)
     return point_geoms
-
-def get_line_polygons_inters_points(line_geom, polygons):
-    polygons_under_line = get_polygons_under_line(line_geom, polygons)
-    point_geoms = []
-    for idx, row in polygons_under_line.iterrows():
-        poly_geom = row['geometry']
-        inters_geom = poly_geom.intersection(line_geom)
-        if (inters_geom.geom_type == 'MultiLineString'):
-            for inters_line in inters_geom:
-                point_geoms += get_inters_points(inters_line)
-        else:
-            inters_line = inters_geom
-            point_geoms += get_inters_points(inters_line)
-    return gpd.GeoDataFrame(geometry=point_geoms, crs=from_epsg(3879))
-
-def filter_duplicate_split_points(split_points):
-    split_points['geom_str'] = [str(geom) for geom in split_points['geometry']]
-    grouped = split_points.groupby('geom_str')
-    point_geoms = []
-    for key, values in grouped:
-        point_geom = list(values['geometry'])[0]
-        point_geoms.append(point_geom)
-    return gpd.GeoDataFrame(geometry=point_geoms, crs=from_epsg(3879))
 
 def get_polygons_under_line(line_geom, polygons):
     polygons_sindex = polygons.sindex
@@ -181,23 +138,8 @@ def explode_lines_to_split_lines(line_df, uniq_id):
     new_gdf['mid_point'] = [get_line_middle_point(geom) for geom in new_gdf['geometry']]
     return new_gdf[[uniq_id, 'geometry', 'length', 'mid_point']]
 
-def create_line_geom(point_coords):
-    '''
-    Function for building line geometries from list of coordinate tuples [(x,y), (x,y)].
-    Returns
-    -------
-    <LineString>
-    '''
-    try:
-        return LineString([point for point in point_coords])
-    except:
-        return
-
 def get_line_middle_point(line_geom):
     return line_geom.interpolate(0.5, normalized = True)
-
-def get_simple_line(row, from_col, to_col):
-    return LineString([row[from_col], row[to_col]])
 
 def get_geojson_from_geom(geom):
     geom_wgs = project_to_wgs(geom)
@@ -233,8 +175,3 @@ def lines_overlap(geom1, geom2, tolerance=2, min_intersect=None):
             match = False
     return match
 
-def get_gdf_subset_within_poly(gdf, polygon):
-    gdf = gdf.copy()
-    gdf['b_inside_poly'] = [True if geom.within(polygon) else False for geom in gdf['geometry']]
-    inside = gdf[gdf['b_inside_poly'] == True]
-    return inside.drop(columns=['b_inside_poly'])

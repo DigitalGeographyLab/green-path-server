@@ -85,27 +85,6 @@ def get_shortest_path(graph, orig_node, dest_node, weight='length'):
     else:
         return None
 
-def join_dt_path_attributes(s_paths_g_gdf, dt_paths):
-    dt_paths_join = dt_paths.rename(index=str, columns={'path_dist': 'dt_total_length'})
-    dt_paths_join = dt_paths_join[['dt_total_length', 'uniq_id', 'to_id', 'count']]
-    merged = pd.merge(s_paths_g_gdf, dt_paths_join, how='inner', on='uniq_id')
-    return merged
-
-def get_short_quiet_paths_comparison_for_gdf(paths_gdf):
-    shortest_p = paths_gdf.loc[paths_gdf['type'] == 'short'].squeeze()
-    s_len = shortest_p.get('total_length')
-    s_noises = shortest_p.get('noises')
-    s_th_noises = shortest_p.get('th_noises')
-    s_nei = shortest_p.get('nei')
-    paths_gdf['noises_diff'] = [exps.get_noises_diff(s_noises, noises) for noises in paths_gdf['noises']]
-    paths_gdf['th_noises_diff'] = [exps.get_noises_diff(s_th_noises, th_noises) for th_noises in paths_gdf['th_noises']]
-    paths_gdf['len_diff'] = [round(total_len - s_len, 1) for total_len in paths_gdf['total_length']]
-    paths_gdf['len_diff_rat'] = [round((len_diff / s_len)*100,1) for len_diff in paths_gdf['len_diff']]
-    paths_gdf['nei_diff'] = [round(nei - s_nei, 1) for nei in paths_gdf['nei']]
-    paths_gdf['nei_diff_rat'] = [round((nei_diff / s_nei)*100, 1) if s_nei > 0 else 0 for nei_diff in paths_gdf['nei_diff']]
-    paths_gdf['path_score'] = paths_gdf.apply(lambda row: round((row.nei_diff / row.len_diff) * -1, 1) if row.len_diff > 0 else 0, axis=1)
-    return paths_gdf
-
 def get_short_quiet_paths_comparison_for_dicts(paths):
     comp_paths = paths.copy()
     path_s = [path for path in comp_paths if path['properties']['type'] == 'short'][0]

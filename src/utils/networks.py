@@ -86,12 +86,6 @@ def osmid_to_string(osmid):
         osm_str = str(osmid)
     return osm_str
 
-def export_nodes_edges_to_files(graph):
-    nodes, edges = ox.graph_to_gdfs(graph, nodes=True, edges=True, node_geometry=True, fill_edge_geometry=True)
-    edges = edges[['geometry', 'u', 'v', 'length']]
-    edges.to_file('data/networks.gpkg', layer='koskela_edges', driver="GPKG")
-    nodes.to_file('data/networks.gpkg', layer='koskela_nodes', driver="GPKG")
-
 def get_node_gdf(graph):
     node_gdf = ox.graph_to_gdfs(graph, nodes=True, edges=False, node_geometry=True, fill_edge_geometry=False)
     return node_gdf[['geometry']]
