@@ -19,3 +19,11 @@ $ cd hope-green-path-server/src
 $ conda env create -f env-gis-flask.yml
 $ conda activate gis-flask
 ```
+
+## Running the tests
+```
+$ cd hope-green-path-server/src
+$ conda activate gis-flask
+$ python -m pytest test_utils.py
+$ python test_quiet_paths_app.py
+```

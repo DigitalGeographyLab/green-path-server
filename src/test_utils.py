@@ -49,14 +49,8 @@ def test_get_exposure_lines():
     max_noise = noise_lines['db_lo'].max()
     assert (mean_noise, min_noise, max_noise) == (59.5, 40.0, 75.0)
 
-def test_get_edge_dicts():
-    graph_proj = files.get_network_kumpula()
-    edge_dicts = nw.get_all_edge_dicts(graph_proj)
-    edge_d = edge_dicts[0]
-    assert (len(edge_dicts), edge_d['length'], type(edge_d['geometry'])) == (23857, 127.051, LineString)
-
 def test_add_exposures_to_edges():
-    graph_proj = files.get_network_kumpula()
+    graph_proj = files.get_network_kumpula_noise()
     edge_dicts = nw.get_all_edge_dicts(graph_proj)
     edge_gdf = nw.get_edge_gdf(graph_proj, attrs=['geometry', 'length', 'uvkey'], subset=5)
     edge_gdf['split_lines'] = [geom_utils.get_split_lines_list(line_geom, noise_polys) for line_geom in edge_gdf['geometry']]
