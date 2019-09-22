@@ -8,8 +8,8 @@ from fiona.crs import from_epsg
 import utils.files as files
 import utils.routing as rt
 import utils.geometry as geom_utils
-import utils.networks as nw
-import utils.exposures as exps
+import utils.graphs as graph_utils
+import utils.noise_exposures as noise_exps
 import utils.quiet_paths as qp
 import utils.utils as utils
 import utils.tests as tests
@@ -26,26 +26,26 @@ def get_short_quiet_paths(graph, from_latLon, to_latLon, logging=False):
     # get shortest path
     path_list = []
     shortest_path = rt.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
-    path_geom_noises = nw.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
+    path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
     path_list.append({**path_geom_noises, **{'id': 'short_p','type': 'short', 'nt': 0}})
     # get quiet paths to list
     for nt in nts:
         noise_cost_attr = 'nc_'+str(nt)
         shortest_path = rt.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
-        path_geom_noises = nw.aggregate_path_geoms_attrs(graph, shortest_path, weight=noise_cost_attr, noises=True)
+        path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
     # remove linking edges of the origin / destination nodes
-    nw.remove_new_node_and_link_edges(graph, orig_node)
-    nw.remove_new_node_and_link_edges(graph, dest_node)
+    graph_utils.remove_new_node_and_link_edges(graph, orig_node)
+    graph_utils.remove_new_node_and_link_edges(graph, dest_node)
     # collect quiet paths to gdf
     paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
     paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
     # add exposures to noise levels higher than specified threshods (dBs)
-    paths_gdf['th_noises'] = [exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in paths_gdf['noises']]
+    paths_gdf['th_noises'] = [noise_exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in paths_gdf['noises']]
     # add percentages of cumulative distances of different noise levels
-    paths_gdf['noise_pcts'] = paths_gdf.apply(lambda row: exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
+    paths_gdf['noise_pcts'] = paths_gdf.apply(lambda row: noise_exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
     # add noise exposure index (same as noise cost with noise tolerance: 1)
-    paths_gdf['nei'] = [round(exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
+    paths_gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
     paths_gdf['nei_norm'] = paths_gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
     return paths_gdf
 
@@ -53,19 +53,19 @@ def get_short_quiet_paths(graph, from_latLon, to_latLon, logging=False):
 start_time = time.time()
 nts = qp.get_noise_tolerances()
 db_costs = qp.get_db_costs()
-# graph = files.get_network_full_noise()
-graph = files.get_network_kumpula_noise()
+# graph = files.get_graph_full_noise()
+graph = files.get_graph_kumpula_noise()
 print('Graph of', graph.size(), 'edges read.')
-edge_gdf = nw.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
-node_gdf = nw.get_node_gdf(graph)
-print('Network features extracted.')
-nw.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, nts=nts)
+edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
+node_gdf = graph_utils.get_node_gdf(graph)
+print('Graph features extracted.')
+graph_utils.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, nts=nts)
 edge_gdf = edge_gdf[['uvkey', 'geometry', 'noises']]
 print('Noise costs set.')
 edges_sind = edge_gdf.sindex
 nodes_sind = node_gdf.sindex
 print('Spatial index built.')
-utils.print_duration(start_time, 'Network initialized.')
+utils.print_duration(start_time, 'Graph initialized.')
 
 def get_od_path_stats(graph, od_dict, logging=False):
     paths = get_short_quiet_paths(graph, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
@@ -75,8 +75,8 @@ def get_od_path_stats(graph, od_dict, logging=False):
     qp_count = len(qp)
     sp_len = round(sp['total_length'].sum(), 1)
     qp_len_sum = round(qp['total_length'].sum(), 1)
-    all_noises = exps.aggregate_exposures(list(paths['noises']))
-    noise_total_len = round(exps.get_total_noises_len(all_noises), 1)
+    all_noises = noise_exps.aggregate_exposures(list(paths['noises']))
+    noise_total_len = round(noise_exps.get_total_noises_len(all_noises), 1)
     stats = { 'sp_count': sp_count, 'qp_count': qp_count, 'sp_len': sp_len, 'qp_len_sum': qp_len_sum, 'noise_total_len': noise_total_len }
     return stats
 

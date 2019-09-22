@@ -6,9 +6,9 @@ import time
 from fiona.crs import from_epsg
 from shapely.geometry import Point, LineString, MultiLineString, box
 from shapely.ops import nearest_points
-import utils.networks as nw
+import utils.graphs as graph_utils
 import utils.geometry as geom_utils
-import utils.exposures as exps
+import utils.noise_exposures as noise_exps
 import utils.utils as utils
 import utils.quiet_paths as qp
 
@@ -69,9 +69,9 @@ def get_nearest_node(graph, xy, edge_gdf, node_gdf, nts=[], db_costs={}, orig_no
         if (nearest_edge_point.distance(orig_node['link_edges']['link2']['geometry']) < 0.2):
             nearest_edge = orig_node['link_edges']['link2']
     # create a new node on the nearest edge
-    new_node = nw.add_new_node_to_graph(graph, nearest_edge_point, logging=logging)
+    new_node = graph_utils.add_new_node_to_graph(graph, nearest_edge_point, logging=logging)
     # link added node to the origin and destination nodes of the nearest edge (by adding two linking edges)
-    link_edges = nw.add_linking_edges_for_new_node(graph, new_node, nearest_edge_point, nearest_edge, nts, db_costs, logging=logging)
+    link_edges = graph_utils.add_linking_edges_for_new_node(graph, new_node, nearest_edge_point, nearest_edge, nts, db_costs, logging=logging)
     return { 'node': new_node, 'link_edges': link_edges, 'offset': round(nearest_edge_point.distance(point), 1) }
 
 def get_shortest_path(graph, orig_node, dest_node, weight='length'):
@@ -95,8 +95,8 @@ def get_short_quiet_paths_comparison_for_dicts(paths):
     s_mdB = path_s['properties']['mdB']
     for path in comp_paths:
         props = path['properties']
-        path['properties']['noises_diff'] = exps.get_noises_diff(s_noises, props['noises'])
-        path['properties']['th_noises_diff'] = exps.get_noises_diff(s_th_noises, props['th_noises'], full_db_range=False)
+        path['properties']['noises_diff'] = noise_exps.get_noises_diff(s_noises, props['noises'])
+        path['properties']['th_noises_diff'] = noise_exps.get_noises_diff(s_th_noises, props['th_noises'], full_db_range=False)
         path['properties']['len_diff'] = round(props['length'] - s_len, 1)
         path['properties']['len_diff_rat'] = round((path['properties']['len_diff'] / s_len) * 100, 1) if s_len > 0 else 0
         path['properties']['mdB_diff'] = round(props['mdB'] - s_mdB, 1)
@@ -127,28 +127,28 @@ def get_short_quiet_paths(graph, from_latLon, to_latLon, edge_gdf, node_gdf, nts
         return None
     if (only_short == True):
         return shortest_path
-    path_geom_noises = nw.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
+    path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
     path_list.append({**path_geom_noises, **{'id': 'short_p','type': 'short', 'nt': 0}})
     # get quiet paths to list
     for nt in nts:
         noise_cost_attr = 'nc_'+str(nt)
         quiet_path = get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
-        path_geom_noises = nw.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
+        path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
     # remove linking edges of the origin / destination nodes
-    nw.remove_new_node_and_link_edges(graph, orig_node)
-    nw.remove_new_node_and_link_edges(graph, dest_node)
+    graph_utils.remove_new_node_and_link_edges(graph, orig_node)
+    graph_utils.remove_new_node_and_link_edges(graph, dest_node)
     # collect quiet paths to gdf
     paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
     paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
     # add exposures to noise levels higher than specified threshods (dBs)
-    paths_gdf['th_noises'] = [exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in paths_gdf['noises']]
+    paths_gdf['th_noises'] = [noise_exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in paths_gdf['noises']]
     # add percentages of cumulative distances of different noise levels
-    paths_gdf['noise_pcts'] = paths_gdf.apply(lambda row: exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
+    paths_gdf['noise_pcts'] = paths_gdf.apply(lambda row: noise_exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
     # calculate mean noise level
-    paths_gdf['mdB'] = paths_gdf.apply(lambda row: exps.get_mean_noise_level(row['noises'], row['total_length']), axis=1)
+    paths_gdf['mdB'] = paths_gdf.apply(lambda row: noise_exps.get_mean_noise_level(row['noises'], row['total_length']), axis=1)
     # calculate noise exposure index (same as noise cost but without noise tolerance coefficient)
-    paths_gdf['nei'] = [round(exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
+    paths_gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
     paths_gdf['nei_norm'] = paths_gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
     # gdf to dicts
     path_dicts = qp.get_geojson_from_q_path_gdf(paths_gdf)

@@ -31,12 +31,12 @@ def get_hel_poly(WGS84=False, buffer_m=None):
         poly = geom_utils.project_to_wgs(poly)
     return poly
 
-def get_network_kumpula_noise(version=3):
+def get_graph_kumpula_noise(version=3):
     if (version == 3):
         return load_graphml('kumpula-v3_u_g_n2_f_s.graphml', folder='graphs', directed=False)
     return None
 
-def get_network_full_noise(version=3):
+def get_graph_full_noise(version=3):
     if (version == 3):
         return load_graphml('hel-v3_u_g_n2_f_s.graphml', folder='graphs', directed=False)
     return None

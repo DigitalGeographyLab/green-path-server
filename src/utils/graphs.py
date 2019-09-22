@@ -6,12 +6,12 @@ import json
 import ast
 from fiona.crs import from_epsg
 from shapely.geometry import Point, LineString, MultiLineString, box
-import utils.exposures as exps
+import utils.noise_exposures as noise_exps
 import utils.geometry as geom_utils
 import utils.utils as utils
 
-def get_walkable_network(extent_poly_wgs=None):
-    # define filter for acquiring walkable street network
+def get_walkable_network_graph(extent_poly_wgs=None):
+    # define filter for acquiring walkable street network graph
     cust_filter = '["area"!~"yes"]["highway"!~"trunk_link|motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["service"!~"private"]["access"!~"private"]'
     # query graph
     g = ox.graph_from_polygon(extent_poly_wgs, custom_filter=cust_filter)
@@ -23,7 +23,8 @@ def get_walkable_network(extent_poly_wgs=None):
     g_u_proj = ox.project_graph(g_u, from_epsg(3879))
     return g_u_proj
 
-def get_unwalkable_network(extent_poly_wgs=None):
+def get_unwalkable_network_graph(extent_poly_wgs=None):
+    # define filter for acquiring (unwalkable) service roads & service tunnels
     cust_filter_no_tunnels = '["area"!~"yes"]["highway"!~"trunk_link|motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["service"!~"private"]["access"!~"private"]["highway"~"service"]["layer"~"-1|-2|-3|-4|-5|-6|-7"]'
     # query graph
     g = ox.graph_from_polygon(extent_poly_wgs, custom_filter=cust_filter_no_tunnels, retain_all=True)
@@ -130,9 +131,9 @@ def get_edge_noise_cost_attrs(nts, db_costs, edge_d, link_geom):
     cost_attrs['noises'] = interpolate_link_noises(link_geom, edge_d['geometry'], edge_d['noises'])
     # calculate noise tolerance specific noise costs
     for nt in nts:
-        noise_cost = exps.get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, nt=nt)
+        noise_cost = noise_exps.get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, nt=nt)
         cost_attrs['nc_'+str(nt)] = round(noise_cost + link_geom.length, 2)
-    noises_sum_len = exps.get_total_noises_len(cost_attrs['noises'])
+    noises_sum_len = noise_exps.get_total_noises_len(cost_attrs['noises'])
     if ((noises_sum_len - link_geom.length) > 0.1):
         print('link length unmatch:', noises_sum_len, link_geom.length)
     return cost_attrs
@@ -231,11 +232,11 @@ def aggregate_path_geoms_attrs(graph, path, weight='length', geom=True, noises=F
                 edge_lengths.append(edge_line.length)
                 edge_coords = edge_line.coords
             path_coords += edge_coords
-            edge_noise_len_diff = (edge_d['length'] - exps.get_total_noises_len(edge_d['noises']))
+            edge_noise_len_diff = (edge_d['length'] - noise_exps.get_total_noises_len(edge_d['noises']))
             if (edge_noise_len_diff < -0.05):
                 print('idx:', idx, 'from:', node_1, 'to:', node_2)
                 print(' problems with edge:', edge_d['uvkey'], edge_d['noises'])
-                print(' edge lens vs noise lens:', edge_d['length'], exps.get_total_noises_len(edge_d['noises']))
+                print(' edge lens vs noise lens:', edge_d['length'], noise_exps.get_total_noises_len(edge_d['noises']))
         if noises:
             if ('noises' in edge_d):
                 edge_exps.append(edge_d['noises'])
@@ -245,7 +246,7 @@ def aggregate_path_geoms_attrs(graph, path, weight='length', geom=True, noises=F
         result['geometry'] = path_line
         result['total_length'] = total_length
     if noises:
-        result['noises'] = exps.aggregate_exposures(edge_exps)
+        result['noises'] = noise_exps.aggregate_exposures(edge_exps)
     return result
 
 def get_all_edge_dicts(graph, attrs=None, by_nodes=True):
@@ -308,6 +309,6 @@ def update_edge_costs_to_graph(edge_gdf, graph, nt):
 def set_graph_noise_costs(graph, edge_gdf, db_costs=None, nts=None):
     edge_nc_gdf = edge_gdf.copy()
     for nt in nts:
-        edge_nc_gdf['noise_cost'] = [exps.get_noise_cost(noises=noises, db_costs=db_costs, nt=nt) for noises in edge_nc_gdf['noises']]
+        edge_nc_gdf['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, nt=nt) for noises in edge_nc_gdf['noises']]
         edge_nc_gdf['tot_cost'] = edge_nc_gdf.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
         update_edge_costs_to_graph(edge_nc_gdf, graph, nt)

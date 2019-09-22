@@ -1,5 +1,5 @@
 import utils.geometry as geom_utils
-import utils.exposures as exps
+import utils.noise_exposures as noise_exps
 
 def get_noise_tolerances():
     return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
