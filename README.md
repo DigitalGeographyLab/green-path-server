@@ -1,7 +1,7 @@
 # hope-green-path-server
 
 ## General
-Green Path is an open source route planner developed in Urban Innovative Action **HOPE** – Healthy Outdoor Premises for Everyone. It informs people on clean routes for walking and cycling in the Greater Helsinki urban region. It is based Air Quality Index (AQI) of the Enfuser model that is developed by the Finnish Meteorological Institute. AQI involves hourly updated and combined information on NO2, PM2.5, PM10 and O3. 
+Green Path is an open source route planner developed in Urban Innovative Action **HOPE** – Healthy Outdoor Premises for Everyone. It informs people on clean routes for walking and cycling in the Greater Helsinki urban region. It is based on Air Quality Index (AQI) of the Enfuser model that is developed by the Finnish Meteorological Institute. AQI involves hourly updated and combined information on NO2, PM2.5, PM10 and O3. 
 
 ## Tech
 * Python (3.6)
