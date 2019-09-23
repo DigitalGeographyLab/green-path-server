@@ -106,6 +106,3 @@ venv.bak/
 # other files
 .DS_Store
 src/.vscode/settings.json
-src/data/noise_data.gpkg
-src/data/noise_data.gpkg-shm
-src/data/noise_data.gpkg-wal
