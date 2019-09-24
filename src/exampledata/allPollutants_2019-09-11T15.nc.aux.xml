@@ -1,0 +1,84 @@
+<PAMDataset>
+  <Subdataset name="cnc_NO2_gas">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">84</MDI>
+          <MDI key="STATISTICS_MEAN">-104.90743376727</MDI>
+          <MDI key="STATISTICS_MINIMUM">-124</MDI>
+          <MDI key="STATISTICS_STDDEV">15.06039750153</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="AQI">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Histograms>
+          <HistItem>
+            <HistMin>-125.1165</HistMin>
+            <HistMax>108.1165</HistMax>
+            <BucketCount>1000</BucketCount>
+            <IncludeOutOfRange>0</IncludeOutOfRange>
+            <Approximate>1</Approximate>
+            <HistCounts>6510|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1806|0|0|0|3843|0|0|0|0|2033|0|0|0|6057|0|0|0|5642|0|0|0|3614|0|0|0|0|3310|0|0|0|3616|0|0|0|3955|0|0|0|0|3442|0|0|0|3338|0|0|0|4207|0|0|0|4013|0|0|0|0|3670|0|0|0|3357|0|0|0|2837|0|0|0|0|2775|0|0|0|2602|0|0|0|2635|0|0|0|2577|0|0|0|0|2821|0|0|0|3202|0|0|0|3447|0|0|0|0|3863|0|0|0|3506|0|0|0|2561|0|0|0|2362|0|0|0|0|2176|0|0|0|1790|0|0|0|1452|0|0|0|0|1326|0|0|0|1300|0|0|0|1108|0|0|0|1102|0|0|0|0|887|0|0|0|989|0|0|0|779|0|0|0|0|823|0|0|0|720|0|0|0|746|0|0|0|0|648|0|0|0|567|0|0|0|386|0|0|0|211|0|0|0|0|150|0|0|0|0|0|0|0|136|0|0|0|0|76|0|0|0|58|0|0|0|36|0|0|0|30|0|0|0|0|22|0|0|0|41|0|0|0|24|0|0|0|0|28|0|0|0|22|0|0|0|15|0|0|0|22|0|0|0|0|15|0|0|0|20|0|0|0|9|0|0|0|0|19|0|0|0|13|0|0|0|6|0|0|0|12|0|0|0|0|14|0|0|0|12|0|0|0|7|0|0|0|0|10|0|0|0|10|0|0|0|10|0|0|0|7|0|0|0|0|7|0|0|0|6|0|0|0|11|0|0|0|0|6|0|0|0|4|0|0|0|7|0|0|0|7|0|0|0|0|9|0|0|0|1|0|0|0|10|0|0|0|0|9|0|0|0|4|0|0|0|11|0|0|0|4|0|0|0|0|6|0|0|0|6|0|0|0|2|0|0|0|0|7|0|0|0|6|0|0|0|7|0|0|0|4|0|0|0|0|4|0|0|0|4|0|0|0|1|0|0|0|0|2|0|0|0|3|0|0|0|2|0|0|0|2|0|0|0|0|2|0|0|0|2|0|0|0|3|0|0|0|0|3|0|0|0|0|0|0|0|2|0|0|0|0|0|0|0|0|2|0|0|0|3|0|0|0|1|0|0|0|0|4|0|0|0|0|0|0|0|1|0|0|0|2|0|0|0|0|0|0|0|0|2|0|0|0|2|0|0|0|0|1|0|0|0|2|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|1|0|0|0|2|0|0|0|0|0|0|0|0|2|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1</HistCounts>
+          </HistItem>
+        </Histograms>
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">108</MDI>
+          <MDI key="STATISTICS_MEAN">-34.461143301912</MDI>
+          <MDI key="STATISTICS_MINIMUM">-125</MDI>
+          <MDI key="STATISTICS_STDDEV">24.672113041955</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="cnc_O3_gas">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">123</MDI>
+          <MDI key="STATISTICS_MEAN">86.553789878703</MDI>
+          <MDI key="STATISTICS_MINIMUM">-95</MDI>
+          <MDI key="STATISTICS_STDDEV">15.752875568293</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="cnc_PM10">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">116</MDI>
+          <MDI key="STATISTICS_MEAN">-108.7953086718</MDI>
+          <MDI key="STATISTICS_MINIMUM">-124</MDI>
+          <MDI key="STATISTICS_STDDEV">12.840542665604</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="cnc_PM2_5">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">116</MDI>
+          <MDI key="STATISTICS_MEAN">-95.810559917178</MDI>
+          <MDI key="STATISTICS_MINIMUM">-124</MDI>
+          <MDI key="STATISTICS_STDDEV">20.725128022253</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="cnc_PM2_5_PM10">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">117</MDI>
+          <MDI key="STATISTICS_MEAN">-116.54320295381</MDI>
+          <MDI key="STATISTICS_MINIMUM">-124</MDI>
+          <MDI key="STATISTICS_STDDEV">9.882527081364</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+</PAMDataset>
