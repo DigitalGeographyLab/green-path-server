@@ -99,7 +99,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     paths_gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
     paths_gdf['nei_norm'] = paths_gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
     # gdf to dicts
-    path_dicts = qp_utils.get_geojson_from_quiet_paths_gdf(paths_gdf)
+    path_dicts = qp_utils.get_quiet_path_dicts_from_qp_df(paths_gdf)
     # group paths with nearly identical geometries
     unique_paths = path_utils.remove_duplicate_geom_paths(path_dicts, tolerance=30, cost_attr='nei_norm', logging=False)
     # calculate exposure differences to shortest path
