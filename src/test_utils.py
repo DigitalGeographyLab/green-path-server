@@ -54,7 +54,7 @@ def test_add_exposures_to_edges():
     edge_dicts = graph_utils.get_all_edge_dicts(graph_proj)
     edge_gdf = graph_utils.get_edge_gdf(graph_proj, attrs=['geometry', 'length', 'uvkey'], subset=5)
     edge_gdf['split_lines'] = [geom_utils.get_split_lines_list(line_geom, noise_polys) for line_geom in edge_gdf['geometry']]
-    split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf, 'uvkey')
+    split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf, uniq_id='uvkey')
     split_line_noises = noise_exps.get_noise_attrs_to_split_lines(split_lines, noise_polys)
     edge_noises = noise_exps.aggregate_line_noises(split_line_noises, 'uvkey')
     graph_utils.update_edge_noises_to_graph(edge_noises, graph_proj)

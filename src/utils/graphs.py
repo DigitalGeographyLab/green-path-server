@@ -107,7 +107,7 @@ def get_new_node_id(graph):
 
 def get_new_node_attrs(graph, point):
     new_node_id = get_new_node_id(graph)
-    wgs_point = geom_utils.project_to_wgs(point)
+    wgs_point = geom_utils.project_geom(point, from_epsg=3879, to_epsg=4326)
     geom_attrs = {**geom_utils.get_xy_from_geom(point), **geom_utils.get_lat_lon_from_geom(wgs_point)}
     return { 'id': new_node_id, **geom_attrs }
 

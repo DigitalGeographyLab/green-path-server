@@ -8,17 +8,18 @@ from shapely.geometry import box
 import utils.geometry as geom_utils
 
 def get_noise_polygons():
-    # return noise data in epsg:3879 (Helsinki)
+    """Returns noise polygons (for Helsinki) as GeoDataFrame in EPSG 3879
+    """
     noise_data = gpd.read_file('data/noise_data.gpkg', layer='2017_alue_01_tieliikenne_L_Aeq_paiva')
     noise_polys = geom_utils.explode_multipolygons_to_polygons(noise_data)
     return noise_polys
 
 def get_koskela_kumpula_box():
-    # return polygon of Kumpula & Koskela area in epsg:3879
+    # return polygon of Kumpula & Koskela area in epsg:4326 (projected from epsg:3879)
     bboxes = gpd.read_file('data/aoi_polygons.gpkg', layer='bboxes')
     rows = bboxes.loc[bboxes['name'] == 'koskela_kumpula']
     poly = list(rows['geometry'])[0]
-    bounds = geom_utils.project_to_wgs(poly).bounds
+    bounds = geom_utils.project_geom(poly, from_epsg=3879, to_epsg=4326).bounds
     return box(*bounds)
 
 def get_hel_poly(WGS84=False, buffer_m=None):
@@ -28,7 +29,7 @@ def get_hel_poly(WGS84=False, buffer_m=None):
     if (buffer_m is not None):
         poly = poly.buffer(buffer_m)
     if (WGS84 == True):
-        poly = geom_utils.project_to_wgs(poly)
+        poly = geom_utils.project_geom(poly, from_epsg=3879, to_epsg=4326)
     return poly
 
 def get_graph_kumpula_noise(version=3):
