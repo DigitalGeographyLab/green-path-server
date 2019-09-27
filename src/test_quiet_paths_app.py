@@ -16,12 +16,22 @@ import utils.tests as tests
 
 #%% 
 def get_short_quiet_paths(graph, from_latLon, to_latLon, logging=False):
+    # parse query
     from_xy = geom_utils.get_xy_from_lat_lon(from_latLon)
     to_xy = geom_utils.get_xy_from_lat_lon(to_latLon)
-    # find origin and destination nodes from closest edges
-    orig_node = rt.get_nearest_node(graph, from_xy, edge_gdf, node_gdf, nts=nts, db_costs=db_costs, logging=logging)
-    dest_node = rt.get_nearest_node(graph, to_xy, edge_gdf, node_gdf, nts=nts, db_costs=db_costs, logging=logging, orig_node=orig_node)
+
+    # find / create origin & destination nodes
+    orig_node, dest_node, orig_link_edges, dest_link_edges = rt.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
     # utils.print_duration(start_time, 'Origin & destination nodes set.')
+    # return error messages if origin/destination not found
+    if (orig_node is None):
+        print('could not find origin node at', from_latLon)
+        # return jsonify({'error': 'Origin not found'})
+    if (dest_node is None):
+        print('could not find destination node at', to_latLon)
+        # return jsonify({'error': 'Destination not found'})
+
+    # optimize paths
     # start_time = time.time()
     # get shortest path
     path_list = []
@@ -35,8 +45,9 @@ def get_short_quiet_paths(graph, from_latLon, to_latLon, logging=False):
         path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
     # remove linking edges of the origin / destination nodes
-    graph_utils.remove_new_node_and_link_edges(graph, orig_node)
-    graph_utils.remove_new_node_and_link_edges(graph, dest_node)
+    graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
+    graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
+
     # collect quiet paths to gdf
     paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
     paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])

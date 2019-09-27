@@ -118,49 +118,35 @@ def add_new_node_to_graph(graph, point, logging=True):
     graph.add_node(attrs['id'], ref='', x=attrs['x'], y=attrs['y'], lon=attrs['lon'], lat=attrs['lat'])
     return attrs['id']
 
-def interpolate_link_noises(link_geom, edge_geom, edge_noises):
-    link_noises = {}
-    link_len_ratio = link_geom.length / edge_geom.length
-    for db in edge_noises.keys():
-        link_noises[db] = round(edge_noises[db] * link_len_ratio, 3)
-    return link_noises
-
-def get_edge_noise_cost_attrs(nts, db_costs, edge_d, link_geom):
-    cost_attrs = {}
-    # estimate link noises based on link length - edge length -ratio and edge noises
-    cost_attrs['noises'] = interpolate_link_noises(link_geom, edge_d['geometry'], edge_d['noises'])
-    # calculate noise tolerance specific noise costs
-    for nt in nts:
-        noise_cost = noise_exps.get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, nt=nt)
-        cost_attrs['nc_'+str(nt)] = round(noise_cost + link_geom.length, 2)
-    noises_sum_len = noise_exps.get_total_noises_len(cost_attrs['noises'])
-    if ((noises_sum_len - link_geom.length) > 0.1):
-        print('link length unmatch:', noises_sum_len, link_geom.length)
-    return cost_attrs
-
-def add_linking_edges_for_new_node(graph, new_node, split_point, edge, nts, db_costs, logging=False):
-    edge_geom = edge['geometry']
-    # split edge at new node to two line geometries
-    split_lines = geom_utils.split_line_at_point(edge_geom, split_point)
-    node_from = edge['uvkey'][0]
-    node_to = edge['uvkey'][1]
+def split_link_edge_geoms(graph, edge_geom, split_point, node_from, node_to):
     node_from_p = get_node_geom(graph, node_from)
     node_to_p = get_node_geom(graph, node_to)
     edge_first_p = Point(edge_geom.coords[0])
+    # split edge at new node to two line geometries
+    split_lines = geom_utils.split_line_at_point(edge_geom, split_point)
     if(edge_first_p.distance(node_from_p) < edge_first_p.distance(node_to_p)):
         link1 = split_lines[0]
         link2 = split_lines[1]
     else:
         link1 = split_lines[1]
         link2 = split_lines[0]
+    return { 'l1': link1, 'l2': link2 }
+    
+def create_linking_edges_for_new_node(graph, new_node, split_point, edge, nts, db_costs, logging=False):
+    node_from = edge['uvkey'][0]
+    node_to = edge['uvkey'][1]
+    links = split_link_edge_geoms(graph, edge['geometry'], split_point, node_from, node_to)
+    link1 = links['l1']
+    link2 = links['l2']
+
     if (logging == True):
         print('add linking edges between:', node_from, new_node, node_to)
     # interpolate noise cost attributes for new linking edges so that they work in quiet path routing
-    link1_noise_costs = get_edge_noise_cost_attrs(nts, db_costs, edge, link1)
-    link2_noise_costs = get_edge_noise_cost_attrs(nts, db_costs, edge, link2)
+    link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=edge, link_geom=link1)
+    link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=edge, link_geom=link2)
     # combine link attributes to prepare adding them as new edges
-    link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_noise_costs }
-    link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_noise_costs }
+    link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_cost_attrs }
+    link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_cost_attrs }
     # add linking edges with noice cost attributes to graph
     graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
     graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])
@@ -170,32 +156,37 @@ def add_linking_edges_for_new_node(graph, new_node, split_point, edge, nts, db_c
     link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
     return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
-def remove_new_node_and_link_edges(graph, new_node_d):
-    if ('link_edges' in new_node_d.keys()):
-        link_edges = new_node_d['link_edges']
-        edges = [
+def remove_new_node_and_link_edges(graph, new_node=None, link_edges=None):
+    if (link_edges is not None):
+        removed_count = 0
+        removed_node = False
+        rm_edges = [
             (link_edges['node_from'], link_edges['new_node']),
             (link_edges['new_node'], link_edges['node_from']),
             (link_edges['new_node'], link_edges['node_to']),
             (link_edges['node_to'], link_edges['new_node'])
             ]
-        for edge in edges:
+        for rm_edge in rm_edges:
             try:
-                graph.remove_edge(*edge)
+                graph.remove_edge(*rm_edge)
+                removed_count += 1
             except Exception:
                 continue
         try:
-            graph.remove_node(link_edges['new_node'])
+            graph.remove_node(new_node)
+            removed_node = True
         except Exception:
             pass
+        if (removed_count == 0): print('Could not remove linking edges')
+        if (removed_node == False): print('Could not remove new node')
 
-def get_shortest_edge(edges, weight):
+def get_least_cost_edge(edges, cost_attr):
     if (len(edges) == 1):
         return next(iter(edges.values()))
     s_edge = next(iter(edges.values()))
     for edge_k in edges.keys():
-        if (weight in edges[edge_k].keys() and weight in s_edge.keys()):
-            if (edges[edge_k][weight] < s_edge[weight]):
+        if (cost_attr in edges[edge_k].keys() and cost_attr in s_edge.keys()):
+            if (edges[edge_k][cost_attr] < s_edge[cost_attr]):
                 s_edge = edges[edge_k]
     return s_edge
 
@@ -220,7 +211,7 @@ def aggregate_path_geoms_attrs(graph, path, weight='length', geom=True, noises=F
         node_1 = path[idx]
         node_2 = path[idx+1]
         edges = graph[node_1][node_2]
-        edge_d = get_shortest_edge(edges, weight)
+        edge_d = get_least_cost_edge(edges, weight)
         if geom:
             if ('nc_0.1') not in edge_d:
                 print('missing noise cost attr')
@@ -271,7 +262,6 @@ def get_all_edge_dicts(graph, attrs=None, by_nodes=True):
                         ed = edges[edge_k]
                         ed['uvkey'] = edge_uvkey
                     edge_dicts.append(ed)
-        return edge_dicts
     else:
         for u, v, k, data in graph.edges(keys=True, data=True):
             edge_uvkey = (u, v, k)
@@ -285,7 +275,7 @@ def get_all_edge_dicts(graph, attrs=None, by_nodes=True):
                 ed = data.copy()
                 ed['uvkey'] = edge_uvkey
             edge_dicts.append(ed)
-        return edge_dicts
+    return edge_dicts
 
 def get_edge_gdf(graph, attrs=None, by_nodes=True, subset=None, dicts=False):
     edge_dicts = get_all_edge_dicts(graph, attrs=attrs, by_nodes=by_nodes)

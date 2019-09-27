@@ -20,8 +20,8 @@ CORS(app)
 start_time = time.time()
 nts = qp.get_noise_tolerances()
 db_costs = qp.get_db_costs()
-# graph = files.get_graph_full_noise()
-graph = files.get_graph_kumpula_noise()
+graph = files.get_graph_full_noise()
+# graph = files.get_graph_kumpula_noise() # use this for testing as it loads quicker
 print('Graph of', graph.size(), 'edges read.')
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
 node_gdf = graph_utils.get_node_gdf(graph)
@@ -40,6 +40,7 @@ def hello_world():
 
 @app.route('/quietpaths/<from_lat>,<from_lon>/<to_lat>,<to_lon>')
 def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
+    # parse query
     start_time = time.time()
     from_latLon = {'lat': float(from_lat), 'lon': float(from_lon)}
     to_latLon = {'lat': float(to_lat), 'lon': float(to_lon)}
@@ -47,27 +48,29 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     print('to:', to_latLon)
     from_xy = geom_utils.get_xy_from_lat_lon(from_latLon)
     to_xy = geom_utils.get_xy_from_lat_lon(to_latLon)
-    # find/create origin and destination nodes
-    orig_node = rt.get_nearest_node(graph, from_xy, edge_gdf, node_gdf, nts=nts, db_costs=db_costs)
-    dest_node = rt.get_nearest_node(graph, to_xy, edge_gdf, node_gdf, nts=nts, db_costs=db_costs, orig_node=orig_node)
+
+    # find / create origin & destination nodes
+    orig_node, dest_node, orig_link_edges, dest_link_edges = rt.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
+    utils.print_duration(start_time, 'Origin & destination nodes set.')
+    # return error messages if origin/destination not found
     if (orig_node is None):
         print('could not find origin node at', from_latLon)
         return jsonify({'error': 'Origin not found'})
     if (dest_node is None):
         print('could not find destination node at', to_latLon)
         return jsonify({'error': 'Destination not found'})
-    utils.print_duration(start_time, 'Origin & destination nodes set.')
-    # optimize paths
+
+    # calculate least cost paths
     start_time = time.time()
     path_list = []
-    # get shortest path
+    # calculate shortest path
     shortest_path = rt.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
     if (shortest_path is None):
         return jsonify({'error': 'Could not find paths'})
     # aggregate (combine) path geometry & noise attributes 
     path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
     path_list.append({**path_geom_noises, **{'id': 'short_p','type': 'short', 'nt': 0}})
-    # find & add quiet paths to path_list
+    # calculate quiet paths
     for nt in nts:
         # set name for the noise cost attribute (edge cost)
         noise_cost_attr = 'nc_'+str(nt)
@@ -79,9 +82,10 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     utils.print_duration(start_time, 'Routing done.')
     start_time = time.time()
     # remove linking edges of the origin / destination nodes
-    graph_utils.remove_new_node_and_link_edges(graph, orig_node)
-    graph_utils.remove_new_node_and_link_edges(graph, dest_node)
-    # collect quiet paths to gdf
+    graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
+    graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
+
+    # collect quiet paths to gdf -> dict -> json
     paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
     paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
     # add exposures to noise levels higher than specified threshods (dBs)
