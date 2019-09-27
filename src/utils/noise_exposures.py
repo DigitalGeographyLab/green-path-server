@@ -143,6 +143,26 @@ def get_noise_cost(noises={}, db_costs={}, nt=1):
             noise_cost += noises[db] * db_costs[db] * nt
     return round(noise_cost, 2)
 
+def interpolate_link_noises(link_geom, edge_geom, edge_noises):
+    link_noises = {}
+    link_len_ratio = link_geom.length / edge_geom.length
+    for db in edge_noises.keys():
+        link_noises[db] = round(edge_noises[db] * link_len_ratio, 3)
+    return link_noises
+
+def get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=None, link_geom=None):
+    cost_attrs = {}
+    # estimate link noises based on link length - edge length -ratio and edge noises
+    cost_attrs['noises'] = interpolate_link_noises(link_geom, edge_dict['geometry'], edge_dict['noises'])
+    # calculate noise tolerance specific noise costs
+    for nt in nts:
+        noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, nt=nt)
+        cost_attrs['nc_'+str(nt)] = round(noise_cost + link_geom.length, 2)
+    noises_sum_len = get_total_noises_len(cost_attrs['noises'])
+    if ((noises_sum_len - link_geom.length) > 0.1):
+        print('link length unmatch:', noises_sum_len, link_geom.length)
+    return cost_attrs
+
 def compare_lens_noises_lens(edge_gdf):
     gdf = edge_gdf.copy()
     gdf['uvkey_str'] = [str(uvkey[0])+'_'+str(uvkey[1]) for uvkey in gdf['uvkey']]
