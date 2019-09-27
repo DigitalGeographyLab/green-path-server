@@ -5,12 +5,13 @@ from flask import jsonify
 import geopandas as gpd
 from fiona.crs import from_epsg
 import time
-import utils.files as files
-import utils.routing as rt
+import utils.files as file_utils
+import utils.routing as routing_utils
 import utils.geometry as geom_utils
 import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
-import utils.quiet_paths as qp
+import utils.quiet_paths as qp_utils
+import utils.paths as path_utils
 import utils.utils as utils
 
 app = Flask(__name__)
@@ -18,10 +19,10 @@ CORS(app)
 
 # INITIALIZE GRAPH
 start_time = time.time()
-nts = qp.get_noise_tolerances()
-db_costs = qp.get_db_costs()
-graph = files.get_graph_full_noise()
-# graph = files.get_graph_kumpula_noise() # use this for testing as it loads quicker
+nts = qp_utils.get_noise_tolerances()
+db_costs = qp_utils.get_db_costs()
+# graph = file_utils.get_graph_full_noise()
+graph = file_utils.get_graph_kumpula_noise() # use this for testing as it loads quicker
 print('Graph of', graph.size(), 'edges read.')
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
 node_gdf = graph_utils.get_node_gdf(graph)
@@ -50,7 +51,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     to_xy = geom_utils.get_xy_from_lat_lon(to_latLon)
 
     # find / create origin & destination nodes
-    orig_node, dest_node, orig_link_edges, dest_link_edges = rt.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
+    orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
     utils.print_duration(start_time, 'Origin & destination nodes set.')
     # return error messages if origin/destination not found
     if (orig_node is None):
@@ -64,7 +65,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     start_time = time.time()
     path_list = []
     # calculate shortest path
-    shortest_path = rt.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
+    shortest_path = routing_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
     if (shortest_path is None):
         return jsonify({'error': 'Could not find paths'})
     # aggregate (combine) path geometry & noise attributes 
@@ -75,7 +76,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         # set name for the noise cost attribute (edge cost)
         noise_cost_attr = 'nc_'+str(nt)
         # optimize quiet path by noise_cost_attr as edge cost
-        quiet_path = rt.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
+        quiet_path = routing_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
         # aggregate (combine) path geometry & noise attributes 
         path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
@@ -98,11 +99,11 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     paths_gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
     paths_gdf['nei_norm'] = paths_gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
     # gdf to dicts
-    path_dicts = qp.get_geojson_from_q_path_gdf(paths_gdf)
+    path_dicts = qp_utils.get_geojson_from_quiet_paths_gdf(paths_gdf)
     # group paths with nearly identical geometries
-    unique_paths = qp.remove_duplicate_geom_paths(path_dicts, tolerance=30, logging=False)
+    unique_paths = path_utils.remove_duplicate_geom_paths(path_dicts, tolerance=30, cost_attr='nei_norm', logging=False)
     # calculate exposure differences to shortest path
-    path_comps = rt.get_short_quiet_paths_comparison_for_dicts(unique_paths)
+    path_comps = qp_utils.get_short_quiet_paths_comparison_for_dicts(unique_paths)
     # return paths as GeoJSON (FeatureCollection)
     utils.print_duration(start_time, 'Processed paths.')
     return jsonify(path_comps)

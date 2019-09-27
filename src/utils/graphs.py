@@ -291,7 +291,7 @@ def update_edge_noises_to_graph(edge_gdf, graph):
     for edge in edge_gdf.itertuples():
         nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { 'noises': getattr(edge, 'noises')}})
 
-def update_edge_costs_to_graph(edge_gdf, graph, nt):
+def update_edge_noise_costs_to_graph(edge_gdf, graph, nt):
     cost_attr = 'nc_'+str(nt)
     for edge in edge_gdf.itertuples():
         nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { cost_attr: getattr(edge, 'tot_cost')}}) 
@@ -301,4 +301,4 @@ def set_graph_noise_costs(graph, edge_gdf, db_costs=None, nts=None):
     for nt in nts:
         edge_nc_gdf['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, nt=nt) for noises in edge_nc_gdf['noises']]
         edge_nc_gdf['tot_cost'] = edge_nc_gdf.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
-        update_edge_costs_to_graph(edge_nc_gdf, graph, nt)
+        update_edge_noise_costs_to_graph(edge_nc_gdf, graph, nt)
