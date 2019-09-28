@@ -3,7 +3,7 @@ import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
 
 def get_db_costs() -> Dict[int, float]:
-    """Returns dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
+    """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
     (Alternative noise costs can be calculated by multiplying the base noise cost with different noise tolerances 
     from get_noise_tolerances())
 
@@ -14,16 +14,17 @@ def get_db_costs() -> Dict[int, float]:
     return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
 
 def get_noise_tolerances() -> List[float]:
-    """Returns noise tolerances that can be used in adding alternative noise-based costs to edges and
+    """Returns a set of noise tolerance coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
+    
     Returns:
         A list of noise tolerance values.
     """
     return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
 
 def get_short_quiet_paths_comparison_for_dicts(paths: List[dict]) -> List[dict]:
-    """Finds the shortest path from the list of paths and compares exposure to noise (and path length) between the 
-    quiet paths and the shortest path (mean dB etc.). The differences are added as attributes to the paths' 'properites' -dictionaries.
+    """Finds the shortest path from a list of paths and compares exposures to noise (and path length) between the 
+    quiet paths and the shortest path (mean dB etc.). The differences are added as attributes to the paths' 'properties' -dictionaries.
 
     Args:
         paths: A list of paths as dictionaries. 
@@ -51,7 +52,7 @@ def get_short_quiet_paths_comparison_for_dicts(paths: List[dict]) -> List[dict]:
     return comp_paths
 
 def get_quiet_path_dicts_from_qp_df(gdf) -> List[dict]:
-    """Converts GeoDataFrame containing the quiet paths to list of dicts.
+    """Converts a GeoDataFrame containing the quiet paths to a list of dicts.
     """
     features = []
     for path in gdf.itertuples():

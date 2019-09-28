@@ -36,13 +36,13 @@ def get_short_quiet_paths(graph, from_latLon, to_latLon, logging=False):
     # start_time = time.time()
     # get shortest path
     path_list = []
-    shortest_path = rt_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
+    shortest_path = rt_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
     path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
     path_list.append({**path_geom_noises, **{'id': 'short_p','type': 'short', 'nt': 0}})
     # get quiet paths to list
     for nt in nts:
         noise_cost_attr = 'nc_'+str(nt)
-        shortest_path = rt_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
+        shortest_path = rt_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
         path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
     # remove linking edges of the origin / destination nodes
@@ -65,8 +65,8 @@ def get_short_quiet_paths(graph, from_latLon, to_latLon, logging=False):
 start_time = time.time()
 nts = qp_utils.get_noise_tolerances()
 db_costs = qp_utils.get_db_costs()
-# graph = file_utils.get_graph_full_noise()
-graph = file_utils.get_graph_kumpula_noise()
+# graph = file_utils.load_graph_full_noise()
+graph = file_utils.load_graph_kumpula_noise()
 print('Graph of', graph.size(), 'edges read.')
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
 node_gdf = graph_utils.get_node_gdf(graph)

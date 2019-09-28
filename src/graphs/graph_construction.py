@@ -184,7 +184,7 @@ print('Noises extracted by edge geometries.')
 
 #%% 9.3 Update edge noises to graph
 for edge_noises in edge_noise_dfs:
-    graph_utils.update_edge_noises_to_graph(edge_noises, graph)
+    graph_utils.update_edge_attr_to_graph(graph, edge_noises, df_attr='noises', edge_attr='noises')
 print('Noises updated to graph.')
 
 #%% 10. Export graph with edge noises

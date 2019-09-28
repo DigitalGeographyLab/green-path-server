@@ -50,7 +50,7 @@ def project_geom(geom, from_epsg: int = 4326, to_epsg: int = 3879):
     return geom_proj
 
 def get_closest_point_on_line(line: LineString, point: Point) -> Point:
-    """Finds the closest point on a line to given point and returns it as shapely geometry Point.
+    """Finds the closest point on a line to given point and returns it as Point.
     """
     projected = line.project(point)
     closest_point = line.interpolate(projected)
@@ -59,7 +59,7 @@ def get_closest_point_on_line(line: LineString, point: Point) -> Point:
 def split_line_at_point(line: LineString, point: Point) -> List[LineString]:
     """Splits a line at nearest intersecting point.
     Returns:
-        The result as a list containing two LineString objects.
+        A list containing two LineString objects.
     """
     snap_line = snap(line,point,0.01)
     result = split(snap_line, point)
@@ -67,6 +67,8 @@ def split_line_at_point(line: LineString, point: Point) -> List[LineString]:
     return result
 
 def get_polygons_under_line(line_geom: LineString, polygons: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Returns polygons that intersect the [line_geom] as GeoDataFrame.
+    """
     polygons_sindex = polygons.sindex
     close_polygons_idxs = list(polygons_sindex.intersection(line_geom.buffer(200).bounds))
     close_polygons = polygons.iloc[close_polygons_idxs].copy()
@@ -75,6 +77,8 @@ def get_polygons_under_line(line_geom: LineString, polygons: gpd.GeoDataFrame) -
     return polygons_under_line
 
 def get_multipolygon_under_line(line_geom: LineString, polygons: gpd.GeoDataFrame) -> MultiPolygon:
+    """Returns polygons that intersect the [line_geom] as MultiPolygon.
+    """
     polys = get_polygons_under_line(line_geom, polygons)
     geoms = list(polys['geometry'])
     if (len(geoms) == 0):
@@ -82,7 +86,7 @@ def get_multipolygon_under_line(line_geom: LineString, polygons: gpd.GeoDataFram
     return MultiPolygon(geoms)
 
 def get_split_lines_list(line_geom: LineString, polygons: gpd.GeoDataFrame) -> List[LineString]:
-    """Split a line geometry at boundaries of polygons.
+    """Splits a line geometry at boundaries of polygons.
     Returns:
         A list of split lines as LineString objects.
     """
@@ -93,7 +97,7 @@ def get_split_lines_list(line_geom: LineString, polygons: gpd.GeoDataFrame) -> L
     return list(split_line_geom)
 
 def get_split_lines_gdf(line_geom: LineString, polygons: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Split a line geometry at boundaries of polygons.
+    """Splits a line geometry at boundaries of polygons.
     Returns:
         A GeoDataFrame containing the split lines with LineString geometry.
     """
@@ -147,9 +151,14 @@ def explode_lines_to_split_lines(line_df: pd.DataFrame, uniq_id: str = 'uvkey') 
     return new_gdf[[uniq_id, 'geometry', 'length', 'mid_point']]
 
 def get_line_middle_point(line_geom: LineString) -> Point:
+    """Returns the middle point of a line geometry as Point.
+    """
     return line_geom.interpolate(0.5, normalized = True)
 
 def get_geojson_from_geom(geom, from_epsg: int = 3879) -> dict:
+    """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
+    feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
+    """
     geom_wgs = project_geom(geom, from_epsg=from_epsg, to_epsg=4326)
     feature = { 
         'type': 'Feature', 
@@ -158,17 +167,18 @@ def get_geojson_from_geom(geom, from_epsg: int = 3879) -> dict:
         }
     return feature
 
-def lines_overlap(geom1: LineString, geom2: LineString, tolerance: int = 2, min_intersect: float = None):
-    """Tests if two lines overlap within small tolerance.
-    Note: partial overlap is accepted as line lengths don't need to match.
+def lines_overlap(geom1: LineString, geom2: LineString, tolerance: int = 2, min_intersect: float = None) -> bool:
+    """Tests if two lines overlap.
 
+    Note: 
+        A partial overlap can be accepted - line lengths don't need to match.
     Args:
-        geom1 (LineString)
-        geom2 (LineString)
-        tolerance (int): tolerance in meters
-        min_intersect: 
+        geom1: (LineString).
+        geom2: (LineString).
+        tolerance (int): A tolerance in meters - the geometries will be buffered with the tolerance.
+        min_intersect: A minimum instersecton between the buffered geometries (1=full, 0.5=half).
     Returns:
-        bool
+        A boolean value indicating whether the two geometries overlap with respect to the specified requirements.
     """
     buffer1 = geom1.buffer(tolerance)
     buffer2 = geom2.buffer(tolerance)

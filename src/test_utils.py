@@ -42,22 +42,22 @@ def test_get_th_exposure_lens():
     th_noise_dict = noise_exps.get_th_exposures(noise_dict, [55, 60, 65, 70])
     assert th_noise_dict == {55: 573.907, 60: 229.041, 65: 121.931, 70: 59.351}
 
-def test_get_exposure_lines():
-    noise_lines = noise_exps.get_exposure_lines(walk_geom, noise_polys)
+def test_get_noise_exposure_lines():
+    noise_lines = noise_exps.get_noise_exposure_lines(walk_geom, noise_polys)
     mean_noise =  round(noise_lines['db_lo'].mean(),1)
     min_noise = noise_lines['db_lo'].min()
     max_noise = noise_lines['db_lo'].max()
     assert (mean_noise, min_noise, max_noise) == (59.5, 40.0, 75.0)
 
 def test_add_exposures_to_edges():
-    graph_proj = files.get_graph_kumpula_noise()
+    graph_proj = files.load_graph_kumpula_noise()
     edge_dicts = graph_utils.get_all_edge_dicts(graph_proj)
     edge_gdf = graph_utils.get_edge_gdf(graph_proj, attrs=['geometry', 'length', 'uvkey'], subset=5)
     edge_gdf['split_lines'] = [geom_utils.get_split_lines_list(line_geom, noise_polys) for line_geom in edge_gdf['geometry']]
     split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf, uniq_id='uvkey')
     split_line_noises = noise_exps.get_noise_attrs_to_split_lines(split_lines, noise_polys)
     edge_noises = noise_exps.aggregate_line_noises(split_line_noises, 'uvkey')
-    graph_utils.update_edge_noises_to_graph(edge_noises, graph_proj)
+    graph_utils.update_edge_attr_to_graph(graph_proj, edge_noises, df_attr='noises', edge_attr='noises')
     edge_dicts = graph_utils.get_all_edge_dicts(graph_proj)
     edge_d = edge_dicts[0]
     print(edge_d)

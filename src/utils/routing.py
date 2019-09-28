@@ -122,7 +122,7 @@ def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges
     return { 'node': new_node, 'offset': round(nearest_edge_point.distance(point), 1), 'add_links': True, **links_to }
 
 def get_orig_dest_nodes_and_linking_edges(graph, from_xy: dict, to_xy: dict, edge_gdf, node_gdf, nts: List[float], db_costs: Dict[int,float]):
-    """Finds the nearest nodes to origin and destination as well as the newly created egdes that connect 
+    """Finds the nearest nodes to origin and destination as well as the newly created edges that connect 
     the origin and destination nodes to the graph.
 
     Args:
@@ -154,8 +154,8 @@ def get_orig_dest_nodes_and_linking_edges(graph, from_xy: dict, to_xy: dict, edg
         dest_link_edges = graph_utils.create_linking_edges_for_new_node(graph, dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], nts, db_costs)
     return orig_node, dest_node, orig_link_edges, dest_link_edges
 
-def get_shortest_path(graph, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
-    """Calculates the least cost path by given weight with NetworX library.
+def get_least_cost_path(graph, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
+    """Calculates a least cost path by the given edge weight.
 
     Args:
         graph: A NetworkX graph with which to solve the least cost path optimization problem.
@@ -163,8 +163,8 @@ def get_shortest_path(graph, orig_node: int, dest_node: int, weight: str = 'leng
         dest_node: The name of the destination node (number).
         weight: The name of the edge attribute to use as cost in the least cost path optimization.
     Returns:
-        The least cost path as the sequence of nodes (node ids).
-        None is returned if origin and destination nodes are the same or no path is found between them.
+        The least cost path as a sequence of nodes (node ids).
+        Returns None if the origin and destination nodes are the same or no path is found between them.
     """
     if (orig_node != dest_node):
         try:

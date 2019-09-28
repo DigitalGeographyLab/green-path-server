@@ -4,26 +4,28 @@ import geopandas as gpd
 import osmnx as ox
 import networkx as nx
 from shapely import wkt
-from shapely.geometry import box
+from shapely.geometry import box, Polygon
 import utils.geometry as geom_utils
 
-def get_noise_polygons():
+def get_noise_polygons() -> gpd.GeoDataFrame:
     """Returns noise polygons (for Helsinki) as GeoDataFrame in EPSG 3879
     """
     noise_data = gpd.read_file('data/noise_data.gpkg', layer='2017_alue_01_tieliikenne_L_Aeq_paiva')
     noise_polys = geom_utils.explode_multipolygons_to_polygons(noise_data)
     return noise_polys
 
-def get_koskela_kumpula_box():
-    # return polygon of Kumpula & Koskela area in epsg:4326 (projected from epsg:3879)
+def get_koskela_kumpula_box() -> Polygon:
+    """Returns polygon of Kumpula & Koskela area in epsg:4326 (projected from epsg:3879)
+    """
     bboxes = gpd.read_file('data/aoi_polygons.gpkg', layer='bboxes')
     rows = bboxes.loc[bboxes['name'] == 'koskela_kumpula']
     poly = list(rows['geometry'])[0]
     bounds = geom_utils.project_geom(poly, from_epsg=3879, to_epsg=4326).bounds
     return box(*bounds)
 
-def get_hel_poly(WGS84=False, buffer_m=None):
-    # return buffered polygon for Helsinki in either epsg:3879 or WGS84
+def get_hel_poly(WGS84=False, buffer_m=None) -> Polygon:
+    """returns buffered polygon for Helsinki in either epsg:3879 or WGS84
+    """
     hel_poly = gpd.read_file('data/aoi_polygons.gpkg', layer='hel')
     poly = list(hel_poly['geometry'])[0]
     if (buffer_m is not None):
@@ -32,17 +34,21 @@ def get_hel_poly(WGS84=False, buffer_m=None):
         poly = geom_utils.project_geom(poly, from_epsg=3879, to_epsg=4326)
     return poly
 
-def get_graph_kumpula_noise(version=3):
+def load_graph_kumpula_noise(version=3) -> nx.Graph:
     if (version == 3):
         return load_graphml('kumpula-v3_u_g_n2_f_s.graphml', folder='graphs', directed=False)
+    else:
+        print('No graph found for version:', version)
     return None
 
-def get_graph_full_noise(version=3):
+def load_graph_full_noise(version=3) -> nx.Graph:
     if (version == 3):
         return load_graphml('hel-v3_u_g_n2_f_s.graphml', folder='graphs', directed=False)
+    else:
+        print('No graph found for version:', version)
     return None
 
-def load_graphml(filename, folder=None, node_type=int, directed=None, noises=True):
+def load_graphml(filename, folder=None, node_type=int, directed=None, noises=True) -> nx.Graph:
     # read the graph from disk
     path = os.path.join(folder, filename)
 

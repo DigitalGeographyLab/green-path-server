@@ -1,3 +1,4 @@
+from typing import List, Set, Dict, Tuple, Optional
 import pandas as pd
 import geopandas as gpd
 import osmnx as ox
@@ -10,7 +11,9 @@ import utils.noise_exposures as noise_exps
 import utils.geometry as geom_utils
 import utils.utils as utils
 
-def get_walkable_network_graph(extent_poly_wgs=None):
+def get_walkable_network_graph(extent_poly_wgs=None) -> nx.Graph:
+    """Queries and processes a walkable network graph (undirected) from OSM Overpass API.
+    """
     # define filter for acquiring walkable street network graph
     cust_filter = '["area"!~"yes"]["highway"!~"trunk_link|motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["service"!~"private"]["access"!~"private"]'
     # query graph
@@ -23,7 +26,9 @@ def get_walkable_network_graph(extent_poly_wgs=None):
     g_u_proj = ox.project_graph(g_u, from_epsg(3879))
     return g_u_proj
 
-def get_unwalkable_network_graph(extent_poly_wgs=None):
+def get_unwalkable_network_graph(extent_poly_wgs=None) -> nx.Graph:
+    """Queries and processes an unwalkable network graph (undirected) from OSM Overpass API.
+    """
     # define filter for acquiring (unwalkable) service roads & service tunnels
     cust_filter_no_tunnels = '["area"!~"yes"]["highway"!~"trunk_link|motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["service"!~"private"]["access"!~"private"]["highway"~"service"]["layer"~"-1|-2|-3|-4|-5|-6|-7"]'
     # query graph
@@ -36,7 +41,9 @@ def get_unwalkable_network_graph(extent_poly_wgs=None):
     g_u_proj = ox.project_graph(g_u, from_epsg(3879))
     return g_u_proj
 
-def delete_unused_edge_attrs(graph, save_attrs=['uvkey', 'length', 'geometry', 'noises']):
+def delete_unused_edge_attrs(graph, save_attrs=['uvkey', 'length', 'geometry', 'noises']) -> None:
+    """Removes edge attributes other than the ones listed in save_attrs -arg from the graph.
+    """
     for node_from in list(graph.nodes):
         nodes_to = graph[node_from]
         for node_to in nodes_to.keys():
@@ -48,7 +55,12 @@ def delete_unused_edge_attrs(graph, save_attrs=['uvkey', 'length', 'geometry', '
                     if (attr not in save_attrs):
                         del edge[attr]
 
-def get_missing_edge_geometries(graph, edge_dict):
+def get_missing_edge_geometries(graph, edge_dict: dict) -> dict:
+    """Adds a straight line geometry (LineString) to edge dictionary if the geometry is missing.
+    
+    Returns:
+        A dictionary of the edge (e.g. { 'uvkey': (1,2), 'geometry': LineString_object, ... }).
+    """
     edge_d = {}
     edge_d['uvkey'] = edge_dict['uvkey']
     if ('geometry' not in edge_dict):
@@ -62,7 +74,8 @@ def get_missing_edge_geometries(graph, edge_dict):
     edge_d['length'] = round(edge_d['geometry'].length, 3)
     return edge_d
 
-def add_missing_edge_geometries(graph, edge_dicts):
+def add_missing_edge_geometries(graph, edge_dicts: List[dict]) -> None:
+    """Updates missing straight line edge geometries to edge attributes in a graph."""
     edge_count = len(edge_dicts)
     for idx, edge_d in enumerate(edge_dicts):
         if ('geometry' not in edge_d):
@@ -77,7 +90,9 @@ def add_missing_edge_geometries(graph, edge_dicts):
         utils.print_progress(idx+1, edge_count, percentages=True)
     print('\nEdge geometries & lengths set.')
 
-def osmid_to_string(osmid):
+def osmid_to_string(osmid) -> str:
+    """Creates an unique osmid-string (for an edge) from osmid property that can be either string or list of strings.
+    """
     if isinstance(osmid, list):
         osm_str = ''
         osmid_list = sorted(osmid)
@@ -87,40 +102,61 @@ def osmid_to_string(osmid):
         osm_str = str(osmid)
     return osm_str
 
-def get_node_gdf(graph):
-    node_gdf = ox.graph_to_gdfs(graph, nodes=True, edges=False, node_geometry=True, fill_edge_geometry=False)
-    return node_gdf[['geometry']]
+def get_node_gdf(graph) -> gpd.GeoDataFrame:
+    """Collects and returns the nodes of a graph as a GeoDataFrame. 
+    Names/ids of the nodes are the row ids in the GeoDataFrame.
+    """
+    nodes, data = zip(*graph.nodes(data=True))
+    gdf_nodes = gpd.GeoDataFrame(list(data), index=nodes)
+    gdf_nodes['geometry'] = gdf_nodes.apply(lambda row: Point(row['x'], row['y']), axis=1)
+    gdf_nodes.crs = graph.graph['crs']
+    gdf_nodes.gdf_name = '{}_nodes'.format(graph.graph['name'])
+    return gdf_nodes[['geometry']]
 
-def get_node_geom(graph, node):
+def get_node_point_geom(graph, node: int) -> Point:
     node_d = graph.node[node]
     return Point(node_d['x'], node_d['y'])
 
-def get_edge_geom_from_node_pair(graph, node_1, node_2):
+def get_edge_geom_from_node_pair(graph, node_1: int, node_2: int) -> LineString:
+    """Returns a straight line edge geometry between two nodes.
+    """
     node_1_geom = geom_utils.get_point_from_xy(graph.nodes[node_1])
     node_2_geom = geom_utils.get_point_from_xy(graph.nodes[node_2])
     edge_line = LineString([node_1_geom, node_2_geom])
     return edge_line
 
-def get_new_node_id(graph):
+def get_new_node_id(graph) -> int:
+    """Returns an unique node id that can be used in creating a new node to a graph.
+    """
     graph_nodes = graph.nodes
     return  max(graph_nodes)+1
 
-def get_new_node_attrs(graph, point):
+def get_new_node_attrs(graph, point: Point) -> dict:
+    """Returns the basic attributes for a new node based on a specified location (Point).
+    """
     new_node_id = get_new_node_id(graph)
     wgs_point = geom_utils.project_geom(point, from_epsg=3879, to_epsg=4326)
     geom_attrs = {**geom_utils.get_xy_from_geom(point), **geom_utils.get_lat_lon_from_geom(wgs_point)}
     return { 'id': new_node_id, **geom_attrs }
 
-def add_new_node_to_graph(graph, point, logging=True):
+def add_new_node_to_graph(graph, point: Point, logging=True) -> int:
+    """Adds a new node to a graph at a specified location (Point) and returns the id of the new node.
+    """
     attrs = get_new_node_attrs(graph, point)
     if (logging == True):
         print('add new node:', attrs['id'])
     graph.add_node(attrs['id'], ref='', x=attrs['x'], y=attrs['y'], lon=attrs['lon'], lat=attrs['lat'])
     return attrs['id']
 
-def split_link_edge_geoms(graph, edge_geom, split_point, node_from, node_to):
-    node_from_p = get_node_geom(graph, node_from)
-    node_to_p = get_node_geom(graph, node_to)
+def split_link_edge_geoms(graph, edge_geom: LineString, split_point: Point, node_from: int, node_to: int) -> Tuple[LineString]:
+    """Splits the line geometry of an edge to two parts at the location of a new node. Split parts can subsequently be used as linking edges 
+    that connect the new node to the graph.
+
+    Returns:
+        Tuple containing the geometries of the link edges (LineString, LineString).
+    """
+    node_from_p = get_node_point_geom(graph, node_from)
+    node_to_p = get_node_point_geom(graph, node_to)
     edge_first_p = Point(edge_geom.coords[0])
     # split edge at new node to two line geometries
     split_lines = geom_utils.split_line_at_point(edge_geom, split_point)
@@ -130,14 +166,23 @@ def split_link_edge_geoms(graph, edge_geom, split_point, node_from, node_to):
     else:
         link1 = split_lines[1]
         link2 = split_lines[0]
-    return { 'l1': link1, 'l2': link2 }
+    return link1, link2
     
-def create_linking_edges_for_new_node(graph, new_node, split_point, edge, nts, db_costs, logging=False):
+def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, edge: dict, nts: list, db_costs: dict, logging=False) -> dict:
+    """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
+    for the new edges based on attributes of the original edge on which the new node was added. 
+
+    Returns:
+        A dictionary containing the following keys:
+        node_from: int
+        new_node: int
+        node_to: int
+        link1_d: A dict cotaining the basic edge attributes of the first new linking edge.
+        link2_d: A dict cotaining the basic edge attributes of the second new linking edge.
+    """
     node_from = edge['uvkey'][0]
     node_to = edge['uvkey'][1]
-    links = split_link_edge_geoms(graph, edge['geometry'], split_point, node_from, node_to)
-    link1 = links['l1']
-    link2 = links['l2']
+    link1, link2 = split_link_edge_geoms(graph, edge['geometry'], split_point, node_from, node_to)
 
     if (logging == True):
         print('add linking edges between:', node_from, new_node, node_to)
@@ -156,7 +201,9 @@ def create_linking_edges_for_new_node(graph, new_node, split_point, edge, nts, d
     link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
     return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
-def remove_new_node_and_link_edges(graph, new_node=None, link_edges=None):
+def remove_new_node_and_link_edges(graph, new_node: int = None, link_edges: dict = None) -> None:
+    """Removes linking edges from a graph. Useful after routing in order to keep the graph unchanged.
+    """
     if (link_edges is not None):
         removed_count = 0
         removed_node = False
@@ -180,7 +227,9 @@ def remove_new_node_and_link_edges(graph, new_node=None, link_edges=None):
         if (removed_count == 0): print('Could not remove linking edges')
         if (removed_node == False): print('Could not remove new node')
 
-def get_least_cost_edge(edges, cost_attr):
+def get_least_cost_edge(edges: List[dict], cost_attr: str) -> dict:
+    """Returns the least cost edge from a set of edges (dicts) by an edge cost attribute.
+    """
     if (len(edges) == 1):
         return next(iter(edges.values()))
     s_edge = next(iter(edges.values()))
@@ -190,9 +239,12 @@ def get_least_cost_edge(edges, cost_attr):
                 s_edge = edges[edge_k]
     return s_edge
 
-def get_edge_line_coords(graph, node_from, edge_d):
+def get_edge_line_coords(graph, node_from: int, edge: dict) -> List[tuple]:
+    """Returns the coordinates of the line geometry of an edge. The list of coordinates is ordered so that the 
+    first point is at the same location as [node_from]. 
+    """
     from_point = geom_utils.get_point_from_xy(graph.nodes[node_from])
-    edge_line = edge_d['geometry']
+    edge_line = edge['geometry']
     edge_coords = edge_line.coords
     first_point = Point(edge_coords[0])
     last_point = Point(edge_coords[len(edge_coords)-1])
@@ -200,7 +252,18 @@ def get_edge_line_coords(graph, node_from, edge_d):
         return edge_coords[::-1]
     return edge_coords
 
-def aggregate_path_geoms_attrs(graph, path, weight='length', geom=True, noises=False):
+def aggregate_path_geoms_attrs(graph, path: List[int], weight: str = 'length', geom: bool = True, noises: bool = False) -> dict:
+    """Aggregates path geometries and attributes from individual edges that a path consists of. 
+
+    Args:
+        path: A least cost path as a sequence of nodes (node ids).
+        weight: The edge cost attribute that was used in solving the least cost path problem.
+        geom: A boolean value indicating whether the path geometry should be aggregated and returned or not.
+        noises: A boolean value indicating whether the path noises should be aggregated and returned or not.
+    Returns:
+        A dictionary that contains the aggregated path geometry and attributes: 
+        { 'geometry': LineString, 'total_length': float, 'noises': aggregated noise exposures as dict }
+    """
     result = {}
     edge_lengths = []
     path_coords = []
@@ -240,7 +303,16 @@ def aggregate_path_geoms_attrs(graph, path, weight='length', geom=True, noises=F
         result['noises'] = noise_exps.aggregate_exposures(edge_exps)
     return result
 
-def get_all_edge_dicts(graph, attrs=None, by_nodes=True):
+def get_all_edge_dicts(graph, attrs: list = None, by_nodes: bool = True) -> List[dict]:
+    """Collects and returns all edges of a graph as a list of dictionaries. 
+
+    Args:
+        attrs: A list of edge attributes (keys) that the edge dictionaries should have.
+        by_nodes: A boolean value indicating whether the edge dictionaries should be extracted as all connections between nodes or just as the
+            set of undirected edges in the graph (which is around half of the total number of connections between nodes). 
+    Returns:
+        A list of dictionaries containing the edge attributes.
+    """
     edge_dicts = []
     if (by_nodes == True):
         for node_from in list(graph.nodes):
@@ -277,7 +349,18 @@ def get_all_edge_dicts(graph, attrs=None, by_nodes=True):
             edge_dicts.append(ed)
     return edge_dicts
 
-def get_edge_gdf(graph, attrs=None, by_nodes=True, subset=None, dicts=False):
+def get_edge_gdf(graph, attrs: list = None, by_nodes: bool = True, subset: int = None, dicts: bool = False) -> gpd.GeoDataFrame:
+    """Collects the edges of a graph to a GeoDataFrame.
+
+    Args:
+        attrs: A list of edge attributes that the GeoDataFrame should have as columns.
+        by_nodes: A boolean value to indicate whether the edge dictionaries should be extracted as all connections between nodes or just as the
+            set of undirected edges in the graph (which is around half of the total number of connections between nodes). 
+        subset: The maximum number of rows the GeoDataFrame should have (if None, all rows are returned).
+        dicts: A boolean value to specify whether also a list of edge dictionaries should be returned.
+    Returns:
+        A GeoDataFrame having either all edge attributes as columns or just the ones specified in attrs -argument. 
+    """
     edge_dicts = get_all_edge_dicts(graph, attrs=attrs, by_nodes=by_nodes)
     gdf = gpd.GeoDataFrame(edge_dicts, crs=from_epsg(3879))
     if (subset is not None):
@@ -287,16 +370,36 @@ def get_edge_gdf(graph, attrs=None, by_nodes=True, subset=None, dicts=False):
     else:
         return gdf
     
-def update_edge_noises_to_graph(edge_gdf, graph):
-    for edge in edge_gdf.itertuples():
+def update_edge_attr_to_graph(graph, edge_df, df_attr: str, edge_attr: str) -> None:
+    """Updates the given edge attribute from a DataFrame to a graph. 
+
+    Args:
+        edge_gdf: A GeoDataFrame containing at least columns 'uvkey' and [df_attr]
+        df_attr: The name of the column in [edge_df] from which the values for the new edge attribute are read. 
+        edge_attr: A name for the edge attribute to which the new attribute values are set.
+    """
+    for edge in edge_df.itertuples():
         nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { 'noises': getattr(edge, 'noises')}})
 
-def update_edge_noise_costs_to_graph(edge_gdf, graph, nt):
+def update_edge_noise_costs_to_graph(edge_gdf, graph, nt: float) -> None:
+    """Updates a noise tolerance specific cost attribute to a graph. 
+
+    Args:
+        edge_gdf: A GeoDataFrame containing at least columns 'uvkey' and (nt-specific) 'tot_cost'.
+        nt: The noise tolerance value with which the 'tot_cost' values were calculated.
+    """
     cost_attr = 'nc_'+str(nt)
     for edge in edge_gdf.itertuples():
         nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { cost_attr: getattr(edge, 'tot_cost')}}) 
 
-def set_graph_noise_costs(graph, edge_gdf, db_costs=None, nts=None):
+def set_graph_noise_costs(graph, edge_gdf, db_costs: dict = None, nts: List[float] = None) -> None:
+    """Updates all noise cost attributes to a graph.
+
+    Args:
+        db_cost: A dictionary containing the dB-specific noise cost coefficients.
+        nts: A list of noise tolerance values.
+        edge_gdf: A GeoDataFrame containing at least columns 'uvkey' (tuple) and 'noises' (dict).
+    """
     edge_nc_gdf = edge_gdf.copy()
     for nt in nts:
         edge_nc_gdf['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, nt=nt) for noises in edge_nc_gdf['noises']]

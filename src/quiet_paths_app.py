@@ -21,8 +21,8 @@ CORS(app)
 start_time = time.time()
 nts = qp_utils.get_noise_tolerances()
 db_costs = qp_utils.get_db_costs()
-# graph = file_utils.get_graph_full_noise()
-graph = file_utils.get_graph_kumpula_noise() # use this for testing as it loads quicker
+# graph = file_utils.load_graph_full_noise()
+graph = file_utils.load_graph_kumpula_noise() # use this for testing (it loads quicker)
 print('Graph of', graph.size(), 'edges read.')
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
 node_gdf = graph_utils.get_node_gdf(graph)
@@ -65,7 +65,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     start_time = time.time()
     path_list = []
     # calculate shortest path
-    shortest_path = routing_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
+    shortest_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
     if (shortest_path is None):
         return jsonify({'error': 'Could not find paths'})
     # aggregate (combine) path geometry & noise attributes 
@@ -76,7 +76,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         # set name for the noise cost attribute (edge cost)
         noise_cost_attr = 'nc_'+str(nt)
         # optimize quiet path by noise_cost_attr as edge cost
-        quiet_path = routing_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
+        quiet_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
         # aggregate (combine) path geometry & noise attributes 
         path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
