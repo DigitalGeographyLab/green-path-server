@@ -21,8 +21,8 @@ CORS(app)
 start_time = time.time()
 nts = qp_utils.get_noise_tolerances()
 db_costs = qp_utils.get_db_costs()
-# graph = file_utils.get_graph_full_noise()
-graph = file_utils.get_graph_kumpula_noise() # use this for testing as it loads quicker
+# graph = file_utils.load_graph_full_noise()
+graph = file_utils.load_graph_kumpula_noise() # use this for testing (it loads quicker)
 print('Graph of', graph.size(), 'edges read.')
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
 node_gdf = graph_utils.get_node_gdf(graph)
@@ -53,7 +53,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     # find / create origin & destination nodes
     orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
     utils.print_duration(start_time, 'Origin & destination nodes set.')
-    # return error messages if origin/destination not found
+    
     if (orig_node is None):
         print('could not find origin node at', from_latLon)
         return jsonify({'error': 'Origin not found'})
@@ -64,8 +64,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     # calculate least cost paths
     start_time = time.time()
     path_list = []
-    # calculate shortest path
-    shortest_path = routing_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight='length')
+    shortest_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
     if (shortest_path is None):
         return jsonify({'error': 'Could not find paths'})
     # aggregate (combine) path geometry & noise attributes 
@@ -75,36 +74,24 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     for nt in nts:
         # set name for the noise cost attribute (edge cost)
         noise_cost_attr = 'nc_'+str(nt)
-        # optimize quiet path by noise_cost_attr as edge cost
-        quiet_path = routing_utils.get_shortest_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
+        quiet_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
         # aggregate (combine) path geometry & noise attributes 
         path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
     utils.print_duration(start_time, 'Routing done.')
+
     start_time = time.time()
-    # remove linking edges of the origin / destination nodes
     graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
     graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
-
-    # collect quiet paths to gdf -> dict -> json
+    # list -> gdf
     paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
     paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
-    # add exposures to noise levels higher than specified threshods (dBs)
-    paths_gdf['th_noises'] = [noise_exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in paths_gdf['noises']]
-    # add percentages of cumulative distances of different noise levels
-    paths_gdf['noise_pcts'] = paths_gdf.apply(lambda row: noise_exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
-    # calculate mean noise level
-    paths_gdf['mdB'] = paths_gdf.apply(lambda row: noise_exps.get_mean_noise_level(row['noises'], row['total_length']), axis=1)
-    # calculate noise exposure index (same as noise cost but without noise tolerance coefficient)
-    paths_gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
-    paths_gdf['nei_norm'] = paths_gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
-    # gdf to dicts
-    path_dicts = qp_utils.get_geojson_from_quiet_paths_gdf(paths_gdf)
-    # group paths with nearly identical geometries
+    paths_gdf = qp_utils.add_noise_columns_to_path_gdf(paths_gdf, db_costs)
+    # gdf -> dicts
+    path_dicts = qp_utils.get_quiet_path_dicts_from_qp_df(paths_gdf)
     unique_paths = path_utils.remove_duplicate_geom_paths(path_dicts, tolerance=30, cost_attr='nei_norm', logging=False)
     # calculate exposure differences to shortest path
     path_comps = qp_utils.get_short_quiet_paths_comparison_for_dicts(unique_paths)
-    # return paths as GeoJSON (FeatureCollection)
     utils.print_duration(start_time, 'Processed paths.')
     return jsonify(path_comps)
 

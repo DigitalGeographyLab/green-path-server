@@ -1,13 +1,53 @@
+"""
+This module provides constants and functions needed in quiet path optimization. 
+
+"""
+
+from typing import List, Set, Dict, Tuple
+import geopandas as gpd
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
 
-def get_noise_tolerances():
-    return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
+def get_db_costs() -> Dict[int, float]:
+    """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
+    (Alternative noise costs can be calculated by multiplying the base noise cost with different noise tolerances 
+    from get_noise_tolerances())
 
-def get_db_costs():
+    Returns:
+        A dictionary of noise cost coefficients where the keys are the lower boundaries of the 5 dB ranges 
+        (e.g. key 50 refers to 50-55 dB range) and the values are the dB-specific noise cost coefficients.
+    """
     return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
 
-def get_short_quiet_paths_comparison_for_dicts(paths):
+def get_noise_tolerances() -> List[float]:
+    """Returns a set of noise tolerance coefficients that can be used in adding alternative noise-based costs to edges and
+    subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
+    
+    Returns:
+        A list of noise tolerance values.
+    """
+    return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
+
+def add_noise_columns_to_path_gdf(gdf, db_costs: dict) -> gpd.GeoDataFrame:
+    gdf['th_noises'] = [noise_exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in gdf['noises']]
+    # add percentages of cumulative distances of different noise levels
+    gdf['noise_pcts'] = gdf.apply(lambda row: noise_exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
+    # calculate mean noise level
+    gdf['mdB'] = gdf.apply(lambda row: noise_exps.get_mean_noise_level(row['noises'], row['total_length']), axis=1)
+    # calculate noise exposure index (same as noise cost but without noise tolerance coefficient)
+    gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in gdf['noises']]
+    gdf['nei_norm'] = gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
+    return gdf
+
+def get_short_quiet_paths_comparison_for_dicts(paths: List[dict]) -> List[dict]:
+    """Finds the shortest path from a list of paths and compares exposures to noise (and path length) between the 
+    quiet paths and the shortest path (mean dB etc.). The differences are added as attributes to the paths' 'properties' -dictionaries.
+
+    Args:
+        paths: A list of paths as dictionaries. 
+    Returns:
+        A similar list of dictionaries (paths) as given but with the added properties.
+    """
     comp_paths = paths.copy()
     path_s = [path for path in comp_paths if path['properties']['type'] == 'short'][0]
     s_len = path_s['properties']['length']
@@ -28,7 +68,9 @@ def get_short_quiet_paths_comparison_for_dicts(paths):
         path['properties']['path_score'] = round((path['properties']['nei_diff'] / path['properties']['len_diff']) * -1, 1) if path['properties']['len_diff'] > 0 else 0
     return comp_paths
 
-def get_geojson_from_quiet_paths_gdf(gdf):
+def get_quiet_path_dicts_from_qp_df(gdf) -> List[dict]:
+    """Converts a GeoDataFrame containing the quiet paths to a list of dicts.
+    """
     features = []
     for path in gdf.itertuples():
         feature_d = geom_utils.get_geojson_from_geom(getattr(path, 'geometry'))

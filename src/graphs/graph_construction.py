@@ -162,7 +162,7 @@ def get_edge_noises_df(edge_dicts):
     # add noise split lines as list
     edge_gdf_sub['split_lines'] = [geom_utils.get_split_lines_list(line_geom, noise_polys) for line_geom in edge_gdf_sub['geometry']]
     # explode new rows from split lines column
-    split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf_sub, 'uvkey')
+    split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf_sub, uniq_id='uvkey')
     # join noises to split lines
     split_line_noises = noise_exps.get_noise_attrs_to_split_lines(split_lines, noise_polys)
     # aggregate noises back to edges
@@ -184,7 +184,7 @@ print('Noises extracted by edge geometries.')
 
 #%% 9.3 Update edge noises to graph
 for edge_noises in edge_noise_dfs:
-    graph_utils.update_edge_noises_to_graph(edge_noises, graph)
+    graph_utils.update_edge_attr_to_graph(graph, edge_noises, df_attr='noises', edge_attr='noises')
 print('Noises updated to graph.')
 
 #%% 10. Export graph with edge noises

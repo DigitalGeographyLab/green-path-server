@@ -1,10 +1,24 @@
+"""
+This module provides functions for aggregating paths based on their geometries. 
 
-def get_similar_length_paths(paths, path):
+Todo:
+    * Add support for using other edge weights than noise (e.g. AQI)
+
+"""
+
+from typing import List, Set, Dict, Tuple
+
+def get_similar_length_paths(paths: List[dict], path: dict, len_diff: int = 25) -> List[dict]:
+    """Returns paths with length difference not greater or less than specified in [len_diff] (m)
+    compared to the length of [path].
+    """
     path_len = path['properties']['length']
-    similar_len_paths = [path for path in paths if (path['properties']['length'] < (path_len + 25)) & (path['properties']['length'] > (path_len - 25))]
+    similar_len_paths = [path for path in paths if (path['properties']['length'] < (path_len + len_diff)) & (path['properties']['length'] > (path_len - len_diff))]
     return similar_len_paths
 
-def get_overlapping_paths(compare_paths, path, tolerance=None):
+def get_overlapping_paths(compare_paths: List[dict], path: dict, tolerance: int = None) -> List[dict]:
+    """Returns overlapping paths by comparing buffered geometries of [paths] to buffered geometry of [path].
+    """
     overlapping = [path]
     path_geom = path['properties']['geometry']
     path_geom_buff = path_geom.buffer(tolerance)
@@ -15,20 +29,34 @@ def get_overlapping_paths(compare_paths, path, tolerance=None):
             overlapping.append(compare_path)
     return overlapping
 
-def get_best_path(paths, cost_attr='nei_norm'):
+def get_best_path(paths: List[dict], cost_attr: str = 'nei_norm') -> dict:
+    """Returns the least expensive (best) path by given cost attribute.
+    """
     ordered = paths.copy()
     def get_score(path):
         return path['properties'][cost_attr]
     ordered.sort(key=get_score)
     return ordered[0]
 
-def remove_duplicate_geom_paths(paths, tolerance=None, remove_geom_prop=True, logging=True, cost_attr='nei_norm'):
+def remove_duplicate_geom_paths(paths: List[dict], tolerance: int = None, remove_geom_prop: bool = True, cost_attr: str = 'nei_norm', logging: bool = True) -> List[dict]:
+    """Filters a list of paths by comparing buffered line geometries of the paths and selecting only the unique paths by given tolerance (m).
+
+    Args:
+        paths: A list of paths to filter.
+        tolerance: A tolerance in meters with which the path geometries will be buffered when comparing path geometries.
+        remove_geom_prop: A boolean value indicating whether the geometry property of the paths should be removed or retained.
+        cost_attr: The name of a cost attribute to minimize when selecting the best of overlapping paths.
+    Note:
+        If the length of the shortest quiet path is no longer than 10 m more than the length of the shortest path,
+        the shortest quiet path is set as the shortest path and shortest path is removed from the list of paths.
+    Returns:
+        A filtered list of paths having unique line geometry with respect to given tolerance.
+    """
     all_overlapping_paths = []
     filtered_paths_ids = []
     filtered_paths = []
-    quiet_paths = [path for path in paths if path['properties']['type'] == 'quiet']
     shortest_path = [path for path in paths if path['properties']['type'] == 'short'][0]
-    # function for returning better of two paths
+    quiet_paths = [path for path in paths if path['properties']['type'] == 'quiet']
     for path in quiet_paths:
         if (path['properties']['type'] != 'short'):
             path_id = path['properties']['id']
