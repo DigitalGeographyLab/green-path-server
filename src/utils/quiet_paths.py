@@ -28,6 +28,17 @@ def get_noise_tolerances() -> List[float]:
     """
     return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
 
+def add_noise_columns_to_path_gdf(gdf, db_costs: dict) -> gpd.GeoDataFrame:
+    gdf['th_noises'] = [noise_exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in gdf['noises']]
+    # add percentages of cumulative distances of different noise levels
+    gdf['noise_pcts'] = gdf.apply(lambda row: noise_exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
+    # calculate mean noise level
+    gdf['mdB'] = gdf.apply(lambda row: noise_exps.get_mean_noise_level(row['noises'], row['total_length']), axis=1)
+    # calculate noise exposure index (same as noise cost but without noise tolerance coefficient)
+    gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in gdf['noises']]
+    gdf['nei_norm'] = gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
+    return gdf
+
 def get_short_quiet_paths_comparison_for_dicts(paths: List[dict]) -> List[dict]:
     """Finds the shortest path from a list of paths and compares exposures to noise (and path length) between the 
     quiet paths and the shortest path (mean dB etc.). The differences are added as attributes to the paths' 'properties' -dictionaries.

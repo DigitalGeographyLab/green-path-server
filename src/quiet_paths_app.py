@@ -79,24 +79,15 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
         path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
     utils.print_duration(start_time, 'Routing done.')
-    start_time = time.time()
 
+    start_time = time.time()
     graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
     graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
-
-    # collect quiet paths to gdf -> dict -> json
+    # list -> gdf
     paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
     paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
-    # add exposures to noise levels higher than specified threshods (dBs)
-    paths_gdf['th_noises'] = [noise_exps.get_th_exposures(noises, [55, 60, 65, 70]) for noises in paths_gdf['noises']]
-    # add percentages of cumulative distances of different noise levels
-    paths_gdf['noise_pcts'] = paths_gdf.apply(lambda row: noise_exps.get_noise_pcts(row['noises'], row['total_length']), axis=1)
-    # calculate mean noise level
-    paths_gdf['mdB'] = paths_gdf.apply(lambda row: noise_exps.get_mean_noise_level(row['noises'], row['total_length']), axis=1)
-    # calculate noise exposure index (same as noise cost but without noise tolerance coefficient)
-    paths_gdf['nei'] = [round(noise_exps.get_noise_cost(noises=noises, db_costs=db_costs), 1) for noises in paths_gdf['noises']]
-    paths_gdf['nei_norm'] = paths_gdf.apply(lambda row: round(row.nei / (0.6 * row.total_length), 4), axis=1)
-
+    paths_gdf = qp_utils.add_noise_columns_to_path_gdf(paths_gdf, db_costs)
+    # gdf -> dicts
     path_dicts = qp_utils.get_quiet_path_dicts_from_qp_df(paths_gdf)
     unique_paths = path_utils.remove_duplicate_geom_paths(path_dicts, tolerance=30, cost_attr='nei_norm', logging=False)
     # calculate exposure differences to shortest path
