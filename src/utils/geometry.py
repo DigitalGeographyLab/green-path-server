@@ -1,4 +1,10 @@
-from typing import List, Set, Dict, Tuple, Optional
+"""
+This module provides various functions for manipulating objects and data frames with geometry.
+Supported features include e.g. reprojection, finding nearest point on a line and transforming geometries.
+
+"""
+
+from typing import List, Set, Dict, Tuple
 import pandas as pd
 import geopandas as gpd
 import pyproj
@@ -117,10 +123,10 @@ def explode_multipolygons_to_polygons(polygons_gdf: gpd.GeoDataFrame) -> gpd.Geo
     all_polygons = []
     db_lows = []
     db_highs = []
-    for idx, row in polygons_gdf.iterrows():
-        geom = row['geometry'] 
-        db_low = row['db_lo'] 
-        db_high = row['db_hi'] 
+    for row in polygons_gdf.itertuples():
+        geom = getattr(row, 'geometry') 
+        db_low = getattr(row, 'db_lo') 
+        db_high = getattr(row, 'db_hi') 
         if (geom.geom_type == 'MultiPolygon'):
             polygons = list(geom.geoms)
             all_polygons += polygons

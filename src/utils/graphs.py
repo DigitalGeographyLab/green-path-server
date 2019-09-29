@@ -1,3 +1,14 @@
+"""
+This module provides various functions for loading, using and manipulating graphs.
+Many of the functions are utilities for a route planner application that solves the least cost path problem
+with adjusted edge weights and subsequently aggregates path level attributes from edge attributes.
+
+Todo:
+    * Add support for using other edge weights than noise (e.g. AQI)
+    * Try python-igraph library
+
+"""
+
 from typing import List, Set, Dict, Tuple, Optional
 import pandas as pd
 import geopandas as gpd

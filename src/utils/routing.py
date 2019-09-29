@@ -1,19 +1,22 @@
+"""
+This module provides functions for solving the least cost path problem between two points. 
+
+Todo:
+    * Add support for using other edge weights than noise (e.g. AQI)
+    * Try python-igraph library
+
+"""
+
 from typing import List, Set, Dict, Tuple, Optional
-import pandas as pd
-import geopandas as gpd
-import osmnx as ox
-import networkx as nx
 import time
-from fiona.crs import from_epsg
-from shapely.geometry import Point, LineString, MultiLineString, box
+import networkx as nx
+from shapely.geometry import Point
 from shapely.ops import nearest_points
 import utils.graphs as graph_utils
 import utils.geometry as geom_utils
-import utils.noise_exposures as noise_exps
 import utils.utils as utils
-import utils.quiet_paths as qp
 
-def find_nearest_edge(xy: Dict[str, float], edge_gdf) -> Dict:
+def find_nearest_edge(xy: Dict[str, float], edge_gdf, logging=False) -> Dict:
     """Finds the nearest edge to a given point.
 
     Args:
@@ -26,6 +29,7 @@ def find_nearest_edge(xy: Dict[str, float], edge_gdf) -> Dict:
     Returns:
         The nearest edge as dictionary, having key-value pairs by the columns of the edge_gdf.
     """
+    start_time = time.time()
     edges_sind = edge_gdf.sindex
     point_geom = geom_utils.get_point_from_xy(xy)
     for radius in [80, 150, 250, 350, 650]:
@@ -43,10 +47,10 @@ def find_nearest_edge(xy: Dict[str, float], edge_gdf) -> Dict:
     nearest_edges =  possible_matches.loc[nearest]
     nearest_edge = nearest_edges.iloc[0]
     nearest_edge_dict = nearest_edge.to_dict()
-    # utils.print_duration(start_time, 'found nearest edge')
+    if (logging == True): utils.print_duration(start_time, 'found nearest edge')
     return nearest_edge_dict
 
-def find_nearest_node(xy: Dict[str, float], node_gdf) -> int:
+def find_nearest_node(xy: Dict[str, float], node_gdf, logging=False) -> int:
     """Finds the nearest node to a given point.
 
     Args:
@@ -59,7 +63,7 @@ def find_nearest_node(xy: Dict[str, float], node_gdf) -> int:
     Returns:
         The name of the nearest node (number).
     """
-    # start_time = time.time()
+    start_time = time.time()
     nodes_sind = node_gdf.sindex
     point_geom = geom_utils.get_point_from_xy(xy)
     possible_matches_index = list(nodes_sind.intersection(point_geom.buffer(700).bounds))
@@ -69,7 +73,7 @@ def find_nearest_node(xy: Dict[str, float], node_gdf) -> int:
     nearest = possible_matches.geometry.geom_equals(nearest_geom)
     nearest_point =  possible_matches.loc[nearest]
     nearest_node = nearest_point.index.tolist()[0]
-    # utils.print_duration(start_time, 'found nearest node')
+    if (logging == True): utils.print_duration(start_time, 'found nearest node')
     return nearest_node
 
 def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges: dict = None, logging=False) -> Dict:
@@ -117,7 +121,7 @@ def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges
     # create a new node on the nearest edge to the graph
     new_node = graph_utils.add_new_node_to_graph(graph, nearest_edge_point, logging=logging)
     # new edges from the new node to existing nodes need to be created to the graph
-    # hence return the geometry of the nearest edge and nearest point on nearest edge
+    # hence return the geometry of the nearest edge and the nearest point on the nearest edge
     links_to = { 'nearest_edge': nearest_edge, 'nearest_edge_point': nearest_edge_point }
     return { 'node': new_node, 'offset': round(nearest_edge_point.distance(point), 1), 'add_links': True, **links_to }
 
@@ -142,12 +146,10 @@ def get_orig_dest_nodes_and_linking_edges(graph, from_xy: dict, to_xy: dict, edg
     """
     orig_link_edges = None
     dest_link_edges = None
-    # find/create origin node
     orig_node = get_nearest_node(graph, from_xy, edge_gdf, node_gdf)
     # add linking edges to graph if new node was created on the nearest edge
     if (orig_node is not None and orig_node['add_links'] == True):
         orig_link_edges = graph_utils.create_linking_edges_for_new_node(graph, orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], nts, db_costs)
-    # find/create destination node
     dest_node = get_nearest_node(graph, to_xy, edge_gdf, node_gdf, link_edges=orig_link_edges)
     # add linking edges to graph if new node was created on the nearest edge
     if (dest_node is not None and dest_node['add_links'] == True):

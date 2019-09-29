@@ -1,9 +1,14 @@
+"""
+This module provides various functions for assessing and calculating expsoures to traffic noise. 
+The functions are useful in calculating noise costs for quiet path route optimization and in comparing exposures to noise
+between paths.
+
+"""
+
 from typing import List, Set, Dict, Tuple, Optional
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
-import matplotlib.pyplot as plt
-import numpy as np
 import ast
 import utils.geometry as geom_utils
 
@@ -216,7 +221,7 @@ def get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=None, link_geom=
         cost_attrs['nc_'+str(nt)] = round(noise_cost + link_geom.length, 2)
     noises_sum_len = get_total_noises_len(cost_attrs['noises'])
     if ((noises_sum_len - link_geom.length) > 0.1):
-        print('link length unmatch:', noises_sum_len, link_geom.length)
+        print('link lengths do not match:', noises_sum_len, link_geom.length)
     return cost_attrs
 
 def compare_lens_noises_lens(edge_gdf) -> gpd.GeoDataFrame:

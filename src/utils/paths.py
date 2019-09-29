@@ -1,3 +1,11 @@
+"""
+This module provides functions for aggregating paths based on their geometries. 
+
+Todo:
+    * Add support for using other edge weights than noise (e.g. AQI)
+
+"""
+
 from typing import List, Set, Dict, Tuple, Optional
 
 def get_similar_length_paths(paths: List[dict], path: dict, len_diff: int = 25) -> List[dict]:

@@ -1,3 +1,8 @@
+"""
+This module provides functions needed in the tests. 
+
+"""
+
 from typing import List, Set, Dict, Tuple, Optional
 import pandas as pd
 import geopandas as gpd

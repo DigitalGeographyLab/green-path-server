@@ -1,3 +1,8 @@
+"""
+This module provides functions for loading noise & graph data from external files into application.
+
+"""
+
 import os
 import ast
 import geopandas as gpd
