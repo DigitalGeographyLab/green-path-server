@@ -6,7 +6,6 @@ This module provides functions for loading noise & graph data from external file
 import os
 import ast
 import geopandas as gpd
-import osmnx as ox
 import networkx as nx
 from shapely import wkt
 from shapely.geometry import box, Polygon

@@ -5,11 +5,11 @@ between paths.
 
 """
 
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple
+import ast
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
-import ast
 import utils.geometry as geom_utils
 
 def add_noises_to_split_lines(noise_polygons: gpd.GeoDataFrame, split_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:

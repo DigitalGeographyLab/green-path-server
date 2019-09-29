@@ -7,7 +7,7 @@ Todo:
 
 """
 
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple
 import time
 import networkx as nx
 from shapely.geometry import Point

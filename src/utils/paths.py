@@ -6,7 +6,7 @@ Todo:
 
 """
 
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple
 
 def get_similar_length_paths(paths: List[dict], path: dict, len_diff: int = 25) -> List[dict]:
     """Returns paths with length difference not greater or less than specified in [len_diff] (m)

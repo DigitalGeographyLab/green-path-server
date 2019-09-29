@@ -1,17 +1,10 @@
-#%%
 import unittest
 import pytest
-import json
 import time
-import geopandas as gpd
-from fiona.crs import from_epsg
 import utils.files as file_utils
-import utils.routing as rt_utils
-import utils.geometry as geom_utils
 import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
 import utils.quiet_paths as qp_utils
-import utils.paths as path_utils
 import utils.utils as utils
 import utils.tests as tests
 

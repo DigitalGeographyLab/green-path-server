@@ -14,10 +14,8 @@ import pandas as pd
 import geopandas as gpd
 import osmnx as ox
 import networkx as nx
-import json
-import ast
 from fiona.crs import from_epsg
-from shapely.geometry import Point, LineString, MultiLineString, box
+from shapely.geometry import Point, LineString
 import utils.noise_exposures as noise_exps
 import utils.geometry as geom_utils
 import utils.utils as utils
@@ -77,7 +75,7 @@ def get_missing_edge_geometries(graph, edge_dict: dict) -> dict:
     if ('geometry' not in edge_dict):
         node_from = edge_dict['uvkey'][0]
         node_to = edge_dict['uvkey'][1]
-        # interpolate missing geometry as straigth line between nodes
+        # interpolate missing geometry as straight line between nodes
         edge_geom = get_edge_geom_from_node_pair(graph, node_from, node_to)
         edge_d['geometry'] = edge_geom
     else:
@@ -92,7 +90,7 @@ def add_missing_edge_geometries(graph, edge_dicts: List[dict]) -> None:
         if ('geometry' not in edge_d):
             node_from = edge_d['uvkey'][0]
             node_to = edge_d['uvkey'][1]
-            # interpolate missing geometry as straigth line between nodes
+            # interpolate missing geometry as straight line between nodes
             edge_geom = get_edge_geom_from_node_pair(graph, node_from, node_to)
             # set geometry attribute of the edge
             nx.set_edge_attributes(graph, { edge_d['uvkey']: {'geometry': edge_geom} })
@@ -203,7 +201,7 @@ def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, 
     # combine link attributes to prepare adding them as new edges
     link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_cost_attrs }
     link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_cost_attrs }
-    # add linking edges with noice cost attributes to graph
+    # add linking edges with noise cost attributes to graph
     graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
     graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])
     graph.add_edges_from([ (node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs }) ])

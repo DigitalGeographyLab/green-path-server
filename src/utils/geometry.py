@@ -8,7 +8,6 @@ from typing import List, Set, Dict, Tuple
 import pandas as pd
 import geopandas as gpd
 import pyproj
-import shapely
 from shapely.geometry import mapping, Point, LineString, MultiPolygon, MultiLineString, MultiPoint
 from shapely.ops import split, snap, transform
 from functools import partial

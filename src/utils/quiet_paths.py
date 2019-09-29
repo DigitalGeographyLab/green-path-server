@@ -3,7 +3,8 @@ This module provides constants and functions needed in quiet path optimization.
 
 """
 
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple
+import geopandas as gpd
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
 
