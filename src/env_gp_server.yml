@@ -1,24 +1,16 @@
-name: gis-flask
+name: gp-server
 
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - python=3.6
-  - jupyterlab
+  - python=3
   - pylint
   - pytest
+  - apscheduler
   - geopandas
-  - osmnx
-  - gdal
-  - geoplot
-  - pysal
+  - networkx
   - flask
   - flask-cors
   - flask-testing
   - gunicorn
   - requests
-  - pip
-  - pip:
-    - pycrs
-    - polyline

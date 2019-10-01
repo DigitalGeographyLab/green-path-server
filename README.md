@@ -23,14 +23,19 @@ Currently implemented features include calculation of walkable quiet paths with 
 $ git clone git@github.com:DigitalGeographyLab/hope-green-path-server.git
 $ cd hope-green-path-server/src
 
-$ conda env create -f env-gis-flask.yml
-$ conda activate gis-flask
+# Create Python env for graph construction
+$ conda env create -f env_graph_construction.yml
+$ conda activate graph-construction
+
+# Create Python env for green path server
+$ conda env create -f env_gp_server.yml
+$ conda activate gp-server
 ```
 
 ## Running the tests
 ```
 $ cd hope-green-path-server/src
-$ conda activate gis-flask
-$ python -m pytest test_utils.py
+$ conda activate gp-server
 $ python test_quiet_paths_app.py
+$ python -m pytest test_utils.py
 ```
