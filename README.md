@@ -12,7 +12,7 @@ Currently implemented features include calculation of walkable quiet paths with 
 * [Traffic noise zones in Helsinki 2017](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017)
 
 ## Tech
-* Python (3.6)
+* Python (3.7)
 * NetworkX
 * GeoPandas
 * Shapely
@@ -23,19 +23,23 @@ Currently implemented features include calculation of walkable quiet paths with 
 $ git clone git@github.com:DigitalGeographyLab/hope-green-path-server.git
 $ cd hope-green-path-server/src
 
-# Create Python env for graph construction
+# create environment for graph construction
 $ conda env create -f env_graph_construction.yml
-$ conda activate graph-construction
 
-# Create Python env for green path server
+# create environment for green path server
 $ conda env create -f env_gp_server.yml
+```
+
+## Running the server locally
+```
 $ conda activate gp-server
+$ python green_paths_app.py
 ```
 
 ## Running the tests
 ```
 $ cd hope-green-path-server/src
 $ conda activate gp-server
-$ python test_quiet_paths_app.py
+$ python test_green_paths_app.py
 $ python -m pytest test_utils.py
 ```
