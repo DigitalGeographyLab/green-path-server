@@ -21,7 +21,7 @@ def get_noise_polygons() -> gpd.GeoDataFrame:
 def get_koskela_kumpula_box() -> Polygon:
     """Returns polygon of Kumpula & Koskela area in epsg:4326 (projected from epsg:3879)
     """
-    bboxes = gpd.read_file('data/aoi_polygons.gpkg', layer='bboxes')
+    bboxes = gpd.read_file('data/aoi_polygons.gpkg', layer='aoi_bboxes')
     rows = bboxes.loc[bboxes['name'] == 'koskela_kumpula']
     poly = list(rows['geometry'])[0]
     bounds = geom_utils.project_geom(poly, from_epsg=3879, to_epsg=4326).bounds

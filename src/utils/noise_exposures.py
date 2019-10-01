@@ -42,7 +42,7 @@ def get_noise_exposure_lines(line_geom: LineString, noise_polys: gpd.GeoDataFram
     if (split_lines.empty):
         return gpd.GeoDataFrame()
     line_noises = add_noises_to_split_lines(noise_polys, split_lines)
-    line_noises = line_noises.fillna(40)
+    line_noises = line_noises.fillna({ 'db_lo': 40 })
     len_error = abs(line_geom.length - line_noises['length'].sum())
     if (len_error > 0.1):
         print('len_error:', len_error)

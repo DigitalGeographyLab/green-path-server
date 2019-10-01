@@ -1,8 +1,6 @@
 import pytest
 import geopandas as gpd
-import osmnx as ox
 import time
-from shapely.geometry import LineString
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
 import utils.graphs as graph_utils
