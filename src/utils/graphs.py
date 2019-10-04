@@ -348,7 +348,7 @@ def get_edge_gdf(graph, attrs: list = None, by_nodes: bool = True, subset: int =
     else:
         return gdf
     
-def update_edge_attr_to_graph(graph, edge_df, df_attr: str, edge_attr: str) -> None:
+def update_edge_attr_to_graph(graph, edge_df, df_attr: str = None, edge_attr: str = None) -> None:
     """Updates the given edge attribute from a DataFrame to a graph. 
 
     Args:
@@ -357,18 +357,7 @@ def update_edge_attr_to_graph(graph, edge_df, df_attr: str, edge_attr: str) -> N
         edge_attr: A name for the edge attribute to which the new attribute values are set.
     """
     for edge in edge_df.itertuples():
-        nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { 'noises': getattr(edge, 'noises')}})
-
-def update_edge_noise_costs_to_graph(edge_gdf, graph, nt: float) -> None:
-    """Updates a noise tolerance specific cost attribute to a graph. 
-
-    Args:
-        edge_gdf: A GeoDataFrame containing at least columns 'uvkey' and (nt-specific) 'tot_cost'.
-        nt: The noise tolerance value with which the 'tot_cost' values were calculated.
-    """
-    cost_attr = 'nc_'+str(nt)
-    for edge in edge_gdf.itertuples():
-        nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { cost_attr: getattr(edge, 'tot_cost')}}) 
+        nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { edge_attr: getattr(edge, df_attr)}})
 
 def set_graph_noise_costs(graph, edge_gdf, db_costs: dict = None, nts: List[float] = None) -> None:
     """Updates all noise cost attributes to a graph.
@@ -382,4 +371,5 @@ def set_graph_noise_costs(graph, edge_gdf, db_costs: dict = None, nts: List[floa
     for nt in nts:
         edge_nc_gdf['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, nt=nt) for noises in edge_nc_gdf['noises']]
         edge_nc_gdf['tot_cost'] = edge_nc_gdf.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
-        update_edge_noise_costs_to_graph(edge_nc_gdf, graph, nt)
+        cost_attr = 'nc_'+str(nt)
+        update_edge_attr_to_graph(graph, edge_nc_gdf, df_attr='tot_cost', edge_attr=cost_attr)
