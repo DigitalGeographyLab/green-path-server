@@ -10,6 +10,7 @@ Todo:
 """
 
 from typing import List, Set, Dict, Tuple, Optional
+from datetime import datetime
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
@@ -168,8 +169,8 @@ def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, 
     link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=edge, link_geom=link1)
     link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=edge, link_geom=link2)
     # combine link attributes to prepare adding them as new edges
-    link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_cost_attrs }
-    link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_cost_attrs }
+    link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_cost_attrs, 'updatetime': edge['updatetime'] }
+    link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_cost_attrs, 'updatetime': edge['updatetime'] }
     # add linking edges with noise cost attributes to graph
     graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
     graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])
@@ -253,8 +254,9 @@ def aggregate_path_geoms_attrs(graph, path: List[int], weight: str = 'length', g
         node_2 = path[idx+1]
         edges = graph[node_1][node_2]
         edge_d = get_least_cost_edge(edges, weight)
+        result['cost_update_time'] = edge_d['updatetime']
         if geom:
-            if ('nc_0.1') not in edge_d:
+            if ('nc_0.1' not in edge_d):
                 print('missing noise cost attr')
             if ('geometry' in edge_d):
                 edge_lengths.append(edge_d['length'])
@@ -373,3 +375,7 @@ def set_graph_noise_costs(graph, edge_gdf, db_costs: dict = None, nts: List[floa
         edge_nc_gdf['tot_cost'] = edge_nc_gdf.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
         cost_attr = 'nc_'+str(nt)
         update_edge_attr_to_graph(graph, edge_nc_gdf, df_attr='tot_cost', edge_attr=cost_attr)
+    
+    # set update time as edge attribute
+    edge_gdf['updatetime'] =  datetime.now().strftime("%H:%M:%S")
+    update_edge_attr_to_graph(graph, edge_gdf, df_attr='updatetime', edge_attr='updatetime')
