@@ -39,7 +39,7 @@ def extract_zipped_aqi(zippedfile, outpath):
 
 def aqi_to_raster(inputfile, outputfile):
     
-    # Read .nc file containing the AQI layer as multimensional array
+    # Read .nc file containing the AQI layer as multidimensional array
     data = xarray.open_dataset(inputfile, 'r+', format='NETCDF4')
     
     # set crs for dataset to WGS84
