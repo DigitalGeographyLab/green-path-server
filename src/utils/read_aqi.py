@@ -28,8 +28,9 @@ import rioxarray
 import xarray
 import boto3
 
-# set bucket's name
+# set bucket parameters
 bucketname = 'enfusernow2'
+region = 'eu-central-1'
 
 def fetch_enfuser(outpath):
     # set up the connection to S3
