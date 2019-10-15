@@ -91,14 +91,14 @@ def extract_zipped_aqi(zippedfile, outpath):
 def aqi_to_raster(inputfile, outputfile):
     
     # Read .nc file containing the AQI layer as multidimensional array
-    data = xarray.open_dataset(inputfile, 'r+', format='NETCDF4')
+    data = xarray.open_dataset(inputfile)
     
     # set crs for dataset to WGS84
-    data.rio.set_crs(4326)
+    data.rio.set_crs(wgs84wkt)
     
     # Retrieve AQI, AQI.data has shape (time, lat, lon)
     # the values are automatically scaled and offset AQI values
     AQI = data['AQI']
     
-    # save AQI to raster
+    # save AQI to raster (.tif geotiff file recommended)
     AQI.rio.to_raster(outputfile)
