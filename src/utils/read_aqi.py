@@ -44,14 +44,22 @@ import zipfile
 import rioxarray
 import xarray
 import boto3
+import pandas as pd
 
 # set bucket parameters
 bucketname = 'enfusernow2'
 region = 'eu-central-1'
+
+# define wkt geometry for wgs84
 wgs84wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,' \
 'AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich",0,' \
 'AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],' \
 'AUTHORITY["EPSG","4326"]]'
+
+# read AWS credentials in
+creds = pd.read_csv('credentials.csv', sep=',', encoding='utf-8')
+AWS_ACCESS_KEY_ID = creds['Access key ID'][0]
+AWS_SECRET_ACCESS_KEY = creds['Secret access key'][0]
 
 def fetch_enfuser(outpath):
     # set up the connection to S3
