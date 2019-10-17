@@ -12,6 +12,26 @@ import geopandas as gpd
 from shapely.geometry import LineString
 import utils.geometry as geom_utils
 
+def get_db_costs() -> Dict[int, float]:
+    """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
+    (Alternative noise costs can be calculated by multiplying the base noise cost with different noise tolerances 
+    from get_noise_tolerances())
+
+    Returns:
+        A dictionary of noise cost coefficients where the keys are the lower boundaries of the 5 dB ranges 
+        (e.g. key 50 refers to 50-55 dB range) and the values are the dB-specific noise cost coefficients.
+    """
+    return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
+
+def get_noise_tolerances() -> List[float]:
+    """Returns a set of noise tolerance coefficients that can be used in adding alternative noise-based costs to edges and
+    subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
+    
+    Returns:
+        A list of noise tolerance values.
+    """
+    return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
+
 def add_noises_to_split_lines(noise_polygons: gpd.GeoDataFrame, split_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Performs a spatial join of noise values (from noise polygons) to LineString objects based on
     spatial intersection of the center points of the lines and the noise polygons.
@@ -187,7 +207,7 @@ def get_mean_noise_level(noises: dict, length: float) -> float:
     db425len = length - sum_noise_len
     sum_db += 42.5 * db425len
     mean_db = sum_db/length
-    return round(mean_db, 2)
+    return round(mean_db, 1)
 
 def get_noise_cost(noises: Dict[int, float] = {}, db_costs: Dict[int, float] = {}, nt: float = 1) -> float:
     """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise tolerance. 

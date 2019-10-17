@@ -4,16 +4,14 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import geopandas as gpd
-from fiona.crs import from_epsg
 import utils.files as file_utils
 import utils.routing as routing_utils
 import utils.geometry as geom_utils
 import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
-import utils.quiet_paths as qp_utils
-import utils.paths as path_utils
 import utils.utils as utils
+from utils.path import Path
+from utils.path_set import PathSet
 
 app = Flask(__name__)
 CORS(app)
@@ -22,8 +20,8 @@ graph_aqi_update_interval_secs = 20
 
 # INITIALIZE GRAPH
 start_time = time.time()
-nts = qp_utils.get_noise_tolerances()
-db_costs = qp_utils.get_db_costs()
+nts = noise_exps.get_noise_tolerances()
+db_costs = noise_exps.get_db_costs()
 # graph = file_utils.load_graph_full_noise()
 graph = file_utils.load_graph_kumpula_noise() # use this for testing (it loads quicker)
 print('Graph of', graph.size(), 'edges read.')
@@ -79,40 +77,38 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         print('could not find destination node at', to_latLon)
         return jsonify({'error': 'Destination not found'})
 
-    # calculate least cost paths
+    # find least cost paths
     start_time = time.time()
-    path_list = []
+    path_set = PathSet(set_type='quiet', debug_mode=True)
     shortest_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
     if (shortest_path is None):
         return jsonify({'error': 'Could not find paths'})
-    # aggregate (combine) path geometry & noise attributes 
-    path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
-    path_list.append({**path_geom_noises, **{'id': 'short_p','type': 'short', 'nt': 0}})
-    # calculate quiet paths
+    path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
     for nt in nts:
-        # set name for the noise cost attribute (edge cost)
-        noise_cost_attr = 'nc_'+str(nt)
+        noise_cost_attr = 'nc_'+ str(nt)
         quiet_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
-        # aggregate (combine) path geometry & noise attributes 
-        path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
-        path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
+        path_set.add_green_path(Path(nodes=quiet_path, name='q_'+str(nt), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=nt))
     utils.print_duration(start_time, 'Routing done.')
+    
+    # find edges of the paths from the graph
+    path_set.set_path_edges(graph)
 
-    start_time = time.time()
+    # keep the garph clean by removing new nodes & edges created before routing
     graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
     graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
-    # list -> gdf
-    paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
-    paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
-    paths_gdf = qp_utils.add_noise_columns_to_path_gdf(paths_gdf, db_costs)
-    # gdf -> dicts
-    path_dicts = qp_utils.get_quiet_path_dicts_from_qp_df(paths_gdf)
-    unique_paths = path_utils.remove_duplicate_geom_paths(path_dicts, tolerance=30, cost_attr='nei_norm', logging=False)
-    # calculate exposure differences to shortest path
-    path_comps = qp_utils.get_short_quiet_paths_comparison_for_dicts(unique_paths)
-    print('graph update time:', path_geom_noises['cost_update_time'])
-    utils.print_duration(start_time, 'Processed paths.')
-    return jsonify(path_comps)
+
+    start_time = time.time()
+    path_set.aggregate_path_attrs(noises=True)
+    if (path_set.get_green_path_count() > 0): path_set.filter_out_unique_paths()
+    path_set.set_path_noise_attrs(db_costs)
+    path_set.set_green_path_diff_attrs()
+    utils.print_duration(start_time, 'Aggregated paths.')
+
+    start_time = time.time()
+    FC = path_set.get_as_feature_collection()
+    utils.print_duration(start_time, 'Processed paths to FC')
+
+    return jsonify(FC)
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')

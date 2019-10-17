@@ -160,7 +160,7 @@ def get_line_middle_point(line_geom: LineString) -> Point:
     """
     return line_geom.interpolate(0.5, normalized = True)
 
-def get_geojson_from_geom(geom, from_epsg: int = 3879) -> dict:
+def get_geojson_feature_from_geom(geom, from_epsg: int = 3879) -> dict:
     """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
     feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
     """

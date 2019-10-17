@@ -231,57 +231,22 @@ def get_edge_line_coords(graph, node_from: int, edge: dict) -> List[tuple]:
         return edge_coords[::-1]
     return edge_coords
 
-def aggregate_path_geoms_attrs(graph, path: List[int], weight: str = 'length', geom: bool = True, noises: bool = False) -> dict:
-    """Aggregates path geometries and attributes from individual edges that a path consists of. 
-
-    Args:
-        path: A least cost path as a sequence of nodes (node ids).
-        weight: The edge cost attribute that was used in solving the least cost path problem.
-        geom: A boolean value indicating whether the path geometry should be aggregated and returned or not.
-        noises: A boolean value indicating whether the path noises should be aggregated and returned or not.
-    Returns:
-        A dictionary that contains the aggregated path geometry and attributes: 
-        { 'geometry': LineString, 'total_length': float, 'noises': aggregated noise exposures as dict }
-    """
-    result = {}
-    edge_lengths = []
-    path_coords = []
-    edge_exps = []
+def get_edges_from_nodelist(graph, path: List[int], cost_attr: str):
+    path_edges = []
     for idx in range(0, len(path)):
         if (idx == len(path)-1):
             break
+        edge_d = {}
         node_1 = path[idx]
         node_2 = path[idx+1]
         edges = graph[node_1][node_2]
-        edge_d = get_least_cost_edge(edges, weight)
-        result['cost_update_time'] = edge_d['updatetime']
-        if geom:
-            if ('nc_0.1' not in edge_d):
-                print('missing noise cost attr')
-            if ('geometry' in edge_d):
-                edge_lengths.append(edge_d['length'])
-                edge_coords = get_edge_line_coords(graph, node_1, edge_d)
-            else:
-                edge_line = get_edge_geom_from_node_pair(graph, node_1, node_2)
-                edge_lengths.append(edge_line.length)
-                edge_coords = edge_line.coords
-            path_coords += edge_coords
-            edge_noise_len_diff = (edge_d['length'] - noise_exps.get_total_noises_len(edge_d['noises']))
-            if (edge_noise_len_diff < -0.05):
-                print('idx:', idx, 'from:', node_1, 'to:', node_2)
-                print(' problems with edge:', edge_d['uvkey'], edge_d['noises'])
-                print(' edge lens vs noise lens:', edge_d['length'], noise_exps.get_total_noises_len(edge_d['noises']))
-        if noises:
-            if ('noises' in edge_d):
-                edge_exps.append(edge_d['noises'])
-    if geom:
-        path_line = LineString(path_coords)
-        total_length = round(sum(edge_lengths),2)
-        result['geometry'] = path_line
-        result['total_length'] = total_length
-    if noises:
-        result['noises'] = noise_exps.aggregate_exposures(edge_exps)
-    return result
+        edge = get_least_cost_edge(edges, cost_attr)
+        edge_d['cost_update_time'] = edge['updatetime'] if 'updatetime' in edge else {}
+        edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
+        edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
+        edge_d['coords'] = get_edge_line_coords(graph, node_1, edge) if 'geometry' in edge else []
+        path_edges.append(edge_d)
+    return path_edges
 
 def get_all_edge_dicts(graph, attrs: list = None, by_nodes: bool = True) -> List[dict]:
     """Collects and returns all edges of a graph as a list of dictionaries. 
