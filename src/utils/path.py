@@ -50,7 +50,7 @@ class Path:
     
     def set_green_path_diff_attrs(self, shortest_path):
         self.len_diff = round(self.length - shortest_path.length, 1)
-        self.len_diff_rat = round((self.length / shortest_path.length) * 100, 1) if shortest_path.length > 0 else 0
+        self.len_diff_rat = round((self.len_diff / shortest_path.length) * 100, 1) if shortest_path.length > 0 else 0
         if (self.path_type == 'quiet'):
             self.noise_attrs.set_noise_diff_attrs(shortest_path.noise_attrs, len_diff=self.len_diff)
 

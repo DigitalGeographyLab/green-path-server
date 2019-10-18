@@ -3,6 +3,7 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_cors import CORS
+import json
 from flask import jsonify
 import utils.files as file_utils
 import utils.routing as routing_utils
@@ -10,14 +11,14 @@ import utils.geometry as geom_utils
 import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
 import utils.utils as utils
-import utils.paths as path_overlay_filter
 from utils.path import Path
 from utils.path_set import PathSet
 
 app = Flask(__name__)
 CORS(app)
 
-graph_aqi_update_interval_secs = 20
+graph_aqi_update_interval_secs: int = 20
+debug: bool = True
 
 # INITIALIZE GRAPH
 start_time = time.time()
@@ -50,7 +51,7 @@ graph_updater = BackgroundScheduler()
 graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
 graph_updater.start()
 
-utils.print_duration(start_time, 'Graph initialized.')
+utils.print_duration(start_time, 'graph initialized')
 
 @app.route('/')
 def hello_world():
@@ -69,7 +70,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
 
     # find / create origin & destination nodes
     orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
-    utils.print_duration(start_time, 'Origin & destination nodes set.')
+    utils.print_duration(start_time, 'origin & destination nodes set')
     
     if (orig_node is None):
         print('could not find origin node at', from_latLon)
@@ -80,7 +81,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
 
     # find least cost paths
     start_time = time.time()
-    path_set = PathSet(set_type='quiet', debug_mode=True)
+    path_set = PathSet(set_type='quiet', debug_mode=debug)
     shortest_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
     if (shortest_path is None):
         return jsonify({'error': 'Could not find paths'})
@@ -89,7 +90,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         noise_cost_attr = 'nc_'+ str(nt)
         quiet_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
         path_set.add_green_path(Path(nodes=quiet_path, name='q_'+str(nt), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=nt))
-    utils.print_duration(start_time, 'Routing done.')
+    utils.print_duration(start_time, 'routing done')
     
     # find edges of the paths from the graph
     path_set.set_path_edges(graph)
@@ -102,16 +103,18 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     path_set.aggregate_path_attrs(noises=True)
     path_set.filter_out_unique_len_paths()
     path_set.set_path_noise_attrs(db_costs)
-    unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(path_set.get_all_paths(), buffer_m=50, cost_attr='nei_norm', debug=debug)
-    if (unique_paths_names is not None):
-        path_set.filter_paths_by_names(unique_paths_names, debug=debug)
+    path_set.filter_out_unique_geom_paths(buffer_m=50)
     path_set.set_green_path_diff_attrs()
-    utils.print_duration(start_time, 'Aggregated paths.')
+    utils.print_duration(start_time, 'aggregated paths')
 
     start_time = time.time()
     FC = path_set.get_as_feature_collection()
-    utils.print_duration(start_time, 'Processed paths to FC')
+    utils.print_duration(start_time, 'processed paths to FC')
 
+    if (debug == True):
+        with open('debug/PathsFC.txt', 'w') as outfile:
+            json.dump(FC, outfile)
+    
     return jsonify(FC)
 
 if __name__ == '__main__':

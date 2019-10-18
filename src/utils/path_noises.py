@@ -35,7 +35,7 @@ class PathNoiseAttrs:
         noise_props['noises'] = self.noises
         noise_props['mdB'] = self.mdB
         noise_props['nei'] = self.nei
-        noise_props['nei_norm'] = self.nei_norm
+        noise_props['nei_norm'] = round(self.nei_norm, 2)
         noise_props['noise_pcts'] = self.noise_pcts
         noise_props['noises_diff'] = self.noises_diff
         noise_props['mdB_diff'] =  self.mdB_diff

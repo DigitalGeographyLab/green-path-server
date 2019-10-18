@@ -106,3 +106,4 @@ venv.bak/
 # other files
 .DS_Store
 src/.vscode/settings.json
+src/debug/PathsFC.txt

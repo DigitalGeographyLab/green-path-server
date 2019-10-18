@@ -10,7 +10,6 @@ from typing import List, Set, Dict, Tuple
 import time
 import utils.utils as utils
 from utils.path import Path
-from utils.path_set import PathSet
 
 def get_path_overlay_candidates_by_len(param_path: Path, all_paths: List[Path], len_diff: int = 25, debug=False) -> List[Path]:
     """Returns paths with length difference not greater or less than specified in [len_diff] (m)
@@ -52,7 +51,7 @@ def get_unique_paths_by_geom_overlay(all_paths: List[Path], buffer_m: int = None
     """Filters a list of paths by comparing buffered line geometries of the paths and selecting only the unique paths by given buffer_m (m).
 
     Args:
-        path_set: A path set containing all paths (both short and green).
+        all_paths: Both short and green paths.
         buffer_m: A buffer size in meters with which the path geometries will be buffered when comparing path geometries.
         cost_attr: The name of a cost attribute to minimize when selecting the best of overlapping paths.
     Note:
