@@ -10,6 +10,7 @@ import utils.geometry as geom_utils
 import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
 import utils.utils as utils
+import utils.paths as path_overlay_filter
 from utils.path import Path
 from utils.path_set import PathSet
 
@@ -99,8 +100,11 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
 
     start_time = time.time()
     path_set.aggregate_path_attrs(noises=True)
-    if (path_set.get_green_path_count() > 0): path_set.filter_out_unique_paths()
+    path_set.filter_out_unique_len_paths()
     path_set.set_path_noise_attrs(db_costs)
+    unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(path_set.get_all_paths(), buffer_m=50, cost_attr='nei_norm', debug=debug)
+    if (unique_paths_names is not None):
+        path_set.filter_paths_by_names(unique_paths_names, debug=debug)
     path_set.set_green_path_diff_attrs()
     utils.print_duration(start_time, 'Aggregated paths.')
 

@@ -20,9 +20,12 @@ class Path:
         self.len_diff: float = 0
         self.len_diff_rat: float = None
         self.noise_attrs: PathNoiseAttrs = None
+    
+    def set_path_name(self, path_name: str): self.name = path_name
 
-    def set_set_type(self, set_type: str):
-        self.set_type = set_type
+    def set_path_type(self, path_type: str): self.path_type = path_type
+
+    def set_set_type(self, set_type: str): self.set_type = set_type
 
     def set_path_edges(self, graph):
         self.edges = graph_utils.get_edges_from_nodelist(graph, self.nodes, self.cost_attr)

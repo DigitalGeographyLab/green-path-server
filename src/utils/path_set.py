@@ -16,9 +16,10 @@ class PathSet:
     def add_green_path(self, q_path: Path):
         q_path.set_set_type(self.set_type)
         self.green_paths.append(q_path)
+
+    def get_all_paths(self): return [self.shortest_path] + self.green_paths
     
-    def get_green_path_count(self):
-        return len(self.green_paths)
+    def get_green_path_count(self): return len(self.green_paths)
     
     def set_path_edges(self, graph):
         if (self.shortest_path is not None):
@@ -54,7 +55,20 @@ class PathSet:
         self.shortest_path.set_noise_attrs(db_costs)
         for path in self.green_paths:
             path.set_noise_attrs(db_costs)
-    
+
+    def filter_paths_by_names(self, filter_names: List[str], debug=False):
+        if (debug == True): print('filter paths by', len(filter_names),'names:', filter_names)
+        filtered_green_paths = [path for path in self.green_paths if path.name in filter_names]
+        if ('short_p' not in filter_names):
+            if (debug == True): print('replace shortest path with shortest green path')
+            shortest_green_path = filtered_green_paths[0]
+            shortest_green_path.set_path_type('short')
+            shortest_green_path.set_path_name('short_p')
+            self.set_shortest_path(shortest_green_path)
+            filtered_green_paths = filtered_green_paths[1:]
+        if (debug == True): print('replace', len(self.green_paths), 'green paths with', len(filtered_green_paths),'filtered paths')
+        self.green_paths = filtered_green_paths
+
     def set_green_path_diff_attrs(self):
         for path in self.green_paths:
             path.set_green_path_diff_attrs(self.shortest_path)
