@@ -4,6 +4,7 @@ This module provides functions needed in the tests.
 """
 
 from typing import List, Set, Dict, Tuple, Optional
+from flask import jsonify
 import pandas as pd
 import geopandas as gpd
 from fiona.crs import from_epsg
@@ -14,6 +15,7 @@ import utils.graphs as graph_utils
 import utils.utils as utils
 from utils.path import Path
 from utils.path_set import PathSet
+from utils.path_finder import PathFinder
 
 def get_update_test_walk_line() -> gpd.GeoDataFrame:
     """Returns a GeoDataFrame containing line geometry to use in tests.
@@ -75,50 +77,18 @@ def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, nts
     """
     debug = False
 
-    # parse query
-    from_xy = geom_utils.get_xy_from_lat_lon(from_latLon)
-    to_xy = geom_utils.get_xy_from_lat_lon(to_latLon)
+    FC = None
+    path_finder = PathFinder('quiet', from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
 
-    # find / create origin & destination nodes
-    orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
-    # utils.print_duration(start_time, 'Origin & destination nodes set.')
-    # return error messages if origin/destination not found
-    if (orig_node is None):
-        print('could not find origin node at', from_latLon)
-        # return jsonify({'error': 'Origin not found'})
-    if (dest_node is None):
-        print('could not find destination node at', to_latLon)
-        # return jsonify({'error': 'Destination not found'})
+    try:
+        path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
+        path_finder.find_least_cost_paths(graph)
+        FC = path_finder.process_paths_to_FC(graph)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    finally:
+        path_finder.delete_added_graph_features(graph)
 
-    # find least cost paths
-    # start_time = time.time()
-    path_set = PathSet(set_type='quiet', debug_mode=debug)
-    shortest_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
-    # if (shortest_path is None):
-        # return jsonify({'error': 'Could not find paths'})
-    path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
-    for nt in nts:
-        noise_cost_attr = 'nc_'+ str(nt)
-        quiet_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
-        path_set.add_green_path(Path(nodes=quiet_path, name='q_'+str(nt), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=nt))
-    # utils.print_duration(start_time, 'routing done')
-    
-    # find edges of the paths from the graph
-    path_set.set_path_edges(graph)
-
-    # keep the garph clean by removing new nodes & edges created before routing
-    graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
-    graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
-
-    # start_time = time.time()
-    path_set.aggregate_path_attrs(noises=True)
-    path_set.filter_out_unique_len_paths()
-    path_set.set_path_noise_attrs(db_costs)
-    path_set.filter_out_unique_geom_paths(buffer_m=50)
-    path_set.set_green_path_diff_attrs()
-    # utils.print_duration(start_time, 'aggregated paths')
-
-    # start_time = time.time()
-    FC = path_set.get_as_feature_collection()
+    # return jsonify(FC)
 
     return FC
