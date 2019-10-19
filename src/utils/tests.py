@@ -69,7 +69,7 @@ def get_qp_feat_props_from_FC(FC):
 
     return qp_prop_dict
 
-def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, nts, db_costs, logging=False) -> dict:
+def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, logging=False) -> dict:
     """Calculates and aggregates short and quiet paths similarly as in the quiet paths application.
 
     Returns:

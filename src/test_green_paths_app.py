@@ -6,36 +6,35 @@ from datetime import datetime
 import utils.files as file_utils
 import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
+import utils.graph_loader as graph_loader
 import utils.utils as utils
 import utils.tests as tests
 
-#%% initialize graph
-start_time = time.time()
-nts = noise_exps.get_noise_tolerances()
-db_costs = noise_exps.get_db_costs()
-graph = file_utils.load_graph_kumpula_noise()
-print('Graph of', graph.size(), 'edges read.')
-edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
-node_gdf = graph_utils.get_node_gdf(graph)
-print('Graph features extracted.')
-graph_utils.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, nts=nts)
-edge_gdf = edge_gdf[['uvkey', 'geometry', 'noises']]
-print('Noise costs set.')
-edges_sind = edge_gdf.sindex
-nodes_sind = node_gdf.sindex
-print('Spatial index built.')
-utils.print_duration(start_time, 'Graph initialized.')
+# graph_aqi_update_interval_secs: int = 20
+debug: bool = True
 
+# load graph data
+start_time = time.time()
+graph, edge_gdf, node_gdf, edges_sind, nodes_sind = graph_loader.load_graph_data(subset=True)
+
+# setup scheduled graph updater
 def edge_attr_update():
     timenow = datetime.now().strftime("%H:%M:%S")
     edge_gdf['updatetime'] =  timenow
     graph_utils.update_edge_attr_to_graph(graph, edge_gdf, df_attr='updatetime', edge_attr='updatetime')
+    # TODO load AQI layer, spatially join AQI values to edge_gdf
+    # TODO calculate AQI costs to edge_gdf, update AQI costs to graph
     print('updated graph at:', timenow)
 
 edge_attr_update()
+# graph_updater = BackgroundScheduler()
+# graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
+# graph_updater.start()
+
+utils.print_duration(start_time, 'graph initialized')
 
 def get_quiet_path_stats(graph, od_dict, logging=False):
-    FC = tests.get_short_quiet_paths(graph, edge_gdf, node_gdf, od_dict['orig_latLon'], od_dict['dest_latLon'], nts, db_costs, logging=logging)
+    FC = tests.get_short_quiet_paths(graph, edge_gdf, node_gdf, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
     path_props = [feat['properties'] for feat in FC]
     paths_df = pd.DataFrame(path_props)
     sp = paths_df[paths_df['type'] == 'short']
