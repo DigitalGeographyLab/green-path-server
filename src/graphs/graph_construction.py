@@ -9,8 +9,7 @@ from fiona.crs import from_epsg
 import utils.files as files
 import utils.geometry as geom_utils
 import utils.graphs as graph_utils
-import utils.graph_initialization as graph_init
-import utils.quiet_paths as qp
+import utils.graph_acquisition as graph_acq
 import utils.noise_exposures as noise_exps
 import utils.utils as utils
 
@@ -24,7 +23,7 @@ aoi_poly = files.get_hel_poly(WGS84=True, buffer_m=1000)
 #%% 2.1 Get undirected projected graph
 print('\nGraph to construct:', graph_name)
 start_time = time.time()
-graph = graph_init.get_walkable_network_graph(extent_poly_wgs=aoi_poly)
+graph = graph_acq.get_walkable_network_graph(extent_poly_wgs=aoi_poly)
 utils.print_duration(start_time, 'Graph acquired.', round_n=1)
 
 #%% 2.2 Delete unnecessary edge attributes and get edges as dictionaries
@@ -45,7 +44,7 @@ utils.print_duration(start_time, 'Missing edge geometries added.', round_n=1)
 
 #%% 3.1 Remove unwalkable streets & tunnels from the graph [query graph for filtering]
 print('Query unwalkable network...')
-graph_filt = graph_init.get_unwalkable_network_graph(extent_poly_wgs=aoi_poly)
+graph_filt = graph_acq.get_unwalkable_network_graph(extent_poly_wgs=aoi_poly)
 filt_edge_dicts = graph_utils.get_all_edge_dicts(graph_filt, by_nodes=False)
 graph_utils.add_missing_edge_geometries(graph_filt, filt_edge_dicts)
 
@@ -212,8 +211,8 @@ else:
 
 #%% 12. Validate exported graph for use in quiet path app
 start_time = time.time()
-nts = qp.get_noise_tolerances()
-db_costs = qp.get_db_costs()
+nts = noise_exps.get_noise_tolerances()
+db_costs = noise_exps.get_db_costs()
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'], by_nodes=False)
 graph_utils.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, nts=nts)
 # get full number of edges (undirected edges x 2)
