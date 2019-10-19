@@ -5,6 +5,8 @@ from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
 import utils.utils as utils
+import utils.graphs as graph_utils
+import utils.graph_loader as graph_loader
 from utils.path_finder import PathFinder
 
 app = Flask(__name__)
@@ -13,30 +15,17 @@ CORS(app)
 graph_aqi_update_interval_secs: int = 20
 debug: bool = True
 
-# INITIALIZE GRAPH
+# load graph data
 start_time = time.time()
-nts = noise_exps.get_noise_tolerances()
-db_costs = noise_exps.get_db_costs()
-# graph = file_utils.load_graph_full_noise()
-graph = file_utils.load_graph_kumpula_noise() # use this for testing (it loads quicker)
-print('Graph of', graph.size(), 'edges read.')
-edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'])
-node_gdf = graph_utils.get_node_gdf(graph)
-print('Graph features extracted.')
-graph_utils.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, nts=nts)
-edge_gdf = edge_gdf[['uvkey', 'geometry', 'noises']]
-print('Noise costs set.')
-edges_sind = edge_gdf.sindex
-nodes_sind = node_gdf.sindex
-print('Spatial index built.')
+graph, edge_gdf, node_gdf, edges_sind, nodes_sind = graph_loader.load_graph_data(subset=True)
 
 # setup scheduled graph updater
 def edge_attr_update():
     timenow = datetime.now().strftime("%H:%M:%S")
     edge_gdf['updatetime'] =  timenow
     graph_utils.update_edge_attr_to_graph(graph, edge_gdf, df_attr='updatetime', edge_attr='updatetime')
-    # TODO: 1) load AQI layer 2) spatially join AQI values to edge_gdf
-    #       3) calculate AQI costs to edge_gdf 4) update AQI costs to graph
+    # TODO: load AQI layer, spatially join AQI values to edge_gdf
+    # TODO: calculate AQI costs to edge_gdf, update AQI costs to graph
     print('updated graph at:', timenow)
 
 edge_attr_update()
