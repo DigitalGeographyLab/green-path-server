@@ -8,6 +8,7 @@ from typing import List, Set, Dict, Tuple
 import pandas as pd
 import geopandas as gpd
 import pyproj
+from shapely.wkt import loads, dumps
 from shapely.geometry import mapping, Point, LineString, MultiPolygon, MultiLineString, MultiPoint
 from shapely.ops import split, snap, transform
 from functools import partial
@@ -168,7 +169,7 @@ def get_geojson_feature_from_geom(geom, from_epsg: int = 3879) -> dict:
     feature = { 
         'type': 'Feature', 
         'properties': {}, 
-        'geometry': mapping(geom_wgs)
+        'geometry': mapping(loads(dumps(geom_wgs, rounding_precision=6)))
         }
     return feature
 

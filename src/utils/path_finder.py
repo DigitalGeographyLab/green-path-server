@@ -111,7 +111,7 @@ class PathFinder:
 
             if (self.debug_mode == True):
                 with open('debug/PathsFC.txt', 'w') as outfile:
-                    json.dump(FC, outfile)
+                    json.dump(FC, outfile, indent=4, sort_keys=True)
             return FC
         except Exception:
             traceback.print_exc()
