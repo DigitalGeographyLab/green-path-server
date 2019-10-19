@@ -4,16 +4,18 @@ This module provides functions needed in the tests.
 """
 
 from typing import List, Set, Dict, Tuple, Optional
+from flask import jsonify
 import pandas as pd
 import geopandas as gpd
 from fiona.crs import from_epsg
-import utils.geometry as geom_utils
 import utils.routing as routing_utils
 import utils.geometry as geom_utils
-import utils.graphs as graph_utils
-import utils.quiet_paths as qp_utils
 import utils.noise_exposures as noise_exps
+import utils.graphs as graph_utils
 import utils.utils as utils
+from utils.path import Path
+from utils.path_set import PathSet
+from utils.path_finder import PathFinder
 
 def get_update_test_walk_line() -> gpd.GeoDataFrame:
     """Returns a GeoDataFrame containing line geometry to use in tests.
@@ -38,46 +40,55 @@ def get_test_ODs() -> List[dict]:
         od_dict[int(od['OD'])] = od
     return od_dict
 
-def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, nts, db_costs, logging=False):
-    """Calculates and aggregates short and quiet paths just as in the quiet paths application.
+def get_qp_feat_props_from_FC(FC):
+    qp_feat = None
+    for feature in FC:
+        if (feature['properties']['type'] == 'quiet'):
+            qp_feat = feature
+            break
+    if (qp_feat is None):
+        return {}
+
+    qp_props = qp_feat['properties']
+    qp_prop_dict = {
+        'id': qp_props['id'], 
+        'length': qp_props['length'], 
+        'len_diff': qp_props['len_diff'],
+        'len_diff_rat': qp_props['len_diff_rat'],
+        'cost_coeff': qp_props['cost_coeff'],
+        'mdB': qp_props['mdB'],
+        'nei': qp_props['nei'],
+        'nei_norm': qp_props['nei_norm'],
+        'mdB_diff': qp_props['mdB_diff'],
+        'nei_diff': qp_props['nei_diff'],
+        'nei_diff_rat': qp_props['nei_diff_rat'],
+        'path_score': qp_props['path_score'],
+        'noise_pcts_sum': noise_exps.get_total_noises_len(qp_props['noise_pcts']),
+        'noise_diff_sum': noise_exps.get_total_noises_len(qp_props['noises_diff'])
+        }
+
+    return qp_prop_dict
+
+def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, nts, db_costs, logging=False) -> dict:
+    """Calculates and aggregates short and quiet paths similarly as in the quiet paths application.
 
     Returns:
-        A GeoDataFrame containing a short & quiet paths.
+        A FeatureCollection (GeoJSON schema) containing a short & quiet paths.
     """
-    # parse query
-    from_xy = geom_utils.get_xy_from_lat_lon(from_latLon)
-    to_xy = geom_utils.get_xy_from_lat_lon(to_latLon)
+    debug = False
 
-    # find / create origin & destination nodes
-    orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(graph, from_xy, to_xy, edge_gdf, node_gdf, nts, db_costs)
-    # utils.print_duration(start_time, 'Origin & destination nodes set.')
-    # return error messages if origin/destination not found
-    if (orig_node is None):
-        print('could not find origin node at', from_latLon)
-        # return jsonify({'error': 'Origin not found'})
-    if (dest_node is None):
-        print('could not find destination node at', to_latLon)
-        # return jsonify({'error': 'Destination not found'})
+    FC = None
+    path_finder = PathFinder('quiet', from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
 
-    # optimize paths
-    # start_time = time.time()
-    # get shortest path
-    path_list = []
-    shortest_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight='length')
-    path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, shortest_path, weight='length', noises=True)
-    path_list.append({**path_geom_noises, **{'id': 'short_p','type': 'short', 'nt': 0}})
-    # get quiet paths to list
-    for nt in nts:
-        noise_cost_attr = 'nc_'+str(nt)
-        quiet_path = routing_utils.get_least_cost_path(graph, orig_node['node'], dest_node['node'], weight=noise_cost_attr)
-        path_geom_noises = graph_utils.aggregate_path_geoms_attrs(graph, quiet_path, weight=noise_cost_attr, noises=True)
-        path_list.append({**path_geom_noises, **{'id': 'q_'+str(nt), 'type': 'quiet', 'nt': nt}})
+    try:
+        path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
+        path_finder.find_least_cost_paths(graph)
+        FC = path_finder.process_paths_to_FC(graph)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    finally:
+        path_finder.delete_added_graph_features(graph)
 
-    graph_utils.remove_new_node_and_link_edges(graph, new_node=orig_node['node'], link_edges=orig_link_edges)
-    graph_utils.remove_new_node_and_link_edges(graph, new_node=dest_node['node'], link_edges=dest_link_edges)
-    # list -> gdf
-    paths_gdf = gpd.GeoDataFrame(path_list, crs=from_epsg(3879))
-    paths_gdf = paths_gdf.drop_duplicates(subset=['type', 'total_length']).sort_values(by=['type', 'total_length'], ascending=[False, True])
-    paths_gdf = qp_utils.add_noise_columns_to_path_gdf(paths_gdf, db_costs)
+    # return jsonify(FC)
 
-    return paths_gdf
+    return FC
