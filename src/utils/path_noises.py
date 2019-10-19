@@ -2,6 +2,8 @@ from typing import List, Set, Dict, Tuple, Optional
 import utils.noise_exposures as noise_exps
 
 class PathNoiseAttrs:
+    """Holds and manipulates all noise exposure related path attributes.
+    """
 
     def __init__(self, path_type: str, noises_list: dict, debug_mode: bool = False):
         self.path_type: str = path_type

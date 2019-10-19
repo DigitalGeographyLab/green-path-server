@@ -11,6 +11,12 @@ from utils.path import Path
 from utils.path_set import PathSet
 
 class PathFinder:
+    """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
+    origin & destination nodes to returning the paths as GeoJSON feature collection.
+    
+    Todo:
+        Implement AQI based routing.
+    """
 
     def __init__(self, finder_type: str, from_lat, from_lon, to_lat, to_lon, debug: bool = False):
         self.finder_type: str = finder_type # either 'quiet' or 'clean'
@@ -29,12 +35,18 @@ class PathFinder:
         self.debug_mode = debug
     
     def delete_added_graph_features(self, graph):
-        # keep the garph clean by removing new nodes & edges created before routing
+        """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
+        """
         if (self.debug_mode == True): print("deleting created nodes & edges from the graph")
         graph_utils.remove_new_node_and_link_edges(graph, new_node=self.orig_node, link_edges=self.orig_link_edges)
         graph_utils.remove_new_node_and_link_edges(graph, new_node=self.dest_node, link_edges=self.dest_link_edges)
 
     def find_origin_dest_nodes(self, graph, edge_gdf, node_gdf):
+        """Finds & sets origin & destination nodes and linking edges as instance variables.
+
+        Raises:
+            Only meaningful exception strings that can be shown in UI.
+        """
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
@@ -53,6 +65,11 @@ class PathFinder:
             if (dest_node is None): raise Exception('Could not find destination')
 
     def find_least_cost_paths(self, graph):
+        """Finds both shortest and least cost paths. 
+
+        Raises:
+            Only meaningful exception strings that can be shown in UI.
+        """
         try:
             start_time = time.time()
             self.path_set = PathSet(set_type='quiet', debug_mode=self.debug_mode)
@@ -69,7 +86,15 @@ class PathFinder:
             traceback.print_exc()
             raise Exception('Could not find paths')
 
-    def process_paths_to_FC(self, graph):
+    def process_paths_to_FC(self, graph) -> dict:
+        """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
+        paths based on geometries and length. 
+
+        Returns:
+            All paths as GeoJSON FeatureCollection (as python dictionary).
+        Raises:
+            Only meaningful exception strings that can be shown in UI.
+        """
         start_time = time.time()
         try:
             self.path_set.set_path_edges(graph)

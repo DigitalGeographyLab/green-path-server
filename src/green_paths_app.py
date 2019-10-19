@@ -24,8 +24,8 @@ def edge_attr_update():
     timenow = datetime.now().strftime("%H:%M:%S")
     edge_gdf['updatetime'] =  timenow
     graph_utils.update_edge_attr_to_graph(graph, edge_gdf, df_attr='updatetime', edge_attr='updatetime')
-    # TODO: load AQI layer, spatially join AQI values to edge_gdf
-    # TODO: calculate AQI costs to edge_gdf, update AQI costs to graph
+    # TODO load AQI layer, spatially join AQI values to edge_gdf
+    # TODO calculate AQI costs to edge_gdf, update AQI costs to graph
     print('updated graph at:', timenow)
 
 edge_attr_update()
@@ -50,8 +50,10 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         path_finder.find_least_cost_paths(graph)
         FC = path_finder.process_paths_to_FC(graph)
     except Exception as e:
+        # PathFinder throws only pretty exceptions so they can be sent to UI
         return jsonify({'error': str(e)})
     finally:
+        # keeps graph clean by removing created nodes & edges
         path_finder.delete_added_graph_features(graph)
 
     return jsonify(FC)

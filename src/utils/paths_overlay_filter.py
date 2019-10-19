@@ -1,8 +1,5 @@
 """
-This module provides functions for aggregating paths based on their geometries. 
-
-Todo:
-    * Add support for using other edge weights than noise (e.g. AQI)
+This module provides function for filtering out paths with nearly identical geometries. 
 
 """
 
@@ -57,7 +54,7 @@ def get_unique_paths_by_geom_overlay(all_paths: List[Path], buffer_m: int = None
     Note:
         Filters out shortest path if an overlapping green path is found to replace it.
     Returns:
-        A filtered list of paths having unique line geometry with respect to the given buffer_m.
+        A filtered list of paths having nearly unique line geometry with respect to the given buffer_m.
         None if PathSet contains only one path.
     """
     if (len(all_paths) == 1):

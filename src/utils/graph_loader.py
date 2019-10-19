@@ -3,6 +3,8 @@ import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
 
 def load_graph_data(subset=False):
+    """Loads and returns all graph related features needed in routing.
+    """
     nts = noise_exps.get_noise_tolerances()
     db_costs = noise_exps.get_db_costs()
     if (subset == True):

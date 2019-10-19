@@ -40,6 +40,6 @@ $ python green_paths_app.py
 ```
 $ cd hope-green-path-server/src
 $ conda activate gp-server
-$ python test_green_paths_app.py
+$ python test_green_paths_app.py -b
 $ python -m pytest test_utils.py
 ```
