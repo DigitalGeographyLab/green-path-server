@@ -1,6 +1,6 @@
 from typing import List, Set, Dict, Tuple
-from utils.path import Path
 import utils.paths_overlay_filter as path_overlay_filter
+from utils.path import Path
 
 class PathSet:
 
@@ -68,7 +68,7 @@ class PathSet:
             shortest_green_path.set_path_name('short_p')
             self.set_shortest_path(shortest_green_path)
             filtered_green_paths = filtered_green_paths[1:]
-        if (self.debug_mode == True): print('replace', len(self.green_paths), 'green paths with', len(filtered_green_paths),'filtered paths')
+        if (self.debug_mode == True): print('replace', len(self.green_paths), 'green paths with', len(filtered_green_paths),'overlay filtered paths')
         self.green_paths = filtered_green_paths
 
     def set_path_noise_attrs(self, db_costs):
@@ -82,9 +82,3 @@ class PathSet:
 
     def get_as_feature_collection(self):
         return [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
-
-    def print_set_info(self):
-        print('green path count:', len(self.green_paths))
-        if (len(self.green_paths > 0)):
-            gp_1 = self.green_paths[0]
-            print('gp_1', gp_1.noise_attrs.mdB)

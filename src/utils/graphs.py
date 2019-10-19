@@ -180,7 +180,7 @@ def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, 
     link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
     return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
-def remove_new_node_and_link_edges(graph, new_node: int = None, link_edges: dict = None) -> None:
+def remove_new_node_and_link_edges(graph, new_node: dict = None, link_edges: dict = None) -> None:
     """Removes linking edges from a graph. Useful after routing in order to keep the graph unchanged.
     """
     if (link_edges is not None):
@@ -199,7 +199,7 @@ def remove_new_node_and_link_edges(graph, new_node: int = None, link_edges: dict
             except Exception:
                 continue
         try:
-            graph.remove_node(new_node)
+            graph.remove_node(new_node['node'])
             removed_node = True
         except Exception:
             pass
