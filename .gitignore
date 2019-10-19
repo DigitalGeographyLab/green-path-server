@@ -107,3 +107,4 @@ venv.bak/
 .DS_Store
 src/.vscode/settings.json
 src/debug/PathsFC.txt
+src/utils/credentials.csv
