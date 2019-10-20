@@ -59,10 +59,9 @@ class PathFinder:
         except Exception:
             print('exception in finding nearest nodes:')
             traceback.print_exc()
-            raise Exception('Error in finding origin and destination nodes')
-        finally:
-            if (orig_node is None): raise Exception('Could not find origin')
-            if (dest_node is None): raise Exception('Could not find destination')
+            if (self.orig_node is None): raise Exception('Could not find origin')
+            elif (self.dest_node is None): raise Exception('Could not find destination')
+            else: raise Exception('Error in finding origin and destination nodes') from None
 
     def find_least_cost_paths(self, graph):
         """Finds both shortest and least cost paths. 
