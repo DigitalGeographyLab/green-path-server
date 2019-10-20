@@ -93,7 +93,7 @@ def get_node_gdf(graph) -> gpd.GeoDataFrame:
     return gdf_nodes[['geometry']]
 
 def get_node_point_geom(graph, node: int) -> Point:
-    node_d = graph.node[node]
+    node_d = graph.nodes[node]
     return Point(node_d['x'], node_d['y'])
 
 def get_edge_geom_from_node_pair(graph, node_1: int, node_2: int) -> LineString:
