@@ -43,6 +43,7 @@ def hello_world():
 def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
 
     FC = None
+    error = None
     path_finder = PathFinder('quiet', from_lat, from_lon, to_lat, to_lon, debug=debug)
 
     try:
@@ -50,11 +51,14 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         path_finder.find_least_cost_paths(graph)
         FC = path_finder.process_paths_to_FC(graph)
     except Exception as e:
-        # PathFinder throws only pretty exceptions so they can be sent to UI
-        return jsonify({'error': str(e)})
+        # PathFinder throws only pretty exception strings so they can be sent to UI
+        error = jsonify({'error': str(e)})
     finally:
-        # keeps graph clean by removing created nodes & edges
+        # keep graph clean by removing created nodes & edges
         path_finder.delete_added_graph_features(graph)
+
+    if (error is not None):
+        return error
 
     return jsonify(FC)
 
