@@ -97,12 +97,14 @@ def get_th_exposures(noise_dict: dict, ths: List[int]) -> Dict[int, float]:
         th_noise_dict[ths[idx]] = round(th_lens[idx],3)
     return th_noise_dict
 
-def get_noise_range(db: float) -> int:
-    if db >= 70.0: return 70
-    elif db >= 65.0: return 65
-    elif db >= 60.0: return 60
-    elif db >= 55.0: return 55
-    elif db >= 50.0: return 50
+def get_noise_range(dB: float) -> int:
+    """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
+    """
+    if dB >= 70.0: return 70
+    elif dB >= 65.0: return 65
+    elif dB >= 60.0: return 60
+    elif dB >= 55.0: return 55
+    elif dB >= 50.0: return 50
     else: return 40
 
 def get_noise_range_pcts(noises: dict, total_length: float) -> Dict[int, float]:

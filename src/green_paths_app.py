@@ -42,25 +42,26 @@ def hello_world():
 @app.route('/quietpaths/<from_lat>,<from_lon>/<to_lat>,<to_lon>')
 def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
 
-    FC = None
     error = None
     path_finder = PathFinder('quiet', from_lat, from_lon, to_lat, to_lon, debug=debug)
 
     try:
         path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
         path_finder.find_least_cost_paths(graph)
-        FC = path_finder.process_paths_to_FC(graph)
+        path_FC, edge_FC = path_finder.process_paths_to_FC(graph, edges=True)
+
     except Exception as e:
         # PathFinder throws only pretty exception strings so they can be sent to UI
         error = jsonify({'error': str(e)})
+
     finally:
         # keep graph clean by removing created nodes & edges
         path_finder.delete_added_graph_features(graph)
 
-    if (error is not None):
-        return error
+        if (error is not None):
+            return error
 
-    return jsonify(FC)
+    return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')

@@ -1,6 +1,9 @@
 from typing import List, Set, Dict, Tuple
+import time
 import utils.paths_overlay_filter as path_overlay_filter
+import utils.utils as utils
 from utils.path import Path
+import utils.geometry as geom_utils
 
 class PathSet:
     """An instance of PathSet holds, manipulates and filters both shortest and least cost paths.
@@ -20,9 +23,9 @@ class PathSet:
         q_path.set_set_type(self.set_type)
         self.green_paths.append(q_path)
 
-    def get_all_paths(self): return [self.shortest_path] + self.green_paths
+    def get_all_paths(self) -> List[Path]: return [self.shortest_path] + self.green_paths
 
-    def get_green_path_count(self): return len(self.green_paths)
+    def get_green_path_count(self) -> int: return len(self.green_paths)
 
     def set_path_edges(self, graph):
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
@@ -85,5 +88,19 @@ class PathSet:
         for path in self.green_paths:
             path.set_green_path_diff_attrs(self.shortest_path)
 
-    def get_as_feature_collection(self):
-        return [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
+    def get_paths_as_feature_collection(self) -> List[dict]:
+        feats = [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
+        return geom_utils.as_geojson_feature_collection(feats)
+
+    def get_edges_as_feature_collection(self):
+        if (self.set_type == 'quiet'):
+            edge_group_attr = 'dBrange'
+        start_time = time.time()
+        for path in [self.shortest_path] + self.green_paths:
+            path.aggregate_edge_groups_by_attr(edge_group_attr)
+        utils.print_duration(start_time, 'aggregated edge groups')
+        
+        feat_lists = [path.get_edge_groups_as_features() for path in [self.shortest_path] + self.green_paths]
+
+        feats = [feat for feat_list in feat_lists for feat in feat_list]
+        return geom_utils.as_geojson_feature_collection(feats)
