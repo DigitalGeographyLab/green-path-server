@@ -105,7 +105,7 @@ def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges
     point = Point(coords)
     nearest_edge = find_nearest_edge(xy, edge_gdf)
     if (nearest_edge is None):
-        return None
+        raise Exception('Nearest edge not found')
     nearest_node = find_nearest_node(xy, node_gdf)
     nearest_node_geom = geom_utils.get_point_from_xy(graph.nodes[nearest_node])
     nearest_edge_point = geom_utils.get_closest_point_on_line(nearest_edge['geometry'], point)
@@ -146,14 +146,24 @@ def get_orig_dest_nodes_and_linking_edges(graph, from_xy: dict, to_xy: dict, edg
     """
     orig_link_edges = None
     dest_link_edges = None
-    orig_node = get_nearest_node(graph, from_xy, edge_gdf, node_gdf)
-    # add linking edges to graph if new node was created on the nearest edge
-    if (orig_node is not None and orig_node['add_links'] == True):
-        orig_link_edges = graph_utils.create_linking_edges_for_new_node(graph, orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], nts, db_costs)
-    dest_node = get_nearest_node(graph, to_xy, edge_gdf, node_gdf, link_edges=orig_link_edges)
-    # add linking edges to graph if new node was created on the nearest edge
-    if (dest_node is not None and dest_node['add_links'] == True):
-        dest_link_edges = graph_utils.create_linking_edges_for_new_node(graph, dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], nts, db_costs)
+
+    try:
+        orig_node = get_nearest_node(graph, from_xy, edge_gdf, node_gdf)
+        # add linking edges to graph if new node was created on the nearest edge
+        if (orig_node is not None and orig_node['add_links'] == True):
+            orig_link_edges = graph_utils.create_linking_edges_for_new_node(
+                graph, orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], nts, db_costs)
+    except Exception:
+        raise Exception('Could not find origin')
+    try:
+        dest_node = get_nearest_node(graph, to_xy, edge_gdf, node_gdf, link_edges=orig_link_edges)
+        # add linking edges to graph if new node was created on the nearest edge
+        if (dest_node is not None and dest_node['add_links'] == True):
+            dest_link_edges = graph_utils.create_linking_edges_for_new_node(
+                graph, dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], nts, db_costs)
+    except Exception:
+        raise Exception('Could not find destination')
+
     return orig_node, dest_node, orig_link_edges, dest_link_edges
 
 def get_least_cost_path(graph, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:

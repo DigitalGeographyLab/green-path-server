@@ -56,12 +56,10 @@ class PathFinder:
             self.orig_link_edges = orig_link_edges
             self.dest_link_edges = dest_link_edges
             utils.print_duration(start_time, 'origin & destination nodes set')
-        except Exception:
+        except Exception as e:
             print('exception in finding nearest nodes:')
             traceback.print_exc()
-            if (self.orig_node is None): raise Exception('Could not find origin')
-            elif (self.dest_node is None): raise Exception('Could not find destination')
-            else: raise Exception('Error in finding origin and destination nodes') from None
+            raise Exception(str(e))
 
     def find_least_cost_paths(self, graph):
         """Finds both shortest and least cost paths. 
