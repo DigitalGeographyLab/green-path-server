@@ -11,6 +11,7 @@ class Path:
     def __init__(self, nodes: List[int], name: str, path_type: str, cost_attr: str, cost_coeff: float = 0.0):
         self.nodes: List[int] = nodes
         self.edges: List[dict] = []
+        self.edge_groups: List[Tuple[int, List[dict]]] = []
         self.cost_update_time = None
         self.name: str = name
         self.path_type: str = path_type
@@ -53,6 +54,32 @@ class Path:
         self.len_diff_rat = round((self.len_diff / shortest_path.length) * 100, 1) if shortest_path.length > 0 else 0
         if (self.path_type == 'quiet'):
             self.noise_attrs.set_noise_diff_attrs(shortest_path.noise_attrs, len_diff=self.len_diff)
+    
+    def aggregate_edge_groups_by_attr(self, group_attr: str):
+        cur_group = []
+        cur_group_id: int = 0
+        for edge in self.edges:
+            # add edge to current or new group based on group_attr
+            if (edge[group_attr] == cur_group_id):
+                cur_group.append(edge)
+            else:
+                # before creating a new group, add the current group to self.edge_groups
+                if (cur_group != []): self.edge_groups.append((cur_group_id, cur_group))
+                # create new edge group and add edge there
+                cur_group = []
+                cur_group_id = edge[group_attr]
+                cur_group.append(edge)
+        self.edge_groups.append((cur_group_id, cur_group))
+
+    def get_edge_groups_as_features(self) -> List[dict]:
+        features = []
+        for group in self.edge_groups:
+            group_coords = [coord for edge in group[1] for coord in edge['coords']]
+            group_line = LineString(group_coords)
+            feature = geom_utils.get_geojson_feature_from_geom(group_line, from_epsg=3879)
+            feature['properties'] = { 'value': group[0], 'path': self.name, 'len_diff': self.len_diff }
+            features.append(feature)
+        return features
 
     def get_as_geojson_feature(self) -> dict:
         props = {

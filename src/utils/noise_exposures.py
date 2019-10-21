@@ -97,7 +97,17 @@ def get_th_exposures(noise_dict: dict, ths: List[int]) -> Dict[int, float]:
         th_noise_dict[ths[idx]] = round(th_lens[idx],3)
     return th_noise_dict
 
-def get_noise_pcts(noise_dict: dict, total_length: float) -> Dict[int, float]:
+def get_noise_range(dB: float) -> int:
+    """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
+    """
+    if dB >= 70.0: return 70
+    elif dB >= 65.0: return 65
+    elif dB >= 60.0: return 60
+    elif dB >= 55.0: return 55
+    elif dB >= 50.0: return 50
+    else: return 40
+
+def get_noise_range_pcts(noises: dict, total_length: float) -> Dict[int, float]:
     """Calculates percentages of aggregated exposures to different noise levels of total length.
 
     Note:
@@ -106,25 +116,25 @@ def get_noise_pcts(noise_dict: dict, total_length: float) -> Dict[int, float]:
         A dictionary containing noise level values with respective percentages.
         (e.g. { 50: 35, 60: 65 })
     """
-    noise_dists = {}
-    db_40_len = round(total_length - get_total_noises_len(noise_dict),1)
+    # interpolate 40 dB distance
+    noise_dists = dict(noises)
+    db_40_len = round(total_length - get_total_noises_len(noise_dists), 2)
     if db_40_len > 0:
         noise_dists[40] = db_40_len
-    for noise in noise_dict.keys():
-        noise_dist = noise_dict[noise]
-        if noise == 45:
-            if 40 in noise_dists.keys(): noise_dists[40] += noise_dist
-            else: noise_dists[40] = noise_dist
-        elif noise >= 70:
-            if 70 in noise_dists.keys(): noise_dists[70] += noise_dist
-            else: noise_dists[70] = noise_dist
-        else:
-            noise_dists[noise] = noise_dist
-    noise_pcts = {}
-    for noise in noise_dists.keys():
-        noise_dist = noise_dists[noise]
-        noise_pcts[noise] = round(noise_dist*100/total_length, 1)
-    return noise_pcts
+    
+    # aggregate noise exposures to pre-defined dB-ranges
+    dB_range_lens = {}
+    for dB in noise_dists.keys():
+        dB_range = get_noise_range(dB)
+        if (dB_range in dB_range_lens.keys()): dB_range_lens[dB_range] += noise_dists[dB]
+        else: dB_range_lens[dB_range] = noise_dists[dB]
+    
+    # calculate ratio (%) of each range's length to total length
+    range_pcts = {}
+    for dB_range in dB_range_lens.keys():
+        range_pcts[dB_range] = round(dB_range_lens[dB_range]*100/total_length, 1)
+
+    return range_pcts
 
 def get_noise_attrs_to_split_lines(gdf: gpd.GeoDataFrame, noise_polys: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Performs a spatial join of noise values (from noise polygons) to LineString objects based on a

@@ -8,6 +8,7 @@ from typing import List, Set, Dict, Tuple
 import pandas as pd
 import geopandas as gpd
 import pyproj
+from shapely.wkt import loads, dumps
 from shapely.geometry import mapping, Point, LineString, MultiPolygon, MultiLineString, MultiPoint
 from shapely.ops import split, snap, transform
 from functools import partial
@@ -160,6 +161,12 @@ def get_line_middle_point(line_geom: LineString) -> Point:
     """
     return line_geom.interpolate(0.5, normalized = True)
 
+def as_geojson_feature_collection(features: List[dict]) -> dict:
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
+
 def get_geojson_feature_from_geom(geom, from_epsg: int = 3879) -> dict:
     """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
     feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
@@ -168,7 +175,7 @@ def get_geojson_feature_from_geom(geom, from_epsg: int = 3879) -> dict:
     feature = { 
         'type': 'Feature', 
         'properties': {}, 
-        'geometry': mapping(geom_wgs)
+        'geometry': mapping(loads(dumps(geom_wgs, rounding_precision=6)))
         }
     return feature
 

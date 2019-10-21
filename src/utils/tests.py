@@ -77,13 +77,12 @@ def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, log
     """
     debug = False
 
-    FC = None
     path_finder = PathFinder('quiet', from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
 
     try:
         path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
         path_finder.find_least_cost_paths(graph)
-        FC = path_finder.process_paths_to_FC(graph)
+        path_FC = path_finder.process_paths_to_FC(graph, edges=False)
     except Exception as e:
         return jsonify({'error': str(e)})
     finally:
@@ -91,4 +90,4 @@ def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, log
 
     # return jsonify(FC)
 
-    return FC
+    return path_FC['features']

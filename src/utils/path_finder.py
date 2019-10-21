@@ -56,13 +56,10 @@ class PathFinder:
             self.orig_link_edges = orig_link_edges
             self.dest_link_edges = dest_link_edges
             utils.print_duration(start_time, 'origin & destination nodes set')
-        except Exception:
+        except Exception as e:
             print('exception in finding nearest nodes:')
             traceback.print_exc()
-            raise Exception('Error in finding origin and destination nodes')
-        finally:
-            if (orig_node is None): raise Exception('Could not find origin')
-            if (dest_node is None): raise Exception('Could not find destination')
+            raise Exception(str(e))
 
     def find_least_cost_paths(self, graph):
         """Finds both shortest and least cost paths. 
@@ -86,7 +83,7 @@ class PathFinder:
             traceback.print_exc()
             raise Exception('Could not find paths')
 
-    def process_paths_to_FC(self, graph) -> dict:
+    def process_paths_to_FC(self, graph, edges: bool = False) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
         paths based on geometries and length. 
 
@@ -106,13 +103,23 @@ class PathFinder:
             utils.print_duration(start_time, 'aggregated paths')
             
             start_time = time.time()
-            FC = self.path_set.get_as_feature_collection()
+            path_FC = self.path_set.get_paths_as_feature_collection()
             utils.print_duration(start_time, 'processed paths to FC')
+            
+            if (edges == True):
+                start_time = time.time()
+                edge_FC = self.path_set.get_edges_as_feature_collection()
+                utils.print_duration(start_time, 'processed edges to FC')
 
             if (self.debug_mode == True):
-                with open('debug/PathsFC.txt', 'w') as outfile:
-                    json.dump(FC, outfile)
-            return FC
+                with open('debug/path_fc.geojson', 'w') as outfile:
+                    json.dump(path_FC, outfile, indent=3, sort_keys=True)
+                if (edges == True):
+                    with open('debug/edge_fc.geojson', 'w') as outfile:
+                        json.dump(edge_FC, outfile, indent=3, sort_keys=True)
+            
+            return (path_FC, edge_FC) if (edges == True) else path_FC
+        
         except Exception:
             traceback.print_exc()
-            raise Exception('Error in path processing')
+            raise Exception('Error in processing paths')

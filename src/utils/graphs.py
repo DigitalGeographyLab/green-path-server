@@ -93,7 +93,7 @@ def get_node_gdf(graph) -> gpd.GeoDataFrame:
     return gdf_nodes[['geometry']]
 
 def get_node_point_geom(graph, node: int) -> Point:
-    node_d = graph.node[node]
+    node_d = graph.nodes[node]
     return Point(node_d['x'], node_d['y'])
 
 def get_edge_geom_from_node_pair(graph, node_1: int, node_2: int) -> LineString:
@@ -218,7 +218,7 @@ def get_least_cost_edge(edges: List[dict], cost_attr: str) -> dict:
                 s_edge = edges[edge_k]
     return s_edge
 
-def get_edge_line_coords(graph, node_from: int, edge: dict) -> List[tuple]:
+def get_ordered_edge_line_coords(graph, node_from: int, edge: dict) -> List[tuple]:
     """Returns the coordinates of the line geometry of an edge. The list of coordinates is ordered so that the 
     first point is at the same location as [node_from]. 
     """
@@ -231,7 +231,10 @@ def get_edge_line_coords(graph, node_from: int, edge: dict) -> List[tuple]:
         return edge_coords[::-1]
     return edge_coords
 
-def get_edges_from_nodelist(graph, path: List[int], cost_attr: str):
+def get_edges_from_nodelist(graph, path: List[int], cost_attr: str) -> List[dict]:
+    """Loads edges from graph by ordered list of nodes representing a path.
+    Loads edge attributes 'cost_update_time', 'length', 'noises', 'dBrange' and 'coords'.
+    """
     path_edges = []
     for idx in range(0, len(path)):
         if (idx == len(path)-1):
@@ -241,10 +244,12 @@ def get_edges_from_nodelist(graph, path: List[int], cost_attr: str):
         node_2 = path[idx+1]
         edges = graph[node_1][node_2]
         edge = get_least_cost_edge(edges, cost_attr)
-        edge_d['cost_update_time'] = edge['updatetime'] if 'updatetime' in edge else {}
+        edge_d['cost_update_time'] = edge['updatetime'] if ('updatetime' in edge) else {}
         edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
         edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
-        edge_d['coords'] = get_edge_line_coords(graph, node_1, edge) if 'geometry' in edge else []
+        mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
+        edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
+        edge_d['coords'] = get_ordered_edge_line_coords(graph, node_1, edge) if 'geometry' in edge else []
         path_edges.append(edge_d)
     return path_edges
 
