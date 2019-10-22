@@ -183,7 +183,6 @@ def get_least_cost_path(graph, orig_node: int, dest_node: int, weight: str = 'le
             s_path = nx.shortest_path(G=graph, source=orig_node, target=dest_node, weight=weight)
             return s_path
         except:
-            print('Could not find paths')
-            return None
+            raise Exception('Could not find paths')
     else:
-        return None
+        raise Exception('Origin and destination are the same location')

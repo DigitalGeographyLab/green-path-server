@@ -71,8 +71,6 @@ class PathFinder:
             start_time = time.time()
             self.path_set = PathSet(set_type='quiet', debug_mode=self.debug_mode)
             shortest_path = routing_utils.get_least_cost_path(graph, self.orig_node['node'], self.dest_node['node'], weight='length')
-            if (shortest_path is None): 
-                raise Exception('Could not find paths')
             self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
             for nt in self.nts:
                 noise_cost_attr = 'nc_'+ str(nt)
