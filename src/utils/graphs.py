@@ -147,7 +147,7 @@ def split_link_edge_geoms(graph, edge_geom: LineString, split_point: Point, node
         link2 = split_lines[0]
     return link1, link2
     
-def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, edge: dict, nts: list, db_costs: dict, logging=False) -> dict:
+def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict, logging=False) -> dict:
     """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
     for the new edges based on attributes of the original edge on which the new node was added. 
 
@@ -166,8 +166,8 @@ def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, 
     if (logging == True):
         print('add linking edges between:', node_from, new_node, node_to)
     # interpolate noise cost attributes for new linking edges so that they work in quiet path routing
-    link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=edge, link_geom=link1)
-    link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=edge, link_geom=link2)
+    link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
+    link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
     # combine link attributes to prepare adding them as new edges
     link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_cost_attrs, 'updatetime': edge['updatetime'] }
     link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_cost_attrs, 'updatetime': edge['updatetime'] }
@@ -331,19 +331,19 @@ def update_edge_attr_to_graph(graph, edge_df, df_attr: str = None, edge_attr: st
     for edge in edge_df.itertuples():
         nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { edge_attr: getattr(edge, df_attr)}})
 
-def set_graph_noise_costs(graph, edge_gdf, db_costs: dict = None, nts: List[float] = None) -> None:
+def set_graph_noise_costs(graph, edge_gdf, db_costs: dict = None, sens: List[float] = None) -> None:
     """Updates all noise cost attributes to a graph.
 
     Args:
         db_cost: A dictionary containing the dB-specific noise cost coefficients.
-        nts: A list of noise tolerance values.
+        sens: A list of sensitivity values.
         edge_gdf: A GeoDataFrame containing at least columns 'uvkey' (tuple) and 'noises' (dict).
     """
     edge_nc_gdf = edge_gdf.copy()
-    for nt in nts:
-        edge_nc_gdf['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, nt=nt) for noises in edge_nc_gdf['noises']]
+    for sen in sens:
+        edge_nc_gdf['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_nc_gdf['noises']]
         edge_nc_gdf['tot_cost'] = edge_nc_gdf.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
-        cost_attr = 'nc_'+str(nt)
+        cost_attr = 'nc_'+str(sen)
         update_edge_attr_to_graph(graph, edge_nc_gdf, df_attr='tot_cost', edge_attr=cost_attr)
     
     # set update time as edge attribute
