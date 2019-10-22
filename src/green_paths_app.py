@@ -48,7 +48,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     try:
         path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
         path_finder.find_least_cost_paths(graph)
-        path_FC, edge_FC = path_finder.process_paths_to_FC(graph, edges=True)
+        path_FC = path_finder.process_paths_to_FC(graph, edges=False)
 
     except Exception as e:
         # PathFinder throws only pretty exception strings so they can be sent to UI
@@ -61,7 +61,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         if (error is not None):
             return error
 
-    return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
+    return jsonify({ 'path_FC': path_FC })
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
