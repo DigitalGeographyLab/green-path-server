@@ -41,7 +41,7 @@ class PathFinder:
         graph_utils.remove_new_node_and_link_edges(graph, new_node=self.orig_node, link_edges=self.orig_link_edges)
         graph_utils.remove_new_node_and_link_edges(graph, new_node=self.dest_node, link_edges=self.dest_link_edges)
 
-    def find_origin_dest_nodes(self, graph, edge_gdf, node_gdf):
+    def find_origin_dest_nodes(self, graph, edge_gdf, node_gdf, debug=False):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
 
         Raises:
@@ -50,12 +50,12 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                graph, self.from_xy, self.to_xy, edge_gdf, node_gdf, self.sens, self.db_costs)
+                graph, self.from_xy, self.to_xy, edge_gdf, node_gdf, self.sens, self.db_costs, debug=debug)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
             self.dest_link_edges = dest_link_edges
-            utils.print_duration(start_time, 'origin & destination nodes set')
+            utils.print_duration(start_time, 'origin & destination nodes set', unit='ms')
         except Exception as e:
             print('exception in finding nearest nodes:')
             traceback.print_exc()

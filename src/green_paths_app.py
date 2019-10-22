@@ -46,7 +46,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     path_finder = PathFinder('quiet', from_lat, from_lon, to_lat, to_lon, debug=debug)
 
     try:
-        path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
+        path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf, debug=debug)
         path_finder.find_least_cost_paths(graph)
         path_FC = path_finder.process_paths_to_FC(graph, edges=False)
 

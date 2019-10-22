@@ -11,6 +11,7 @@ Todo:
 
 from typing import List, Set, Dict, Tuple, Optional
 from datetime import datetime
+import time
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
@@ -118,11 +119,11 @@ def get_new_node_attrs(graph, point: Point) -> dict:
     geom_attrs = {**geom_utils.get_xy_from_geom(point), **geom_utils.get_lat_lon_from_geom(wgs_point)}
     return { 'id': new_node_id, **geom_attrs }
 
-def add_new_node_to_graph(graph, point: Point, logging=True) -> int:
+def add_new_node_to_graph(graph, point: Point, debug=True) -> int:
     """Adds a new node to a graph at a specified location (Point) and returns the id of the new node.
     """
     attrs = get_new_node_attrs(graph, point)
-    if (logging == True):
+    if (debug == True):
         print('add new node:', attrs['id'])
     graph.add_node(attrs['id'], ref='', x=attrs['x'], y=attrs['y'], lon=attrs['lon'], lat=attrs['lat'])
     return attrs['id']
@@ -147,7 +148,7 @@ def split_link_edge_geoms(graph, edge_geom: LineString, split_point: Point, node
         link2 = split_lines[0]
     return link1, link2
     
-def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict, logging=False) -> dict:
+def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict, debug=False) -> dict:
     """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
     for the new edges based on attributes of the original edge on which the new node was added. 
 
@@ -159,12 +160,11 @@ def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, 
         link1_d: A dict cotaining the basic edge attributes of the first new linking edge.
         link2_d: A dict cotaining the basic edge attributes of the second new linking edge.
     """
+    start_time = time.time()
     node_from = edge['uvkey'][0]
     node_to = edge['uvkey'][1]
     link1, link2 = split_link_edge_geoms(graph, edge['geometry'], split_point, node_from, node_to)
 
-    if (logging == True):
-        print('add linking edges between:', node_from, new_node, node_to)
     # interpolate noise cost attributes for new linking edges so that they work in quiet path routing
     link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
     link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
@@ -178,6 +178,7 @@ def create_linking_edges_for_new_node(graph, new_node: int, split_point: Point, 
     graph.add_edges_from([ (new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs }) ])
     link1_d = { 'uvkey': (new_node, node_from), **link1_attrs }
     link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
+    if (debug == True): utils.print_duration(start_time, 'added links for new node', unit='ms')
     return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
 def remove_new_node_and_link_edges(graph, new_node: dict = None, link_edges: dict = None) -> None:
