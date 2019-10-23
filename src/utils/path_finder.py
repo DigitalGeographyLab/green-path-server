@@ -26,7 +26,7 @@ class PathFinder:
         self.from_xy = geom_utils.get_xy_from_lat_lon(self.from_latLon)
         self.to_xy = geom_utils.get_xy_from_lat_lon(self.to_latLon)
         self.db_costs = noise_exps.get_db_costs()
-        self.nts = noise_exps.get_noise_tolerances()
+        self.sens = noise_exps.get_noise_sensitivities()
         self.PathSet = PathSet(set_type=finder_type, debug_mode=debug)
         self.orig_node = None
         self.dest_node = None
@@ -50,7 +50,7 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                graph, self.from_xy, self.to_xy, edge_gdf, node_gdf, self.nts, self.db_costs)
+                graph, self.from_xy, self.to_xy, edge_gdf, node_gdf, self.sens, self.db_costs)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
@@ -72,10 +72,10 @@ class PathFinder:
             self.path_set = PathSet(set_type='quiet', debug_mode=self.debug_mode)
             shortest_path = routing_utils.get_least_cost_path(graph, self.orig_node['node'], self.dest_node['node'], weight='length')
             self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
-            for nt in self.nts:
-                noise_cost_attr = 'nc_'+ str(nt)
+            for sen in self.sens:
+                noise_cost_attr = 'nc_'+ str(sen)
                 least_cost_path = routing_utils.get_least_cost_path(graph, self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
-                self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(nt), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=nt))
+                self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
             utils.print_duration(start_time, 'routing done')
         except Exception:
             traceback.print_exc()

@@ -14,8 +14,8 @@ import utils.geometry as geom_utils
 
 def get_db_costs() -> Dict[int, float]:
     """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
-    (Alternative noise costs can be calculated by multiplying the base noise cost with different noise tolerances 
-    from get_noise_tolerances())
+    (Alternative noise costs can be calculated by multiplying the base noise cost with different noise sensitivities 
+    from get_noise_sensitivities())
 
     Returns:
         A dictionary of noise cost coefficients where the keys are the lower boundaries of the 5 dB ranges 
@@ -23,12 +23,12 @@ def get_db_costs() -> Dict[int, float]:
     """
     return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
 
-def get_noise_tolerances() -> List[float]:
-    """Returns a set of noise tolerance coefficients that can be used in adding alternative noise-based costs to edges and
+def get_noise_sensitivities() -> List[float]:
+    """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
     
     Returns:
-        A list of noise tolerance values.
+        A list of noise sensitivity coefficients.
     """
     return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
 
@@ -219,13 +219,13 @@ def get_mean_noise_level(noises: dict, length: float) -> float:
     mean_db = sum_db/length
     return round(mean_db, 1)
 
-def get_noise_cost(noises: Dict[int, float] = {}, db_costs: Dict[int, float] = {}, nt: float = 1) -> float:
-    """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise tolerance. 
+def get_noise_cost(noises: Dict[int, float] = {}, db_costs: Dict[int, float] = {}, sen: float = 1) -> float:
+    """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
     """
     noise_cost = 0
     for db in noises:
         if (db in db_costs):
-            noise_cost += noises[db] * db_costs[db] * nt
+            noise_cost += noises[db] * db_costs[db] * sen
     return round(noise_cost, 2)
 
 def interpolate_link_noises(link_geom: LineString, edge_geom: LineString, edge_noises: Dict[int, float]) -> Dict[int, float]:
@@ -238,17 +238,17 @@ def interpolate_link_noises(link_geom: LineString, edge_geom: LineString, edge_n
         link_noises[db] = round(edge_noises[db] * link_len_ratio, 3)
     return link_noises
 
-def get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=None, link_geom=None) -> dict:
+def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom=None) -> dict:
     """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
     (from which the edge was split). 
     """
     cost_attrs = {}
     # estimate link noises based on link length - edge length -ratio and edge noises
     cost_attrs['noises'] = interpolate_link_noises(link_geom, edge_dict['geometry'], edge_dict['noises'])
-    # calculate noise tolerance specific noise costs
-    for nt in nts:
-        noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, nt=nt)
-        cost_attrs['nc_'+str(nt)] = round(noise_cost + link_geom.length, 2)
+    # calculate noise sensitivity specific noise costs
+    for sen in sens:
+        noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, sen=sen)
+        cost_attrs['nc_'+str(sen)] = round(noise_cost + link_geom.length, 2)
     noises_sum_len = get_total_noises_len(cost_attrs['noises'])
     if ((noises_sum_len - link_geom.length) > 0.1):
         print('link lengths do not match:', noises_sum_len, link_geom.length)
