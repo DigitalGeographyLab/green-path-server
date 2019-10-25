@@ -4,37 +4,32 @@ import time
 import pandas as pd
 from datetime import datetime
 import utils.files as file_utils
-import utils.graphs as graph_utils
 import utils.noise_exposures as noise_exps
-import utils.graph_loader as graph_loader
 import utils.utils as utils
 import utils.tests as tests
+from utils.graph_handler import GraphHandler
 
 # graph_aqi_update_interval_secs: int = 20
 debug: bool = True
 
 # load graph data
 start_time = time.time()
-graph, edge_gdf, node_gdf, edges_sind, nodes_sind = graph_loader.load_graph_data(subset=True)
+G = GraphHandler(subset=True)
+G.set_graph_noise_costs()
 
 # setup scheduled graph updater
-def edge_attr_update():
-    timenow = datetime.now().strftime("%H:%M:%S")
-    edge_gdf['updatetime'] =  timenow
-    graph_utils.update_edge_attr_to_graph(graph, edge_gdf, df_attr='updatetime', edge_attr='updatetime')
-    # TODO load AQI layer, spatially join AQI values to edge_gdf
-    # TODO calculate AQI costs to edge_gdf, update AQI costs to graph
-    print('updated graph at:', timenow)
+# def edge_attr_update():
+#     # TODO load AQI layer, calculate & update AQI costs to graph
+#     G.update_current_time_to_graph()
 
-edge_attr_update()
 # graph_updater = BackgroundScheduler()
 # graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
 # graph_updater.start()
 
 utils.print_duration(start_time, 'graph initialized')
 
-def get_quiet_path_stats(graph, od_dict, logging=False):
-    FC = tests.get_short_quiet_paths(graph, edge_gdf, node_gdf, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
+def get_quiet_path_stats(G, od_dict, logging=False):
+    FC = tests.get_short_quiet_paths(G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
     path_props = [feat['properties'] for feat in FC]
     paths_df = pd.DataFrame(path_props)
     sp = paths_df[paths_df['type'] == 'short']
@@ -58,7 +53,7 @@ class TestQuietPaths(unittest.TestCase):
 
     def test_quiet_path_1(self):
         set_stats = { 'sp_count': 1, 'qp_count': 0, 'sp_len': 813.0, 'qp_len_sum': 0.0, 'noise_total_len': 309.3 }
-        test_stats = get_quiet_path_stats(graph, od_dict[1])
+        test_stats = get_quiet_path_stats(G, od_dict[1])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_5(self):
@@ -79,7 +74,7 @@ class TestQuietPaths(unittest.TestCase):
             'noise_diff_sum': -219.06,
             'noise_pcts_sum': 100.0
             }
-        test_stats = get_quiet_path_stats(graph, od_dict[5])
+        test_stats = get_quiet_path_stats(G, od_dict[5])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
 
@@ -101,23 +96,23 @@ class TestQuietPaths(unittest.TestCase):
             'noise_diff_sum': 56.92,
             'noise_pcts_sum': 100.1
             }
-        test_stats = get_quiet_path_stats(graph, od_dict[6])
+        test_stats = get_quiet_path_stats(G, od_dict[6])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
 
     def test_quiet_path_7(self):
         set_stats = { 'sp_count': 1, 'qp_count': 2, 'sp_len': 1054.2, 'qp_len_sum': 2704.9, 'noise_total_len': 3322.0 }
-        test_stats = get_quiet_path_stats(graph, od_dict[7])
+        test_stats = get_quiet_path_stats(G, od_dict[7])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_8(self):
         set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 799.6, 'qp_len_sum': 3925.4, 'noise_total_len': 3252.8 }
-        test_stats = get_quiet_path_stats(graph, od_dict[8])
+        test_stats = get_quiet_path_stats(G, od_dict[8])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_9(self):
         set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 670.6, 'qp_len_sum': 694.1, 'noise_total_len': 806.6 }
-        test_stats = get_quiet_path_stats(graph, od_dict[9])
+        test_stats = get_quiet_path_stats(G, od_dict[9])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
 if __name__ == '__main__':
