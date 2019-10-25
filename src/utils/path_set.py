@@ -27,14 +27,14 @@ class PathSet:
 
     def get_green_path_count(self) -> int: return len(self.green_paths)
 
-    def set_path_edges(self, graph):
+    def set_path_edges(self, G):
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
         """
         if (self.shortest_path is not None):
-            self.shortest_path.set_path_edges(graph)
+            self.shortest_path.set_path_edges(G)
         if (len(self.green_paths) > 0):
             for gp in self.green_paths:
-                gp.set_path_edges(graph)
+                gp.set_path_edges(G)
 
     def aggregate_path_attrs(self, geom=True, length=True, noises=False):
         """Aggregates edge level path attributes to paths.

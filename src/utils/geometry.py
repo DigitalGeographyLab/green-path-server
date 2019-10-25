@@ -62,7 +62,7 @@ def get_closest_point_on_line(line: LineString, point: Point) -> Point:
     closest_point = line.interpolate(projected)
     return closest_point
 
-def split_line_at_point(line: LineString, point: Point) -> List[LineString]:
+def get_split_lines(line: LineString, point: Point) -> List[LineString]:
     """Splits a line at nearest intersecting point.
     Returns:
         A list containing two LineString objects.
@@ -71,6 +71,24 @@ def split_line_at_point(line: LineString, point: Point) -> List[LineString]:
     result = split(snap_line, point)
     if (len(result) < 2): print('Error in splitting line at point: only one line in the result') 
     return result
+
+def split_line_at_point(point_1, point_2, line_geom: LineString, split_point: Point) -> Tuple[LineString]:
+    """Splits the line geometry of an edge to two parts at the location of a new node. Split parts can subsequently be used as linking edges 
+    that connect the new node to the graph.
+
+    Returns:
+        Tuple containing the geometries of the link edges (LineString, LineString).
+    """
+    edge_first_p = Point(line_geom.coords[0])
+    # split edge at new node to two line geometries
+    split_lines = get_split_lines(line_geom, split_point)
+    if(edge_first_p.distance(point_1) < edge_first_p.distance(point_2)):
+        link1 = split_lines[0]
+        link2 = split_lines[1]
+    else:
+        link1 = split_lines[1]
+        link2 = split_lines[0]
+    return link1, link2
 
 def get_polygons_under_line(line_geom: LineString, polygons: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Returns polygons that intersect the [line_geom] as GeoDataFrame.

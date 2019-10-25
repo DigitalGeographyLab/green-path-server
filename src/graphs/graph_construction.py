@@ -34,7 +34,7 @@ print('Got all edge dicts:', len(edge_dicts))
 #%% 2.3 Add missing edge geometries to graph
 start_time = time.time()
 def get_edge_geoms(edge_dict):
-    return graph_utils.get_missing_edge_geometries(graph, edge_dict)
+    return graph_utils.add_missing_edge_geometries(graph, edge_dict)
 pool = Pool(processes=4)
 edge_geom_dicts = pool.map(get_edge_geoms, edge_dicts)
 pool.close()

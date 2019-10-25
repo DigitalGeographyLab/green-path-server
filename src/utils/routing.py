@@ -15,6 +15,7 @@ from shapely.ops import nearest_points
 import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 import utils.utils as utils
+from utils.graph_handler import GraphHandler
 
 def find_nearest_edge(xy: Dict[str, float], edge_gdf, debug=False) -> Dict:
     """Finds the nearest edge to a given point.
@@ -77,13 +78,13 @@ def find_nearest_node(xy: Dict[str, float], node_gdf, debug=False) -> int:
     if (debug == True): utils.print_duration(start_time, 'found nearest node', unit='ms')
     return nearest_node
 
-def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges: dict = None, debug=False) -> Dict:
+def get_nearest_node(G: GraphHandler, xy: Dict[str, float], link_edges: dict = None, debug=False) -> Dict:
     """Finds (or creates) the nearest node to a given point. 
     If the nearest node is further than the nearest edge to the point, a new node is created
     on the nearest edge on the nearest point on the edge.
 
     Args:
-        graph: A NetworkX graph used in routing.
+        G: A GraphHandler instance used in routing.
         xy: A location as xy coordinates, e.g. { 'x': 6500, 'y': 2000 }.
         edge_gdf: A GeoDataFrame containing edges of the graph (and line geometries).
         node_gdf: A GeoDataFrame containing nodes of the graph (and point geometries).
@@ -102,14 +103,13 @@ def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges
         'nearest_edge_point' which is a Shapely Point object located on the nearest point on the nearest edge.
         (The last two objects are needed for creating the linking edges for newly created nodes)
     """
-    coords = geom_utils.get_coords_from_xy(xy)
-    point = Point(coords)
-    nearest_edge = find_nearest_edge(xy, edge_gdf, debug=debug)
+    point = geom_utils.get_point_from_xy(xy)
+    nearest_edge = G.find_nearest_edge(point, debug=debug)
     if (nearest_edge is None):
         raise Exception('Nearest edge not found')
-    nearest_node = find_nearest_node(xy, node_gdf, debug=debug)
+    nearest_node = G.find_nearest_node(point, debug=debug)
     start_time = time.time()
-    nearest_node_geom = geom_utils.get_point_from_xy(graph.nodes[nearest_node])
+    nearest_node_geom = geom_utils.get_point_from_xy(G.graph.nodes[nearest_node])
     nearest_edge_point = geom_utils.get_closest_point_on_line(nearest_edge['geometry'], point)
     # return the nearest node if it is as near (or nearer) as the nearest edge (i.e. at the end of an edge)
     if (nearest_edge_point.distance(nearest_node_geom) < 1 or nearest_node_geom.distance(point) < nearest_edge['geometry'].distance(point)):
@@ -121,19 +121,19 @@ def get_nearest_node(graph, xy: Dict[str, float], edge_gdf, node_gdf, link_edges
         if (nearest_edge_point.distance(link_edges['link2']['geometry']) < 0.2):
             nearest_edge = link_edges['link2']
     # create a new node on the nearest edge to the graph
-    new_node = graph_utils.add_new_node_to_graph(graph, nearest_edge_point, debug=debug)
+    new_node = G.add_new_node_to_graph(nearest_edge_point)
     # new edges from the new node to existing nodes need to be created to the graph
     # hence return the geometry of the nearest edge and the nearest point on the nearest edge
     links_to = { 'nearest_edge': nearest_edge, 'nearest_edge_point': nearest_edge_point }
     if (debug == True): utils.print_duration(start_time, 'got geoms for adding node & links', unit='ms')
     return { 'node': new_node, 'offset': round(nearest_edge_point.distance(point), 1), 'add_links': True, **links_to }
 
-def get_orig_dest_nodes_and_linking_edges(graph, from_xy: dict, to_xy: dict, edge_gdf, node_gdf, sens: List[float], db_costs: Dict[int,float], debug=False):
+def get_orig_dest_nodes_and_linking_edges(G: GraphHandler, from_xy: dict, to_xy: dict, sens: List[float], db_costs: Dict[int,float], debug=False):
     """Finds the nearest nodes to origin and destination as well as the newly created edges that connect 
     the origin and destination nodes to the graph.
 
     Args:
-        graph: A NetworkX graph to be used in routing.
+        G: A GraphHandler instance used in routing.
         from_xy: An origin location as xy coordinates, e.g. { 'x': 6500, 'y': 2000 }.
         to_xy: A destination location as xy coordinates, e.g. { 'x': 6500, 'y': 2000 }.
         edge_gdf: A GeoDataFrame containing edges of the graph (and line geometries).
@@ -151,29 +151,29 @@ def get_orig_dest_nodes_and_linking_edges(graph, from_xy: dict, to_xy: dict, edg
     dest_link_edges = None
 
     try:
-        orig_node = get_nearest_node(graph, from_xy, edge_gdf, node_gdf, debug=debug)
+        orig_node = get_nearest_node(G, from_xy, debug=debug)
         # add linking edges to graph if new node was created on the nearest edge
         if (orig_node is not None and orig_node['add_links'] == True):
-            orig_link_edges = graph_utils.create_linking_edges_for_new_node(
-                graph, orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], sens, db_costs, debug=debug)
+            orig_link_edges = G.create_linking_edges_for_new_node(
+                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], sens, db_costs, debug=debug)
     except Exception:
         raise Exception('Could not find origin')
     try:
-        dest_node = get_nearest_node(graph, to_xy, edge_gdf, node_gdf, link_edges=orig_link_edges, debug=debug)
+        dest_node = get_nearest_node(G, to_xy, link_edges=orig_link_edges, debug=debug)
         # add linking edges to graph if new node was created on the nearest edge
         if (dest_node is not None and dest_node['add_links'] == True):
-            dest_link_edges = graph_utils.create_linking_edges_for_new_node(
-                graph, dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], sens, db_costs, debug=debug)
+            dest_link_edges = G.create_linking_edges_for_new_node(
+                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], sens, db_costs, debug=debug)
     except Exception:
         raise Exception('Could not find destination')
 
     return orig_node, dest_node, orig_link_edges, dest_link_edges
 
-def get_least_cost_path(graph, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
+def get_least_cost_path(G: GraphHandler, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
     """Calculates a least cost path by the given edge weight.
 
     Args:
-        graph: A NetworkX graph with which to solve the least cost path optimization problem.
+        G: A GraphHandler instance used in routing.
         orig_node: The name of the origin node (number).
         dest_node: The name of the destination node (number).
         weight: The name of the edge attribute to use as cost in the least cost path optimization.
@@ -183,7 +183,7 @@ def get_least_cost_path(graph, orig_node: int, dest_node: int, weight: str = 'le
     """
     if (orig_node != dest_node):
         try:
-            s_path = nx.shortest_path(G=graph, source=orig_node, target=dest_node, weight=weight)
+            s_path = nx.shortest_path(G=G.graph, source=orig_node, target=dest_node, weight=weight)
             return s_path
         except:
             raise Exception('Could not find paths')
