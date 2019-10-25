@@ -72,11 +72,11 @@ class PathFinder:
         try:
             start_time = time.time()
             self.path_set = PathSet(set_type='quiet', debug_mode=self.debug_mode)
-            shortest_path = routing_utils.get_least_cost_path(self.G, self.orig_node['node'], self.dest_node['node'], weight='length')
+            shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
             self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
             for sen in self.sens:
                 noise_cost_attr = 'nc_'+ str(sen)
-                least_cost_path = routing_utils.get_least_cost_path(self.G, self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
+                least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
                 self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
             utils.print_duration(start_time, 'routing done')
         except Exception:

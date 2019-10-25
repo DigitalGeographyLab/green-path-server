@@ -242,6 +242,26 @@ class GraphHandler:
         if (debug == True): utils.print_duration(start_time, 'added links for new node', unit='ms')
         return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
+    def get_least_cost_path(self, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
+        """Calculates a least cost path by the given edge weight.
+
+        Args:
+            orig_node: The name of the origin node (number).
+            dest_node: The name of the destination node (number).
+            weight: The name of the edge attribute to use as cost in the least cost path optimization.
+        Returns:
+            The least cost path as a sequence of nodes (node ids).
+            Returns None if the origin and destination nodes are the same or no path is found between them.
+        """
+        if (orig_node != dest_node):
+            try:
+                s_path = nx.shortest_path(self.graph, source=orig_node, target=dest_node, weight=weight)
+                return s_path
+            except:
+                raise Exception('Could not find paths')
+        else:
+            raise Exception('Origin and destination are the same location')
+
     def remove_new_node_and_link_edges(self, new_node: dict = None, link_edges: dict = None):
         """Removes linking edges from a graph. Needed after routing in order to keep the graph unchanged.
         """

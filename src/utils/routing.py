@@ -17,67 +17,6 @@ import utils.geometry as geom_utils
 import utils.utils as utils
 from utils.graph_handler import GraphHandler
 
-def find_nearest_edge(xy: Dict[str, float], edge_gdf, debug=False) -> Dict:
-    """Finds the nearest edge to a given point.
-
-    Args:
-        xy: A location as xy coordinates, e.g. { 'x': 6500, 'y': 2000 }.
-        edge_gdf: GeoDataFrame containing edges (and line geometries).
-    Note:
-        The coordinate systems of both xy and node_gdf should be projected (EPSG:3879).
-        The edge_gdf should have spatial index built to make the search quick.
-        It's enough to run edges_sind = edge_gdf.sindex once before using this.
-    Returns:
-        The nearest edge as dictionary, having key-value pairs by the columns of the edge_gdf.
-    """
-    start_time = time.time()
-    edges_sind = edge_gdf.sindex
-    point_geom = geom_utils.get_point_from_xy(xy)
-    for radius in [80, 150, 250, 350, 650]:
-        possible_matches_index = list(edges_sind.intersection(point_geom.buffer(radius).bounds))
-        if (len(possible_matches_index) > 0):
-            possible_matches = edge_gdf.iloc[possible_matches_index].copy()
-            possible_matches['distance'] = [geom.distance(point_geom) for geom in possible_matches['geometry']]
-            shortest_dist = possible_matches['distance'].min()
-            if (shortest_dist < radius):
-                break
-    if (len(possible_matches_index) == 0):
-        print('no near edges found')
-        return None
-    nearest = possible_matches['distance'] == shortest_dist
-    nearest_edge_dict =  possible_matches.loc[nearest].iloc[0].to_dict()
-    if (debug == True): utils.print_duration(start_time, 'found nearest edge', unit='ms')
-    return nearest_edge_dict
-
-def find_nearest_node(xy: Dict[str, float], node_gdf, debug=False) -> int:
-    """Finds the nearest node to a given point.
-
-    Args:
-        xy: A location as xy coordinates, e.g. { 'x': 6500, 'y': 2000 }.
-        node_gdf: A GeoDataFrame containing nodes (and point geometries).
-    Note:
-        The coordinate systems of both xy and node_gdf should be projected (EPSG:3879).
-        The node_gdf should have spatial index built to make the search quick.
-        It's enough to run nodes_sind = node_gdf.sindex once before using this.
-    Returns:
-        The name of the nearest node (number).
-    """
-    start_time = time.time()
-    nodes_sind = node_gdf.sindex
-    point_geom = geom_utils.get_point_from_xy(xy)
-    for radius in [100, 300, 700]:
-        possible_matches_index = list(nodes_sind.intersection(point_geom.buffer(radius).bounds))
-        if (len(possible_matches_index) == 0):
-            continue
-        possible_matches = node_gdf.iloc[possible_matches_index]
-        points_union = possible_matches.geometry.unary_union
-        nearest_geom = nearest_points(point_geom, points_union)[1]
-        nearest = possible_matches.geometry.geom_equals(nearest_geom)
-        nearest_point =  possible_matches.loc[nearest]
-        nearest_node = nearest_point.index.tolist()[0]
-    if (debug == True): utils.print_duration(start_time, 'found nearest node', unit='ms')
-    return nearest_node
-
 def get_nearest_node(G: GraphHandler, xy: Dict[str, float], link_edges: dict = None, debug=False) -> Dict:
     """Finds (or creates) the nearest node to a given point. 
     If the nearest node is further than the nearest edge to the point, a new node is created
@@ -168,24 +107,3 @@ def get_orig_dest_nodes_and_linking_edges(G: GraphHandler, from_xy: dict, to_xy:
         raise Exception('Could not find destination')
 
     return orig_node, dest_node, orig_link_edges, dest_link_edges
-
-def get_least_cost_path(G: GraphHandler, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
-    """Calculates a least cost path by the given edge weight.
-
-    Args:
-        G: A GraphHandler instance used in routing.
-        orig_node: The name of the origin node (number).
-        dest_node: The name of the destination node (number).
-        weight: The name of the edge attribute to use as cost in the least cost path optimization.
-    Returns:
-        The least cost path as a sequence of nodes (node ids).
-        Returns None if the origin and destination nodes are the same or no path is found between them.
-    """
-    if (orig_node != dest_node):
-        try:
-            s_path = nx.shortest_path(G=G.graph, source=orig_node, target=dest_node, weight=weight)
-            return s_path
-        except:
-            raise Exception('Could not find paths')
-    else:
-        raise Exception('Origin and destination are the same location')
