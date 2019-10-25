@@ -28,6 +28,10 @@ def get_list_chunks(l: list, n: int) -> List[list]:
         chunks.append(l[i:i + n])
     return chunks
 
-def print_duration(time1, text, round_n: int = 3) -> None:
-    time_elapsed = round(time.time() - time1, round_n)
-    print('--- %s s --- %s' % (time_elapsed, text))
+def print_duration(time1, text, round_n: int = 3, unit: str = 's') -> None:
+    if unit == 's':
+        time_elapsed = round(time.time() - time1, round_n)
+        print('--- %s s --- %s' % (time_elapsed, text))
+    elif unit == 'ms':
+        time_elapsed = round((time.time() - time1) * 1000)
+        print('--- %s ms --- %s' % (time_elapsed, text))

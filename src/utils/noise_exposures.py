@@ -249,9 +249,6 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     for sen in sens:
         noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, sen=sen)
         cost_attrs['nc_'+str(sen)] = round(noise_cost + link_geom.length, 2)
-    noises_sum_len = get_total_noises_len(cost_attrs['noises'])
-    if ((noises_sum_len - link_geom.length) > 0.1):
-        print('link lengths do not match:', noises_sum_len, link_geom.length)
     return cost_attrs
 
 def compare_lens_noises_lens(edge_gdf) -> gpd.GeoDataFrame:

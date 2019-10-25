@@ -11,7 +11,6 @@ from fiona.crs import from_epsg
 import utils.routing as routing_utils
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
-import utils.graphs as graph_utils
 import utils.utils as utils
 from utils.path import Path
 from utils.path_set import PathSet
@@ -69,7 +68,7 @@ def get_qp_feat_props_from_FC(FC):
 
     return qp_prop_dict
 
-def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, logging=False) -> dict:
+def get_short_quiet_paths(G, from_latLon, to_latLon, logging=False) -> dict:
     """Calculates and aggregates short and quiet paths similarly as in the quiet paths application.
 
     Returns:
@@ -77,16 +76,16 @@ def get_short_quiet_paths(graph, edge_gdf, node_gdf, from_latLon, to_latLon, log
     """
     debug = False
 
-    path_finder = PathFinder('quiet', from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
+    path_finder = PathFinder('quiet', G, from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
 
     try:
-        path_finder.find_origin_dest_nodes(graph, edge_gdf, node_gdf)
-        path_finder.find_least_cost_paths(graph)
-        path_FC = path_finder.process_paths_to_FC(graph, edges=False)
+        path_finder.find_origin_dest_nodes(debug=debug)
+        path_finder.find_least_cost_paths()
+        path_FC = path_finder.process_paths_to_FC(edges=False)
     except Exception as e:
         return jsonify({'error': str(e)})
     finally:
-        path_finder.delete_added_graph_features(graph)
+        path_finder.delete_added_graph_features()
 
     # return jsonify(FC)
 

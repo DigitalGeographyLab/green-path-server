@@ -3,6 +3,7 @@ from typing import List, Set, Dict, Tuple, Optional
 import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 from utils.path_noises import PathNoiseAttrs
+from utils.graph_handler import GraphHandler
 
 class Path:
     """An instance of Path contains all path specific attributes and methods for manipulating them.
@@ -30,10 +31,10 @@ class Path:
 
     def set_set_type(self, set_type: str): self.set_type = set_type
 
-    def set_path_edges(self, graph):
+    def set_path_edges(self, G: GraphHandler):
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
         """
-        self.edges = graph_utils.get_edges_from_nodelist(graph, self.nodes, self.cost_attr)
+        self.edges = G.get_edges_from_nodelist(self.nodes, self.cost_attr)
 
     def aggregate_path_attrs(self, geom=True, length=True, noises=False):
         """Aggregates path attributes form list of edges.

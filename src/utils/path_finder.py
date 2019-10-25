@@ -9,6 +9,7 @@ import utils.routing as routing_utils
 import utils.graphs as graph_utils
 from utils.path import Path
 from utils.path_set import PathSet
+from utils.graph_handler import GraphHandler
 
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
@@ -18,8 +19,9 @@ class PathFinder:
         Implement AQI based routing.
     """
 
-    def __init__(self, finder_type: str, from_lat, from_lon, to_lat, to_lon, debug: bool = False):
+    def __init__(self, finder_type: str, G: GraphHandler, from_lat, from_lon, to_lat, to_lon, debug: bool = False):
         self.finder_type: str = finder_type # either 'quiet' or 'clean'
+        self.G = G
         self.from_latLon = {'lat': float(from_lat), 'lon': float(from_lon)}
         self.to_latLon = {'lat': float(to_lat), 'lon': float(to_lon)}
         print('initializing path finder from', self.from_latLon, 'to', self.to_latLon)
@@ -34,14 +36,14 @@ class PathFinder:
         self.dest_link_edges = None
         self.debug_mode = debug
     
-    def delete_added_graph_features(self, graph):
+    def delete_added_graph_features(self):
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
         """
         if (self.debug_mode == True): print("deleting created nodes & edges from the graph")
-        graph_utils.remove_new_node_and_link_edges(graph, new_node=self.orig_node, link_edges=self.orig_link_edges)
-        graph_utils.remove_new_node_and_link_edges(graph, new_node=self.dest_node, link_edges=self.dest_link_edges)
+        self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
+        self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)
 
-    def find_origin_dest_nodes(self, graph, edge_gdf, node_gdf):
+    def find_origin_dest_nodes(self, debug=False):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
 
         Raises:
@@ -50,18 +52,18 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                graph, self.from_xy, self.to_xy, edge_gdf, node_gdf, self.sens, self.db_costs)
+                self.G, self.from_xy, self.to_xy, self.sens, self.db_costs, debug=debug)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
             self.dest_link_edges = dest_link_edges
-            utils.print_duration(start_time, 'origin & destination nodes set')
+            utils.print_duration(start_time, 'origin & destination nodes set', unit='ms')
         except Exception as e:
             print('exception in finding nearest nodes:')
             traceback.print_exc()
             raise Exception(str(e))
 
-    def find_least_cost_paths(self, graph):
+    def find_least_cost_paths(self):
         """Finds both shortest and least cost paths. 
 
         Raises:
@@ -70,18 +72,18 @@ class PathFinder:
         try:
             start_time = time.time()
             self.path_set = PathSet(set_type='quiet', debug_mode=self.debug_mode)
-            shortest_path = routing_utils.get_least_cost_path(graph, self.orig_node['node'], self.dest_node['node'], weight='length')
+            shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
             self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
             for sen in self.sens:
                 noise_cost_attr = 'nc_'+ str(sen)
-                least_cost_path = routing_utils.get_least_cost_path(graph, self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
+                least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
                 self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
             utils.print_duration(start_time, 'routing done')
         except Exception:
             traceback.print_exc()
             raise Exception('Could not find paths')
 
-    def process_paths_to_FC(self, graph, edges: bool = False) -> dict:
+    def process_paths_to_FC(self, edges: bool = False) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
         paths based on geometries and length. 
 
@@ -92,7 +94,7 @@ class PathFinder:
         """
         start_time = time.time()
         try:
-            self.path_set.set_path_edges(graph)
+            self.path_set.set_path_edges(self.G)
             self.path_set.aggregate_path_attrs(noises=True if self.finder_type == 'quiet' else False)
             self.path_set.filter_out_unique_len_paths()
             self.path_set.set_path_noise_attrs(self.db_costs)
