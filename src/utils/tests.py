@@ -7,6 +7,7 @@ from typing import List, Set, Dict, Tuple, Optional
 from flask import jsonify
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import shape, GeometryCollection
 from fiona.crs import from_epsg
 import utils.routing as routing_utils
 import utils.geometry as geom_utils
@@ -63,7 +64,8 @@ def get_qp_feat_props_from_FC(FC):
         'nei_diff_rat': qp_props['nei_diff_rat'],
         'path_score': qp_props['path_score'],
         'noise_pcts_sum': noise_exps.get_total_noises_len(qp_props['noise_pcts']),
-        'noise_diff_sum': noise_exps.get_total_noises_len(qp_props['noises_diff'])
+        'noise_diff_sum': noise_exps.get_total_noises_len(qp_props['noises_diff']),
+        'geom_length': round(geom_utils.project_geom(shape(qp_feat['geometry'])).length,1)
         }
 
     return qp_prop_dict
@@ -79,14 +81,14 @@ def get_short_quiet_paths(G, from_latLon, to_latLon, logging=False) -> dict:
     path_finder = PathFinder('quiet', G, from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
 
     try:
-        path_finder.find_origin_dest_nodes(debug=debug)
+        path_finder.find_origin_dest_nodes()
         path_finder.find_least_cost_paths()
-        path_FC = path_finder.process_paths_to_FC(edges=False)
+        path_FC, edge_FC = path_finder.process_paths_to_FC()
     except Exception as e:
         return jsonify({'error': str(e)})
     finally:
         path_finder.delete_added_graph_features()
 
-    # return jsonify(FC)
+    # return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
 
     return path_FC['features']
