@@ -46,7 +46,7 @@ class GraphHandler:
         gdf_nodes.gdf_name = '{}_nodes'.format(self.graph.graph['name'])
         return gdf_nodes[['geometry']]
 
-    def set_graph_noise_costs(self):
+    def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
 
         Args:
@@ -174,15 +174,17 @@ class GraphHandler:
                 break
             edge_d = {}
             node_1 = path[idx]
+            node_1_point = self.get_node_point_geom(node_1)
             node_2 = path[idx+1]
             edges = self.graph[node_1][node_2]
-            edge = self.get_least_cost_edge(edges, cost_attr)
+            edge = graph_utils.get_least_cost_edge(edges, cost_attr)
             edge_d['cost_update_time'] = edge['updatetime'] if ('updatetime' in edge) else {}
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
-            edge_d['coords'] = self.get_ordered_edge_line_coords(node_1, edge) if 'geometry' in edge else []
+            bool_flip_geom = geom_utils.bool_line_starts_at_point(node_1_point, edge['geometry'])
+            edge_d['coords'] = edge['geometry'].coords if bool_flip_geom else edge['geometry'].coords[::-1]
             path_edges.append(edge_d)
         return path_edges
 
@@ -225,13 +227,15 @@ class GraphHandler:
         node_to_p = self.get_node_point_geom( node_to)
         link1, link2 = geom_utils.split_line_at_point(node_from_p, node_to_p, edge['geometry'], split_point)
 
+        # set geometry attributes for links
+        link1_geom_attrs = { 'geometry': link1, 'geom_wgs': geom_utils.project_geom(link1, from_epsg=3879, to_epsg=4326) }
+        link2_geom_attrs = { 'geometry': link2, 'geom_wgs': geom_utils.project_geom(link2, from_epsg=3879, to_epsg=4326) }
         # interpolate noise cost attributes for new linking edges so that they work in quiet path routing
         link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
         link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
-        print('\n\nEDGE:', edge)
         # combine link attributes to prepare adding them as new edges
-        link1_attrs = { 'geometry': link1, 'length' : round(link1.length, 3), **link1_cost_attrs, 'updatetime': edge['updatetime'] }
-        link2_attrs = { 'geometry': link2, 'length' : round(link2.length, 3), **link2_cost_attrs, 'updatetime': edge['updatetime'] }
+        link1_attrs = { **link1_geom_attrs, **link1_cost_attrs, 'updatetime': edge['updatetime'] }
+        link2_attrs = { **link2_geom_attrs, **link2_cost_attrs, 'updatetime': edge['updatetime'] }
         # add linking edges with noise cost attributes to graph
         self.graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
         self.graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])

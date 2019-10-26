@@ -221,3 +221,12 @@ def lines_overlap(geom1: LineString, geom2: LineString, tolerance: int = 2, min_
         if (inters_ratio < min_intersect):
             match = False
     return match
+
+def bool_line_starts_at_point(point: Point, line: LineString) -> bool:
+    coords = line.coords
+    first_point = Point(coords[0])
+    last_point = Point(coords[len(coords)-1])
+    if (point.distance(first_point) > point.distance(last_point)):
+        return False
+    else: 
+        return True

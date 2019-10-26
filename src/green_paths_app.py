@@ -17,7 +17,7 @@ debug: bool = True
 # initialize graph
 start_time = time.time()
 G = GraphHandler(subset=True)
-G.set_graph_noise_costs()
+G.set_noise_costs_to_edges()
 
 # setup scheduled graph updater
 def edge_attr_update():
