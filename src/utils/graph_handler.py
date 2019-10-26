@@ -34,7 +34,9 @@ class GraphHandler:
         self.node_gdf = self.get_node_gdf()
         self.nodes_sind = self.node_gdf.sindex
         print('graph nodes collected')
-    
+        self.set_edge_wgs_geoms()
+        print('projected edges to wgs')
+
     def get_node_gdf(self) -> gpd.GeoDataFrame:
         """Collects and sets the nodes of a graph as a GeoDataFrame. 
         Names of the nodes are set as the row ids in the GeoDataFrame.
@@ -45,6 +47,11 @@ class GraphHandler:
         gdf_nodes.crs = self.graph.graph['crs']
         gdf_nodes.gdf_name = '{}_nodes'.format(self.graph.graph['name'])
         return gdf_nodes[['geometry']]
+    
+    def set_edge_wgs_geoms(self):
+        edge_updates = self.edge_gdf.copy()
+        edge_updates = edge_updates.to_crs(epsg=4326)
+        self.update_edge_attr_to_graph(edge_updates, df_attr='geometry', edge_attr='geom_wgs')
 
     def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
@@ -139,31 +146,6 @@ class GraphHandler:
         if (debug == True): utils.print_duration(start_time, 'found nearest edge', unit='ms')
         return nearest_edge_dict
 
-    def get_ordered_edge_line_coords(self, node_from: int, edge: dict) -> List[tuple]:
-        """Returns the coordinates of the line geometry of an edge. The list of coordinates is ordered so that the 
-        first point is at the same location as [node_from]. 
-        """
-        from_point = self.get_node_point_geom(node_from)
-        edge_line = edge['geometry']
-        edge_coords = edge_line.coords
-        first_point = Point(edge_coords[0])
-        last_point = Point(edge_coords[len(edge_coords)-1])
-        if(from_point.distance(first_point) > from_point.distance(last_point)):
-            return edge_coords[::-1]
-        return edge_coords
-
-    def get_least_cost_edge(self, edges: List[dict], cost_attr: str) -> dict:
-        """Returns the least cost edge from a set of edges (dicts) by an edge cost attribute.
-        """
-        if (len(edges) == 1):
-            return next(iter(edges.values()))
-        s_edge = next(iter(edges.values()))
-        for edge_k in edges.keys():
-            if (cost_attr in edges[edge_k].keys() and cost_attr in s_edge.keys()):
-                if (edges[edge_k][cost_attr] < s_edge[cost_attr]):
-                    s_edge = edges[edge_k]
-        return s_edge
-
     def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
         Loads edge attributes 'cost_update_time', 'length', 'noises', 'dBrange' and 'coords'.
@@ -185,6 +167,7 @@ class GraphHandler:
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
             bool_flip_geom = geom_utils.bool_line_starts_at_point(node_1_point, edge['geometry'])
             edge_d['coords'] = edge['geometry'].coords if bool_flip_geom else edge['geometry'].coords[::-1]
+            edge_d['coords_wgs'] = edge['geom_wgs'].coords if bool_flip_geom else edge['geom_wgs'].coords[::-1]
             path_edges.append(edge_d)
         return path_edges
 
