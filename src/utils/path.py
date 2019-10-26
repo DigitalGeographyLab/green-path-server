@@ -75,14 +75,19 @@ class Path:
     def get_edge_groups_as_features(self) -> List[dict]:
         features = []
         for group in self.edge_groups:
-            group_coords = [coord for edge in group[1] for coord in edge['coords']]
-            group_line = LineString(group_coords)
-            feature = geom_utils.get_geojson_feature_from_geom(group_line, from_epsg=3879)
+            group_coords = [coord for edge in group[1] for coord in edge['coords_wgs']]
+            group_coords = geom_utils.round_coordinates(group_coords, digits=6)       
+            feature = geom_utils.as_geojson_feature(group_coords)
             feature['properties'] = { 'value': group[0], 'path': self.name, 'len_diff': self.len_diff }
             features.append(feature)
         return features
 
     def get_as_geojson_feature(self) -> dict:
+        wgs_coords = [coord for edge in self.edges for coord in edge['coords_wgs']]
+        wgs_coords = geom_utils.round_coordinates(wgs_coords, digits=6)
+
+        feature_d = geom_utils.as_geojson_feature(wgs_coords)
+
         props = {
             'type' : self.path_type,
             'id' : self.name,
@@ -93,6 +98,5 @@ class Path:
         }
         # TODO add aqi exposure props here
         exposure_props = self.noise_attrs.get_noise_props_dict() if self.set_type == 'quiet' else {}
-        feature_d = geom_utils.get_geojson_feature_from_geom(self.geometry, from_epsg=3879)
         feature_d['properties'] = { **props, **exposure_props }
         return feature_d

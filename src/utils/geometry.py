@@ -40,6 +40,9 @@ def get_point_from_lat_lon(latLon: Dict[str, float]) -> Point:
 def get_point_from_xy(xy: Dict[str, float]) -> Point:
     return Point(get_coords_from_xy(xy))
 
+def round_coordinates(coords_list: List[tuple], digits=6) -> List[tuple]:
+    return [ (round(coords[0], digits), round(coords[1], digits)) for coords in coords_list]
+
 def project_geom(geom, from_epsg: int = 4326, to_epsg: int = 3879):
     """Projects Shapely geometry object (e.g. Point or LineString) to another CRS. 
     The default conversion is from EPSG 4326 to 3879.
@@ -185,15 +188,17 @@ def as_geojson_feature_collection(features: List[dict]) -> dict:
         "features": features
     }
 
-def get_geojson_feature_from_geom(geom, from_epsg: int = 3879) -> dict:
+def as_geojson_feature(coords: List[tuple]) -> dict:
     """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
     feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
     """
-    geom_wgs = project_geom(geom, from_epsg=from_epsg, to_epsg=4326)
     feature = { 
         'type': 'Feature', 
         'properties': {}, 
-        'geometry': mapping(loads(dumps(geom_wgs, rounding_precision=6)))
+        'geometry': {
+            'coordinates': coords,
+            'type': 'LineString'
+            }
         }
     return feature
 
@@ -221,3 +226,12 @@ def lines_overlap(geom1: LineString, geom2: LineString, tolerance: int = 2, min_
         if (inters_ratio < min_intersect):
             match = False
     return match
+
+def bool_line_starts_at_point(point: Point, line: LineString) -> bool:
+    coords = line.coords
+    first_point = Point(coords[0])
+    last_point = Point(coords[len(coords)-1])
+    if (point.distance(first_point) > point.distance(last_point)):
+        return False
+    else: 
+        return True

@@ -17,7 +17,7 @@ debug: bool = True
 # initialize graph
 start_time = time.time()
 G = GraphHandler(subset=True)
-G.set_graph_noise_costs()
+G.set_noise_costs_to_edges()
 
 # setup scheduled graph updater
 def edge_attr_update():
@@ -41,9 +41,9 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
     path_finder = PathFinder('quiet', G, from_lat, from_lon, to_lat, to_lon, debug=debug)
 
     try:
-        path_finder.find_origin_dest_nodes(debug=debug)
+        path_finder.find_origin_dest_nodes()
         path_finder.find_least_cost_paths()
-        path_FC = path_finder.process_paths_to_FC(edges=False)
+        path_FC, edge_FC = path_finder.process_paths_to_FC()
 
     except Exception as e:
         # PathFinder throws only pretty exception strings so they can be sent to UI
@@ -56,7 +56,7 @@ def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
         if (error is not None):
             return error
 
-    return jsonify({ 'path_FC': path_FC })
+    return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')

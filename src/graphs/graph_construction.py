@@ -214,7 +214,7 @@ start_time = time.time()
 sens = noise_exps.get_noise_sensitivities()
 db_costs = noise_exps.get_db_costs()
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'], by_nodes=False)
-graph_utils.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, sens=sens)
+graph_utils.set_noise_costs_to_edges(graph, edge_gdf, db_costs=db_costs, sens=sens)
 # get full number of edges (undirected edges x 2)
 edge_gdf_all = graph_utils.get_edge_gdf(graph, by_nodes=True)
 # check that set noise costs are ok

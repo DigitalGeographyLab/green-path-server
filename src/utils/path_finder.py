@@ -43,7 +43,7 @@ class PathFinder:
         self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
         self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)
 
-    def find_origin_dest_nodes(self, debug=False):
+    def find_origin_dest_nodes(self):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
 
         Raises:
@@ -52,7 +52,7 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                self.G, self.from_xy, self.to_xy, self.sens, self.db_costs, debug=debug)
+                self.G, self.from_xy, self.to_xy, self.sens, self.db_costs, debug=self.debug_mode)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
@@ -78,12 +78,12 @@ class PathFinder:
                 noise_cost_attr = 'nc_'+ str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
                 self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
-            utils.print_duration(start_time, 'routing done')
+            utils.print_duration(start_time, 'routing done', unit='ms')
         except Exception:
             traceback.print_exc()
             raise Exception('Could not find paths')
 
-    def process_paths_to_FC(self, edges: bool = False) -> dict:
+    def process_paths_to_FC(self, edges: bool = True) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
         paths based on geometries and length. 
 
@@ -100,16 +100,16 @@ class PathFinder:
             self.path_set.set_path_noise_attrs(self.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
             self.path_set.set_green_path_diff_attrs()
-            utils.print_duration(start_time, 'aggregated paths')
+            utils.print_duration(start_time, 'aggregated paths', unit='ms')
             
             start_time = time.time()
             path_FC = self.path_set.get_paths_as_feature_collection()
-            utils.print_duration(start_time, 'processed paths to FC')
+            utils.print_duration(start_time, 'processed paths to FC', unit='ms')
             
             if (edges == True):
                 start_time = time.time()
                 edge_FC = self.path_set.get_edges_as_feature_collection()
-                utils.print_duration(start_time, 'processed edges to FC')
+                utils.print_duration(start_time, 'processed edges to FC', unit='ms')
 
             if (self.debug_mode == True):
                 with open('debug/path_fc.geojson', 'w') as outfile:

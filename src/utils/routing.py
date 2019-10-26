@@ -48,7 +48,7 @@ def get_nearest_node(G: GraphHandler, xy: Dict[str, float], link_edges: dict = N
         raise Exception('Nearest edge not found')
     nearest_node = G.find_nearest_node(point, debug=debug)
     start_time = time.time()
-    nearest_node_geom = geom_utils.get_point_from_xy(G.graph.nodes[nearest_node])
+    nearest_node_geom = G.get_node_point_geom(nearest_node)
     nearest_edge_point = geom_utils.get_closest_point_on_line(nearest_edge['geometry'], point)
     # return the nearest node if it is as near (or nearer) as the nearest edge (i.e. at the end of an edge)
     if (nearest_edge_point.distance(nearest_node_geom) < 1 or nearest_node_geom.distance(point) < nearest_edge['geometry'].distance(point)):

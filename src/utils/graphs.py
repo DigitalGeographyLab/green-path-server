@@ -146,3 +146,25 @@ def update_edge_attr_to_graph(graph, edge_df, df_attr: str = None, edge_attr: st
     """
     for edge in edge_df.itertuples():
         nx.set_edge_attributes(graph, { getattr(edge, 'uvkey'): { edge_attr: getattr(edge, df_attr)}})
+
+def get_ordered_edge_line_coords(node_point: Point, edge: dict) -> List[tuple]:
+    """Returns the coordinates of the line geometry of an edge. The list of coordinates is ordered so that the 
+    first point is at the same location as [node_from]. 
+    """
+    edge_line = edge['geometry']
+    if (geom_utils.bool_line_starts_at_point(node_point, edge_line)):
+        return edge_line.coords
+    else:
+        return edge_line.coords[::-1]
+
+def get_least_cost_edge(edges: List[dict], cost_attr: str) -> dict:
+    """Returns the least cost edge from a set of edges (dicts) by an edge cost attribute.
+    """
+    if (len(edges) == 1):
+        return next(iter(edges.values()))
+    s_edge = next(iter(edges.values()))
+    for edge_k in edges.keys():
+        if (cost_attr in edges[edge_k].keys() and cost_attr in s_edge.keys()):
+            if (edges[edge_k][cost_attr] < s_edge[cost_attr]):
+                s_edge = edges[edge_k]
+    return s_edge

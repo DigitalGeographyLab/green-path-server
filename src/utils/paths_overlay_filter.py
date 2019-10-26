@@ -13,8 +13,8 @@ def get_path_overlay_candidates_by_len(param_path: Path, all_paths: List[Path], 
     compared to the length of [path]. If [all_paths] contains [param_path], the latter is included in the returned list.
     """
     overlay_candidates = [path for path in all_paths if (path.length < (param_path.length + len_diff)) & (path.length > (param_path.length - len_diff))]
-    if (debug == True): 
-        if (len(overlay_candidates) > 1): print('found', len(overlay_candidates), "overlap candidates paths for:", param_path.name)
+    # if (debug == True): 
+    #     if (len(overlay_candidates) > 1): print('found', len(overlay_candidates), "overlap candidates paths for:", param_path.name)
     return overlay_candidates
 
 def get_overlapping_paths(param_path: Path, compare_paths: List[Path], buffer_m: int = None, debug: bool = False) -> List[Path]:
@@ -41,7 +41,7 @@ def get_least_cost_path(paths: List[Path], cost_attr: str = 'nei_norm', debug=Fa
         if (cost_attr == 'nei_norm'):
             return path.noise_attrs.nei_norm
     ordered.sort(key=get_cost)
-    if (debug == True): print('got least cost path', ordered[0].name, 'with cost:', get_cost(ordered[0]), cost_attr, 'from:', [get_cost(path) for path in ordered])
+    # if (debug == True): print('got least cost path', ordered[0].name, 'with cost:', get_cost(ordered[0]), cost_attr, 'from:', [get_cost(path) for path in ordered])
     return ordered[0]
 
 def get_unique_paths_by_geom_overlay(all_paths: List[Path], buffer_m: int = None, cost_attr: str = 'nei_norm', debug: bool = True) -> List[str]:
@@ -72,5 +72,5 @@ def get_unique_paths_by_geom_overlay(all_paths: List[Path], buffer_m: int = None
             paths_already_overlapped += [path.name for path in overlapping_paths]
 
     if (debug == True): print('filtered', len(filtered_paths_names), 'unique paths from', len(all_paths), 'unique paths by overlay')
-    if (debug == True): utils.print_duration(start_time, 'path overlay filtering done')
+    if (debug == True): utils.print_duration(start_time, 'path overlay filtering done', unit='ms')
     return filtered_paths_names

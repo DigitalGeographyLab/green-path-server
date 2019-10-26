@@ -15,7 +15,7 @@ debug: bool = True
 # load graph data
 start_time = time.time()
 G = GraphHandler(subset=True)
-G.set_graph_noise_costs()
+G.set_noise_costs_to_edges()
 
 # setup scheduled graph updater
 # def edge_attr_update():
@@ -72,7 +72,8 @@ class TestQuietPaths(unittest.TestCase):
             'nei_diff_rat': -26.2,
             'path_score': 3.9,
             'noise_diff_sum': -219.06,
-            'noise_pcts_sum': 100.0
+            'noise_pcts_sum': 100.0,
+            'geom_length': 1671.5
             }
         test_stats = get_quiet_path_stats(G, od_dict[5])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
@@ -82,7 +83,7 @@ class TestQuietPaths(unittest.TestCase):
         set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 1024.9, 'qp_len_sum': 5385.1, 'noise_total_len': 5759.3 }
         qp_stats = {
             'id': 'q_1',
-            'length': 1081.79,
+            'length': 1081.78,
             'len_diff': 56.9,
             'len_diff_rat': 5.6,
             'cost_coeff': 1,
@@ -94,7 +95,8 @@ class TestQuietPaths(unittest.TestCase):
             'nei_diff_rat': -22.5,
             'path_score': 1.4,
             'noise_diff_sum': 56.92,
-            'noise_pcts_sum': 100.1
+            'noise_pcts_sum': 100.1,
+            'geom_length': 1081.8
             }
         test_stats = get_quiet_path_stats(G, od_dict[6])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
