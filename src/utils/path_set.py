@@ -67,7 +67,6 @@ class PathSet:
     def filter_paths_by_names(self, filter_names: List[str]):
         """Filters out short / green paths by list of path names to keep.
         """
-        if (self.debug_mode == True): print('filter paths by', len(filter_names),'names:', filter_names)
         filtered_green_paths = [path for path in self.green_paths if path.name in filter_names]
         if ('short_p' not in filter_names):
             if (self.debug_mode == True): print('replace shortest path with shortest green path')
@@ -76,7 +75,6 @@ class PathSet:
             shortest_green_path.set_path_name('short_p')
             self.set_shortest_path(shortest_green_path)
             filtered_green_paths = filtered_green_paths[1:]
-        if (self.debug_mode == True): print('replace', len(self.green_paths), 'green paths with', len(filtered_green_paths),'overlay filtered paths')
         self.green_paths = filtered_green_paths
 
     def set_path_noise_attrs(self, db_costs):
@@ -95,10 +93,9 @@ class PathSet:
     def get_edges_as_feature_collection(self):
         if (self.set_type == 'quiet'):
             edge_group_attr = 'dBrange'
-        start_time = time.time()
+        
         for path in [self.shortest_path] + self.green_paths:
             path.aggregate_edge_groups_by_attr(edge_group_attr)
-        utils.print_duration(start_time, 'aggregated edge groups')
         
         feat_lists = [path.get_edge_groups_as_features() for path in [self.shortest_path] + self.green_paths]
 
