@@ -1,11 +1,57 @@
+"""
+This module provides various functions for assessing and calculating expsoures to traffic noise. 
+The functions are useful in calculating noise costs for quiet path route optimization and in comparing exposures to noise
+between paths.
+
+"""
+
+from typing import List, Set, Dict, Tuple
+import ast
 import pandas as pd
 import geopandas as gpd
-import matplotlib.pyplot as plt
-import numpy as np
-import ast
+from shapely.geometry import LineString
 import utils.geometry as geom_utils
 
-def add_noises_to_split_lines(noise_polygons, split_lines):
+def get_db_costs() -> Dict[int, float]:
+    """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
+    (Alternative noise costs can be calculated by multiplying the base noise cost with different noise sensitivities 
+    from get_noise_sensitivities())
+
+    Returns:
+        A dictionary of noise cost coefficients where the keys are the lower boundaries of the 5 dB ranges 
+        (e.g. key 50 refers to 50-55 dB range) and the values are the dB-specific noise cost coefficients.
+    """
+    return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
+
+def get_noise_sensitivities(subset: bool = False) -> List[float]:
+    """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
+    subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
+
+    Args:
+        subset: A boolean variable indicating whether a subset of sensitivities should be returned.
+    Note:
+        The subset should only contain values that are present in the full set as the full set is used to assign the
+        cost attributes to the graph.
+    Returns:
+        A list of noise sensitivity coefficients.
+    """
+    if (subset == True):
+        return [ 0.2, 0.5, 1, 3, 6, 10, 20 ]
+    else:
+        return [ 0.2, 0.5, 1, 3, 6, 10, 20, 35 ]
+
+def add_noises_to_split_lines(noise_polygons: gpd.GeoDataFrame, split_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Performs a spatial join of noise values (from noise polygons) to LineString objects based on
+    spatial intersection of the center points of the lines and the noise polygons.
+
+    Note:
+        The polygons in the noise_polygons GeoDataFrame should not overlap. However, they sometimes do and hence
+        the result of the spatial join needs to be filtered from duplicate noise values for some lines. In removing
+        the duplicate noise values, higher noise values are retained. 
+
+    Returns:
+        The result of the spatial join as a GeoDataFrame with the added columns from noise polygons (db_lo & db_hi).
+    """
     split_lines['split_line_index'] = split_lines.index
     split_lines['geom_line'] = split_lines['geometry']
     split_lines['geom_point'] = [geom_utils.get_line_middle_point(geom) for geom in split_lines['geometry']]
@@ -17,12 +63,14 @@ def add_noises_to_split_lines(noise_polygons, split_lines):
         line_noises = line_noises.drop_duplicates(subset=['split_line_index'], keep='first')
     return line_noises[['geometry', 'length', 'db_lo', 'db_hi', 'index_right']]
 
-def get_exposure_lines(line_geom, noise_polys):
+def get_noise_exposure_lines(line_geom: LineString, noise_polys: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """TODO: check if this is needed anymore.
+    """
     split_lines = geom_utils.get_split_lines_gdf(line_geom, noise_polys)
     if (split_lines.empty):
         return gpd.GeoDataFrame()
     line_noises = add_noises_to_split_lines(noise_polys, split_lines)
-    line_noises = line_noises.fillna(40)
+    line_noises = line_noises.fillna({ 'db_lo': 40 })
     len_error = abs(line_geom.length - line_noises['length'].sum())
     if (len_error > 0.1):
         print('len_error:', len_error)
@@ -30,7 +78,9 @@ def get_exposure_lines(line_geom, noise_polys):
         print(' line noises sum len:', line_noises['length'].sum())
     return line_noises
 
-def get_exposures(line_noises):
+def get_exposures(line_noises: gpd.GeoDataFrame) -> Dict[int, float]:
+    """Aggregates exposures (contaminated distances) to different traffic noise levels to a dictionary.
+    """
     if (len(line_noises.index) == 0):
         return {}
     noise_dict = {}
@@ -40,7 +90,9 @@ def get_exposures(line_noises):
         noise_dict[int(key)] = tot_len
     return noise_dict
 
-def get_th_exposures(noise_dict, ths):
+def get_th_exposures(noise_dict: dict, ths: List[int]) -> Dict[int, float]:
+    """Aggregates exposures to traffic noise levels exceeding the traffic noise levels specified in [ths].
+    """
     th_count = len(ths)
     th_lens = [0] * len(ths)
     for th in noise_dict.keys():
@@ -53,28 +105,57 @@ def get_th_exposures(noise_dict, ths):
         th_noise_dict[ths[idx]] = round(th_lens[idx],3)
     return th_noise_dict
 
-def get_noise_pcts(noise_dict, total_length):
-    noise_dists = {}
-    db_40_len = round(total_length - get_total_noises_len(noise_dict),1)
+def get_noise_range(dB: float) -> int:
+    """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
+    """
+    if dB >= 70.0: return 70
+    elif dB >= 65.0: return 65
+    elif dB >= 60.0: return 60
+    elif dB >= 55.0: return 55
+    elif dB >= 50.0: return 50
+    else: return 40
+
+def get_noise_range_pcts(noises: dict, total_length: float) -> Dict[int, float]:
+    """Calculates percentages of aggregated exposures to different noise levels of total length.
+
+    Note:
+        Noise levels exceeding 70 dB are aggregated and as well as noise levels lower than 50 dB. 
+    Returns:
+        A dictionary containing noise level values with respective percentages.
+        (e.g. { 50: 35, 60: 65 })
+    """
+    # interpolate 40 dB distance
+    noise_dists = dict(noises)
+    db_40_len = round(total_length - get_total_noises_len(noise_dists), 2)
     if db_40_len > 0:
         noise_dists[40] = db_40_len
-    for noise in noise_dict.keys():
-        noise_dist = noise_dict[noise]
-        if noise == 45:
-            if 40 in noise_dists.keys(): noise_dists[40] += noise_dist
-            else: noise_dists[40] = noise_dist
-        elif noise >= 70:
-            if 70 in noise_dists.keys(): noise_dists[70] += noise_dist
-            else: noise_dists[70] = noise_dist
-        else:
-            noise_dists[noise] = noise_dist
-    noise_pcts = {}
-    for noise in noise_dists.keys():
-        noise_dist = noise_dists[noise]
-        noise_pcts[noise] = round(noise_dist*100/total_length, 1)
-    return noise_pcts
+    
+    # aggregate noise exposures to pre-defined dB-ranges
+    dB_range_lens = {}
+    for dB in noise_dists.keys():
+        dB_range = get_noise_range(dB)
+        if (dB_range in dB_range_lens.keys()): dB_range_lens[dB_range] += noise_dists[dB]
+        else: dB_range_lens[dB_range] = noise_dists[dB]
+    
+    # calculate ratio (%) of each range's length to total length
+    range_pcts = {}
+    for dB_range in dB_range_lens.keys():
+        range_pcts[dB_range] = round(dB_range_lens[dB_range]*100/total_length, 1)
 
-def get_noise_attrs_to_split_lines(gdf, noise_polys):
+    return range_pcts
+
+def get_noise_attrs_to_split_lines(gdf: gpd.GeoDataFrame, noise_polys: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Performs a spatial join of noise values (from noise polygons) to LineString objects based on a
+    spatial intersection of the center points of the lines [gdf] and the noise polygons.
+
+    Note:
+        The polygons in the noise_polygons GeoDataFrame should not overlap. However, they sometimes do and hence
+        the result of the spatial join needs to be filtered from duplicate noise values for some lines. In removing
+        the duplicate noise values, higher noise values are retained. 
+
+    Returns:
+        The result of the spatial join as a GeoDataFrame with the added columns from noise polygons (db_lo & db_hi).
+    """
     gdf['split_line_index'] = gdf.index
     gdf['geometry'] = gdf['mid_point']
     split_line_noises = gpd.sjoin(gdf, noise_polys, how='left', op='intersects')
@@ -83,16 +164,20 @@ def get_noise_attrs_to_split_lines(gdf, noise_polys):
         split_line_noises = split_line_noises.drop_duplicates(subset=['split_line_index'], keep='first')
     return split_line_noises
 
-def aggregate_line_noises(split_line_noises, uniq_id):
+def aggregate_line_noises(split_line_noises: gpd.GeoDataFrame, uniq_id: str) -> pd.DataFrame:
+    """Aggregates noise exposures (contaminated distances) from lines' noise exposures by unique id. 
+    """
     row_accumulator = []
     grouped = split_line_noises.groupby(uniq_id)
     for key, values in grouped:
-        row_d = {uniq_id: key}
+        row_d = { uniq_id: key }
         row_d['noises'] = get_exposures(values)
         row_accumulator.append(row_d)
     return pd.DataFrame(row_accumulator)
 
-def aggregate_exposures(exp_list):
+def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
+    """Aggregates noise exposures (contaminated distances) from a list of noise exposures. 
+    """
     exps = {}
     for exp_d_value in exp_list:
         exp_d = ast.literal_eval(exp_d_value) if type(exp_d_value) == str else exp_d_value
@@ -105,7 +190,9 @@ def aggregate_exposures(exp_list):
         exps[db] = round(exps[db], 2)
     return exps
 
-def get_noises_diff(s_noises, q_noises, full_db_range=True):
+def get_noises_diff(s_noises: Dict[int, float], q_noises: Dict[int, float], full_db_range=True) -> Dict[int, float]:
+    """Calculates the differences in exposures (contaminated distances) to different noise levels between two noise exposure dictionaries.
+    """
     dbs = [40, 45, 50, 55, 60, 65, 70, 75]
     diff_dict = {}
     for db in dbs:
@@ -118,13 +205,17 @@ def get_noises_diff(s_noises, q_noises, full_db_range=True):
         diff_dict[db] = round(noise_diff, 2)
     return diff_dict
 
-def get_total_noises_len(noises):
+def get_total_noises_len(noises: Dict[int, float]) -> float:
+    """Returns a total length of exposures to all noise levels.
+    """
     totlen = 0
     for key in noises.keys():
         totlen += noises[key]
     return round(totlen, 3)
 
-def get_mean_noise_level(noises: dict, length: float):
+def get_mean_noise_level(noises: dict, length: float) -> float:
+    """Returns a mean noise level based on noise exposures weighted by the contaminated distances to different noise levels.
+    """
     sum_db = 0
     # estimate mean dB of 5 dB range to be min dB + 2.5 dB
     for db in noises.keys():
@@ -134,36 +225,44 @@ def get_mean_noise_level(noises: dict, length: float):
     db425len = length - sum_noise_len
     sum_db += 42.5 * db425len
     mean_db = sum_db/length
-    return round(mean_db, 2)
+    return round(mean_db, 1)
 
-def get_noise_cost(noises={}, db_costs={}, nt=1):
+def get_noise_cost(noises: Dict[int, float] = {}, db_costs: Dict[int, float] = {}, sen: float = 1) -> float:
+    """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
+    """
     noise_cost = 0
     for db in noises:
         if (db in db_costs):
-            noise_cost += noises[db] * db_costs[db] * nt
+            noise_cost += noises[db] * db_costs[db] * sen
     return round(noise_cost, 2)
 
-def interpolate_link_noises(link_geom, edge_geom, edge_noises):
+def interpolate_link_noises(link_len_ratio: float, link_geom: LineString, edge_geom: LineString, edge_noises: dict) -> dict:
+    """Interpolates noise exposures for a split edge by multiplying each contaminated distance with a proportion
+    between the edge length to the length of the original edge.
+    """
     link_noises = {}
     link_len_ratio = link_geom.length / edge_geom.length
     for db in edge_noises.keys():
         link_noises[db] = round(edge_noises[db] * link_len_ratio, 3)
     return link_noises
 
-def get_link_edge_noise_cost_estimates(nts, db_costs, edge_dict=None, link_geom=None):
-    cost_attrs = {}
-    # estimate link noises based on link length - edge length -ratio and edge noises
-    cost_attrs['noises'] = interpolate_link_noises(link_geom, edge_dict['geometry'], edge_dict['noises'])
-    # calculate noise tolerance specific noise costs
-    for nt in nts:
-        noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, nt=nt)
-        cost_attrs['nc_'+str(nt)] = round(noise_cost + link_geom.length, 2)
-    noises_sum_len = get_total_noises_len(cost_attrs['noises'])
-    if ((noises_sum_len - link_geom.length) > 0.1):
-        print('link length unmatch:', noises_sum_len, link_geom.length)
+def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom=None) -> dict:
+    """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
+    (from which the edge was split). 
+    """
+    link_len_ratio = link_geom.length / edge_dict['geometry'].length
+    # estimate link costs based on link length - edge length -ratio and edge noises
+    cost_attrs = { 'length': round(edge_dict['length'] * link_len_ratio, 2) }
+    cost_attrs['noises'] = interpolate_link_noises(link_len_ratio, link_geom, edge_dict['geometry'], edge_dict['noises'])
+    # calculate noise sensitivity specific noise costs
+    for sen in sens:
+        noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, sen=sen)
+        cost_attrs['nc_'+str(sen)] = round(noise_cost + link_geom.length, 2)
     return cost_attrs
 
-def compare_lens_noises_lens(edge_gdf):
+def compare_lens_noises_lens(edge_gdf) -> gpd.GeoDataFrame:
+    """Adds new columns to a GeoDataFrame of edges so that the aggregated contaminated distances can be validated against edge lengths. 
+    """
     gdf = edge_gdf.copy()
     gdf['uvkey_str'] = [str(uvkey[0])+'_'+str(uvkey[1]) for uvkey in gdf['uvkey']]
     gdf['node_from'] = [uvkey[0] for uvkey in gdf['uvkey']]

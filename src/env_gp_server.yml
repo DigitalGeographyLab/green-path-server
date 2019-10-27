@@ -1,0 +1,16 @@
+name: gp-server
+
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - pylint
+  - pytest
+  - apscheduler
+  - geopandas
+  - networkx
+  - flask
+  - flask-cors
+  - flask-testing
+  - gunicorn
+  - requests

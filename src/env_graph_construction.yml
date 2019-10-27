@@ -1,0 +1,10 @@
+name: graph-construction
+
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - jupyterlab
+  - pylint
+  - geopandas
+  - osmnx

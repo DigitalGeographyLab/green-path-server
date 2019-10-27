@@ -9,7 +9,7 @@ from fiona.crs import from_epsg
 import utils.files as files
 import utils.geometry as geom_utils
 import utils.graphs as graph_utils
-import utils.quiet_paths as qp
+import utils.graph_acquisition as graph_acq
 import utils.noise_exposures as noise_exps
 import utils.utils as utils
 
@@ -23,7 +23,7 @@ aoi_poly = files.get_hel_poly(WGS84=True, buffer_m=1000)
 #%% 2.1 Get undirected projected graph
 print('\nGraph to construct:', graph_name)
 start_time = time.time()
-graph = graph_utils.get_walkable_network_graph(extent_poly_wgs=aoi_poly)
+graph = graph_acq.get_walkable_network_graph(extent_poly_wgs=aoi_poly)
 utils.print_duration(start_time, 'Graph acquired.', round_n=1)
 
 #%% 2.2 Delete unnecessary edge attributes and get edges as dictionaries
@@ -34,7 +34,7 @@ print('Got all edge dicts:', len(edge_dicts))
 #%% 2.3 Add missing edge geometries to graph
 start_time = time.time()
 def get_edge_geoms(edge_dict):
-    return graph_utils.get_missing_edge_geometries(graph, edge_dict)
+    return graph_utils.add_missing_edge_geometries(graph, edge_dict)
 pool = Pool(processes=4)
 edge_geom_dicts = pool.map(get_edge_geoms, edge_dicts)
 pool.close()
@@ -44,7 +44,7 @@ utils.print_duration(start_time, 'Missing edge geometries added.', round_n=1)
 
 #%% 3.1 Remove unwalkable streets & tunnels from the graph [query graph for filtering]
 print('Query unwalkable network...')
-graph_filt = graph_utils.get_unwalkable_network_graph(extent_poly_wgs=aoi_poly)
+graph_filt = graph_acq.get_unwalkable_network_graph(extent_poly_wgs=aoi_poly)
 filt_edge_dicts = graph_utils.get_all_edge_dicts(graph_filt, by_nodes=False)
 graph_utils.add_missing_edge_geometries(graph_filt, filt_edge_dicts)
 
@@ -162,7 +162,7 @@ def get_edge_noises_df(edge_dicts):
     # add noise split lines as list
     edge_gdf_sub['split_lines'] = [geom_utils.get_split_lines_list(line_geom, noise_polys) for line_geom in edge_gdf_sub['geometry']]
     # explode new rows from split lines column
-    split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf_sub, 'uvkey')
+    split_lines = geom_utils.explode_lines_to_split_lines(edge_gdf_sub, uniq_id='uvkey')
     # join noises to split lines
     split_line_noises = noise_exps.get_noise_attrs_to_split_lines(split_lines, noise_polys)
     # aggregate noises back to edges
@@ -184,7 +184,7 @@ print('Noises extracted by edge geometries.')
 
 #%% 9.3 Update edge noises to graph
 for edge_noises in edge_noise_dfs:
-    graph_utils.update_edge_noises_to_graph(edge_noises, graph)
+    graph_utils.update_edge_attr_to_graph(graph, edge_noises, df_attr='noises', edge_attr='noises')
 print('Noises updated to graph.')
 
 #%% 10. Export graph with edge noises
@@ -211,13 +211,13 @@ else:
 
 #%% 12. Validate exported graph for use in quiet path app
 start_time = time.time()
-nts = qp.get_noise_tolerances()
-db_costs = qp.get_db_costs()
+sens = noise_exps.get_noise_sensitivities()
+db_costs = noise_exps.get_db_costs()
 edge_gdf = graph_utils.get_edge_gdf(graph, attrs=['geometry', 'length', 'noises'], by_nodes=False)
-graph_utils.set_graph_noise_costs(graph, edge_gdf, db_costs=db_costs, nts=nts)
+graph_utils.set_noise_costs_to_edges(graph, edge_gdf, db_costs=db_costs, sens=sens)
 # get full number of edges (undirected edges x 2)
 edge_gdf_all = graph_utils.get_edge_gdf(graph, by_nodes=True)
-#%% check that set noise costs are ok
+# check that set noise costs are ok
 odd_edge_gdf_noise_costs = edge_gdf_all[(edge_gdf_all['nc_0.1'] > 1300) | (edge_gdf_all['nc_0.1'] < 0.02)]
 if (len(odd_edge_gdf_noise_costs) > 0):
     missing_ratio = round((len(odd_edge_gdf_noise_costs)/len(edge_gdf_all)) * 100, 3)

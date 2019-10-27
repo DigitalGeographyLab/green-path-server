@@ -1,76 +1,101 @@
+"""
+This module provides various functions for manipulating objects and data frames with geometry.
+Supported features include e.g. reprojection, finding nearest point on a line and transforming geometries.
+
+"""
+
+from typing import List, Set, Dict, Tuple
 import pandas as pd
 import geopandas as gpd
 import pyproj
-import shapely
+from shapely.wkt import loads, dumps
 from shapely.geometry import mapping, Point, LineString, MultiPolygon, MultiLineString, MultiPoint
 from shapely.ops import split, snap, transform
 from functools import partial
 from fiona.crs import from_epsg
 
-def get_lat_lon_from_coords(coords):
-    return {'lat': coords[1], 'lon': coords[0] }
+def get_lat_lon_from_coords(coords: List[int]) -> Dict[str, float]:
+    return { 'lat': coords[1], 'lon': coords[0] }
 
-def get_lat_lon_from_geom(geom):
-    return {'lat': round(geom.y, 6), 'lon': round(geom.x,6) }
+def get_lat_lon_from_geom(geom: Point) -> Dict[str, float]:
+    return { 'lat': round(geom.y, 6), 'lon': round(geom.x,6) }
 
-def get_coords_from_lat_lon(latLon):
-    return [latLon['lon'], latLon['lat']]
-
-def get_point_from_lat_lon(latLon):
-    return Point(get_coords_from_lat_lon(latLon))
-
-def get_coords_from_xy(xy):
-    return (xy['x'], xy['y'])
-
-def get_point_from_xy(xy):
-    return Point(get_coords_from_xy(xy))
-
-def project_to_etrs(geom, epsg=3879):
-    to_epsg = 'epsg:'+ str(epsg)
-    project = partial(
-        pyproj.transform,
-        pyproj.Proj(init='epsg:4326'), # source coordinate system
-        pyproj.Proj(init=to_epsg)) # destination coordinate system
-    geom_proj = transform(project, geom)
-    return geom_proj
-
-def project_to_wgs(geom, epsg=3879):
-    from_epsg = 'epsg:'+ str(epsg)
-    project = partial(
-        pyproj.transform,
-        pyproj.Proj(init=from_epsg), # source coordinate system
-        pyproj.Proj(init='epsg:4326')) # destination coordinate system
-    geom_proj = transform(project, geom)
-    return geom_proj
-
-def get_xy_from_geom(geom):
-    return { 'x': geom.x, 'y': geom.y }
-
-def get_xy_from_lat_lon(latLon):
+def get_xy_from_lat_lon(latLon: Dict[str, float]) -> Dict[str, float]:
     point = get_point_from_lat_lon(latLon)
-    point_proj = project_to_etrs(point)
+    point_proj = project_geom(point, from_epsg=4326, to_epsg=3879)
     return get_xy_from_geom(point_proj)
 
-def get_closest_point_on_line(line, point):
+def get_xy_from_geom(geom: Point) -> Dict[str, float]:
+    return { 'x': geom.x, 'y': geom.y }
+
+def get_coords_from_lat_lon(latLon: Dict[str, float]) -> List[float]:
+    return [latLon['lon'], latLon['lat']]
+
+def get_coords_from_xy(xy: Dict[str, float]) -> List[float]:
+    return (xy['x'], xy['y'])
+
+def get_point_from_lat_lon(latLon: Dict[str, float]) -> Point:
+    return Point(get_coords_from_lat_lon(latLon))
+
+def get_point_from_xy(xy: Dict[str, float]) -> Point:
+    return Point(get_coords_from_xy(xy))
+
+def round_coordinates(coords_list: List[tuple], digits=6) -> List[tuple]:
+    return [ (round(coords[0], digits), round(coords[1], digits)) for coords in coords_list]
+
+def project_geom(geom, from_epsg: int = 4326, to_epsg: int = 3879):
+    """Projects Shapely geometry object (e.g. Point or LineString) to another CRS. 
+    The default conversion is from EPSG 4326 to 3879.
+    Returns:
+        The projected geometry.
+    """
+    from_epsg_str = 'epsg:'+ str(from_epsg)
+    to_epsg_str = 'epsg:'+ str(to_epsg)
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj(init=from_epsg_str),
+        pyproj.Proj(init=to_epsg_str))
+    geom_proj = transform(project, geom)
+    return geom_proj
+
+def get_closest_point_on_line(line: LineString, point: Point) -> Point:
+    """Finds the closest point on a line to given point and returns it as Point.
+    """
     projected = line.project(point)
     closest_point = line.interpolate(projected)
     return closest_point
 
-def split_line_at_point(line, point):
+def get_split_lines(line: LineString, point: Point) -> List[LineString]:
+    """Splits a line at nearest intersecting point.
+    Returns:
+        A list containing two LineString objects.
+    """
     snap_line = snap(line,point,0.01)
     result = split(snap_line, point)
+    if (len(result) < 2): print('Error in splitting line at point: only one line in the result') 
     return result
 
-def get_inters_points(inters_line):
-    inters_coords = inters_line.coords
-    intersection_line = list(inters_coords)
-    point_geoms = []
-    for coords in intersection_line:
-        point_geom = Point(coords)
-        point_geoms.append(point_geom)
-    return point_geoms
+def split_line_at_point(point_1, point_2, line_geom: LineString, split_point: Point) -> Tuple[LineString]:
+    """Splits the line geometry of an edge to two parts at the location of a new node. Split parts can subsequently be used as linking edges 
+    that connect the new node to the graph.
 
-def get_polygons_under_line(line_geom, polygons):
+    Returns:
+        Tuple containing the geometries of the link edges (LineString, LineString).
+    """
+    edge_first_p = Point(line_geom.coords[0])
+    # split edge at new node to two line geometries
+    split_lines = get_split_lines(line_geom, split_point)
+    if(edge_first_p.distance(point_1) < edge_first_p.distance(point_2)):
+        link1 = split_lines[0]
+        link2 = split_lines[1]
+    else:
+        link1 = split_lines[1]
+        link2 = split_lines[0]
+    return link1, link2
+
+def get_polygons_under_line(line_geom: LineString, polygons: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Returns polygons that intersect the [line_geom] as GeoDataFrame.
+    """
     polygons_sindex = polygons.sindex
     close_polygons_idxs = list(polygons_sindex.intersection(line_geom.buffer(200).bounds))
     close_polygons = polygons.iloc[close_polygons_idxs].copy()
@@ -78,21 +103,31 @@ def get_polygons_under_line(line_geom, polygons):
     polygons_under_line = close_polygons.loc[intersects_mask]
     return polygons_under_line
 
-def get_multipolygon_under_line(line_geom, polygons):
+def get_multipolygon_under_line(line_geom: LineString, polygons: gpd.GeoDataFrame) -> MultiPolygon:
+    """Returns polygons that intersect the [line_geom] as MultiPolygon.
+    """
     polys = get_polygons_under_line(line_geom, polygons)
     geoms = list(polys['geometry'])
     if (len(geoms) == 0):
         return None
     return MultiPolygon(geoms)
 
-def get_split_lines_list(line_geom, polygons):
+def get_split_lines_list(line_geom: LineString, polygons: gpd.GeoDataFrame) -> List[LineString]:
+    """Splits a line geometry at boundaries of polygons.
+    Returns:
+        A list of split lines as LineString objects.
+    """
     multi_polygon = get_multipolygon_under_line(line_geom, polygons)
     if (multi_polygon == None):
         return [line_geom]
     split_line_geom = split(line_geom, multi_polygon)
     return list(split_line_geom)
 
-def get_split_lines_gdf(line_geom, polygons):
+def get_split_lines_gdf(line_geom: LineString, polygons: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Splits a line geometry at boundaries of polygons.
+    Returns:
+        A GeoDataFrame containing the split lines with LineString geometry.
+    """
     multi_polygon = get_multipolygon_under_line(line_geom, polygons)
     if (multi_polygon == None):
         # print('no line-polygon-intersection')
@@ -103,14 +138,16 @@ def get_split_lines_gdf(line_geom, polygons):
     all_split_lines_gdf = gpd.GeoDataFrame(data={'length': lengths}, geometry=line_geoms, crs=from_epsg(3879))
     return all_split_lines_gdf
 
-def explode_multipolygons_to_polygons(polygons_gdf):
+def explode_multipolygons_to_polygons(polygons_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Explodes new rows to GeoDataFrame from found MultiPolygon geometries.
+    """
     all_polygons = []
     db_lows = []
     db_highs = []
-    for idx, row in polygons_gdf.iterrows():
-        geom = row['geometry'] 
-        db_low = row['db_lo'] 
-        db_high = row['db_hi'] 
+    for row in polygons_gdf.itertuples():
+        geom = getattr(row, 'geometry') 
+        db_low = getattr(row, 'db_lo') 
+        db_high = getattr(row, 'db_hi') 
         if (geom.geom_type == 'MultiPolygon'):
             polygons = list(geom.geoms)
             all_polygons += polygons
@@ -124,7 +161,9 @@ def explode_multipolygons_to_polygons(polygons_gdf):
     all_polygons_gdf = gpd.GeoDataFrame(data=data, geometry=all_polygons, crs=from_epsg(3879))
     return all_polygons_gdf
 
-def explode_lines_to_split_lines(line_df, uniq_id):
+def explode_lines_to_split_lines(line_df: pd.DataFrame, uniq_id: str = 'uvkey') -> gpd.GeoDataFrame:
+    """Explodes more rows to DataFrame from list values in column split_lines.
+    """
     row_accumulator = []
     def split_list_to_rows(row):
         for line_geom in row['split_lines']:
@@ -138,31 +177,44 @@ def explode_lines_to_split_lines(line_df, uniq_id):
     new_gdf['mid_point'] = [get_line_middle_point(geom) for geom in new_gdf['geometry']]
     return new_gdf[[uniq_id, 'geometry', 'length', 'mid_point']]
 
-def get_line_middle_point(line_geom):
+def get_line_middle_point(line_geom: LineString) -> Point:
+    """Returns the middle point of a line geometry as Point.
+    """
     return line_geom.interpolate(0.5, normalized = True)
 
-def get_geojson_from_geom(geom):
-    geom_wgs = project_to_wgs(geom)
+def as_geojson_feature_collection(features: List[dict]) -> dict:
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
+
+def as_geojson_feature(coords: List[tuple]) -> dict:
+    """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
+    feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
+    """
     feature = { 
         'type': 'Feature', 
         'properties': {}, 
-        'geometry': mapping(geom_wgs)
+        'geometry': {
+            'coordinates': coords,
+            'type': 'LineString'
+            }
         }
     return feature
 
-def lines_overlap(geom1, geom2, tolerance=2, min_intersect=None):
-    '''
-    Function for testing if two lines overlap within small tolerance.
-    Note: partial overlap is accepted as line lengths don't need to match.
+def lines_overlap(geom1: LineString, geom2: LineString, tolerance: int = 2, min_intersect: float = None) -> bool:
+    """Tests if two lines overlap.
 
+    Note: 
+        A partial overlap can be accepted - line lengths don't need to match.
     Args:
-        geom1 (LineString)
-        geom2 (LineString)
-        tolerance (int): tolerance in meters
-        min_intersect (float): 
+        geom1: (LineString).
+        geom2: (LineString).
+        tolerance (int): A tolerance in meters - the geometries will be buffered with the tolerance.
+        min_intersect: A minimum instersecton between the buffered geometries (1=full, 0.5=half).
     Returns:
-        bool
-    '''
+        A boolean value indicating whether the two geometries overlap with respect to the specified requirements.
+    """
     buffer1 = geom1.buffer(tolerance)
     buffer2 = geom2.buffer(tolerance)
     match = False
@@ -175,3 +227,11 @@ def lines_overlap(geom1, geom2, tolerance=2, min_intersect=None):
             match = False
     return match
 
+def bool_line_starts_at_point(point: Point, line: LineString) -> bool:
+    coords = line.coords
+    first_point = Point(coords[0])
+    last_point = Point(coords[len(coords)-1])
+    if (point.distance(first_point) > point.distance(last_point)):
+        return False
+    else: 
+        return True
