@@ -8,6 +8,8 @@ import utils.utils as utils
 from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
 
+# version: 1.0.1
+
 app = Flask(__name__)
 CORS(app)
 
@@ -16,7 +18,7 @@ debug: bool = True
 
 # initialize graph
 start_time = time.time()
-G = GraphHandler(subset=True)
+G = GraphHandler(subset=False)
 G.set_noise_costs_to_edges()
 
 # setup scheduled graph updater
@@ -26,7 +28,7 @@ def edge_attr_update():
 
 graph_updater = BackgroundScheduler()
 graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
-graph_updater.start()
+# graph_updater.start()
 
 utils.print_duration(start_time, 'graph initialized')
 
