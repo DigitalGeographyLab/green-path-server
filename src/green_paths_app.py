@@ -34,11 +34,11 @@ utils.print_duration(start_time, 'graph initialized')
 def hello_world():
     return 'Keep calm and walk quiet paths.'
 
-@app.route('/quietpaths/<from_lat>,<from_lon>/<to_lat>,<to_lon>')
-def get_short_quiet_paths(from_lat, from_lon, to_lat, to_lon):
+@app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
 
     error = None
-    path_finder = PathFinder('quiet', G, from_lat, from_lon, to_lat, to_lon, debug=debug)
+    path_finder = PathFinder('quiet', G, orig_lat, orig_lon, dest_lat, dest_lon, debug=debug)
 
     try:
         path_finder.find_origin_dest_nodes()
