@@ -19,29 +19,23 @@ class PathFinder:
         Implement AQI based routing.
     """
 
-    def __init__(self, finder_type: str, G: GraphHandler, from_lat, from_lon, to_lat, to_lon, debug: bool = False):
+    def __init__(self, finder_type: str, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon, debug: bool = False):
         self.finder_type: str = finder_type # either 'quiet' or 'clean'
         self.G = G
-        self.from_latLon = {'lat': float(from_lat), 'lon': float(from_lon)}
-        self.to_latLon = {'lat': float(to_lat), 'lon': float(to_lon)}
-        print('initializing path finder from', self.from_latLon, 'to', self.to_latLon)
-        self.from_xy = geom_utils.get_xy_from_lat_lon(self.from_latLon)
-        self.to_xy = geom_utils.get_xy_from_lat_lon(self.to_latLon)
+        orig_latLon = {'lat': float(orig_lat), 'lon': float(orig_lon)}
+        dest_latLon = {'lat': float(dest_lat), 'lon': float(dest_lon)}
+        print('initializing path finder from', orig_latLon, 'to', dest_latLon)
+        self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
+        self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
+        sens_subset = self.orig_point.distance(self.dest_point) > 2000
+        self.sens = noise_exps.get_noise_sensitivities(subset=sens_subset)
         self.db_costs = noise_exps.get_db_costs()
-        self.sens = noise_exps.get_noise_sensitivities()
         self.PathSet = PathSet(set_type=finder_type, debug_mode=debug)
         self.orig_node = None
         self.dest_node = None
         self.orig_link_edges = None
         self.dest_link_edges = None
         self.debug_mode = debug
-    
-    def delete_added_graph_features(self):
-        """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
-        """
-        if (self.debug_mode == True): print("deleting created nodes & edges from the graph")
-        self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
-        self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)
 
     def find_origin_dest_nodes(self):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
@@ -52,7 +46,7 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                self.G, self.from_xy, self.to_xy, self.sens, self.db_costs, debug=self.debug_mode)
+                self.G, self.orig_point, self.dest_point, self.sens, self.db_costs, debug=self.debug_mode)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
@@ -104,12 +98,10 @@ class PathFinder:
             
             start_time = time.time()
             path_FC = self.path_set.get_paths_as_feature_collection()
-            utils.print_duration(start_time, 'processed paths to FC', unit='ms')
-            
-            if (edges == True):
-                start_time = time.time()
+            if (edges == True): 
                 edge_FC = self.path_set.get_edges_as_feature_collection()
-                utils.print_duration(start_time, 'processed edges to FC', unit='ms')
+            
+            utils.print_duration(start_time, 'processed paths & edges to FC', unit='ms')
 
             if (self.debug_mode == True):
                 with open('debug/path_fc.geojson', 'w') as outfile:
@@ -123,3 +115,10 @@ class PathFinder:
         except Exception:
             traceback.print_exc()
             raise Exception('Error in processing paths')
+
+    def delete_added_graph_features(self):
+        """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
+        """
+        if (self.debug_mode == True): print("deleting created nodes & edges from the graph")
+        self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
+        self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)

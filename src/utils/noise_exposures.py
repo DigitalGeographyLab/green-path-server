@@ -23,14 +23,22 @@ def get_db_costs() -> Dict[int, float]:
     """
     return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
 
-def get_noise_sensitivities() -> List[float]:
+def get_noise_sensitivities(subset: bool = False) -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
-    
+
+    Args:
+        subset: A boolean variable indicating whether a subset of sensitivities should be returned.
+    Note:
+        The subset should only contain values that are present in the full set as the full set is used to assign the
+        cost attributes to the graph.
     Returns:
         A list of noise sensitivity coefficients.
     """
-    return [ 0.1, 0.15, 0.25, 0.5, 1, 1.5, 2, 4, 6, 10, 20, 40 ]
+    if (subset == True):
+        return [ 0.2, 0.5, 1, 3, 6, 10, 20 ]
+    else:
+        return [ 0.2, 0.5, 1, 3, 6, 10, 20, 35 ]
 
 def add_noises_to_split_lines(noise_polygons: gpd.GeoDataFrame, split_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Performs a spatial join of noise values (from noise polygons) to LineString objects based on
