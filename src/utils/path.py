@@ -78,7 +78,7 @@ class Path:
             group_coords = [coord for edge in group[1] for coord in edge['coords_wgs']]
             group_coords = geom_utils.round_coordinates(group_coords, digits=6)       
             feature = geom_utils.as_geojson_feature(group_coords)
-            feature['properties'] = { 'value': group[0], 'path': self.name, 'len_diff': self.len_diff }
+            feature['properties'] = { 'value': group[0], 'path': self.name, 'p_len_diff': self.len_diff, 'p_length': self.length }
             features.append(feature)
         return features
 

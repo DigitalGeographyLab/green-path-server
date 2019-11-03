@@ -57,7 +57,7 @@ class TestQuietPaths(unittest.TestCase):
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_5(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 1648.8, 'qp_len_sum': 7437.2, 'noise_total_len': 6735.1 }
+        set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 1648.8, 'qp_len_sum': 5738.1, 'noise_total_len': 5481.6 }
         qp_stats = {
             'id': 'q_1',
             'length': 1671.45,
@@ -103,12 +103,12 @@ class TestQuietPaths(unittest.TestCase):
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
 
     def test_quiet_path_7(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 2, 'sp_len': 1054.2, 'qp_len_sum': 2704.9, 'noise_total_len': 3322.0 }
+        set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 1054.2, 'qp_len_sum': 1366.4, 'noise_total_len': 2197.1 }
         test_stats = get_quiet_path_stats(G, od_dict[7])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_8(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 799.6, 'qp_len_sum': 3925.4, 'noise_total_len': 3252.8 }
+        set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 799.6, 'qp_len_sum': 3818.8, 'noise_total_len': 3247.4 }
         test_stats = get_quiet_path_stats(G, od_dict[8])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 

@@ -71,11 +71,11 @@ class GraphHandler:
             self.update_edge_attr_to_graph(edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
     
-    def update_current_time_to_graph(self):
+    def update_current_time_to_graph(self, debug: bool = False):
         timenow = datetime.now().strftime("%H:%M:%S")
         self.edge_gdf['updatetime'] =  timenow
         self.update_edge_attr_to_graph(self.edge_gdf, df_attr='updatetime', edge_attr='updatetime')
-        print('updated graph at:', timenow)
+        if (debug == True): print('updated graph at:', timenow)
 
     def update_edge_attr_to_graph(self, edge_updates, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
