@@ -8,23 +8,23 @@ import utils.utils as utils
 from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
 
-# version: 1.0.1
+# version: 1.1.0
 
 app = Flask(__name__)
 CORS(app)
 
 graph_aqi_update_interval_secs: int = 20
-debug: bool = True
+debug: bool = False
 
 # initialize graph
 start_time = time.time()
-G = GraphHandler(subset=True)
+G = GraphHandler(subset=False)
 G.set_noise_costs_to_edges()
 
 # setup scheduled graph updater
 def edge_attr_update():
     # TODO load AQI layer, calculate & update AQI costs to graph
-    G.update_current_time_to_graph()
+    G.update_current_time_to_graph(debug)
 
 graph_updater = BackgroundScheduler()
 graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
