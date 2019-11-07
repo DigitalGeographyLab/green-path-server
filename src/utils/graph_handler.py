@@ -51,7 +51,7 @@ class GraphHandler:
     def set_edge_wgs_geoms(self):
         edge_updates = self.edge_gdf.copy()
         edge_updates = edge_updates.to_crs(epsg=4326)
-        self.update_edge_attr_to_graph(edge_updates, df_attr='geometry', edge_attr='geom_wgs')
+        self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='geometry', edge_attr='geom_wgs')
 
     def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
@@ -68,23 +68,25 @@ class GraphHandler:
             cost_attr = 'nc_'+str(sen)
             edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_updates['noises']]
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
-            self.update_edge_attr_to_graph(edge_updates, df_attr='n_cost', edge_attr=cost_attr)
+            self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
     
     def update_current_time_to_graph(self, debug: bool = False):
         timenow = datetime.now().strftime("%H:%M:%S")
         self.edge_gdf['updatetime'] =  timenow
-        self.update_edge_attr_to_graph(self.edge_gdf, df_attr='updatetime', edge_attr='updatetime')
+        self.update_edge_attr_to_graph(df_attr='updatetime', edge_attr='updatetime')
         if (debug == True): print('updated graph at:', timenow)
 
-    def update_edge_attr_to_graph(self, edge_updates, df_attr: str = None, edge_attr: str = None):
+    def update_edge_attr_to_graph(self, edge_gdf = None, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
 
         Args:
             df_attr: The name of the column in [edge_df] from which the values for the new edge attribute are read. 
             edge_attr: A name for the edge attribute to which the new attribute values are set.
         """
-        for edge in edge_updates.itertuples():
+        if (edge_gdf is None):
+            edge_gdf = self.edge_gdf
+        for edge in edge_gdf.itertuples():
             nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: getattr(edge, df_attr)}})
 
     def get_node_point_geom(self, node: int) -> Point:
