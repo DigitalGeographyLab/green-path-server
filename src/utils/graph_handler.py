@@ -52,6 +52,8 @@ class GraphHandler:
         edge_updates = self.edge_gdf.copy()
         edge_updates = edge_updates.to_crs(epsg=4326)
         self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='geometry', edge_attr='geom_wgs')
+        # add wgs point geom of center points of the edges for joining AQI
+        self.edge_gdf['center_wgs'] = [geom_utils.get_line_middle_point(line) for line in edge_updates['geometry']]
 
     def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
