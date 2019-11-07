@@ -6,6 +6,8 @@ import pandas as pd
 import datetime
 import rasterio
 from datetime import datetime
+import utils.geometry as geom_utils
+from utils.graph_handler import GraphHandler
 
 class AqiProcessor:
     """
@@ -77,3 +79,10 @@ class AqiProcessor:
         # save AQI to raster (.tif geotiff file recommended)
         AQI = AQI.rio.set_crs('epsg:4326')
         AQI.rio.to_raster(outputfile)
+
+    def aqi_sjoin_aqi_to_edges(self, G: GraphHandler, aqi_file: str):
+        aqi_raster = rasterio.open(aqi_file)
+        coords = [(x,y) for x, y in zip([point.x for point in G.edge_gdf['center_wgs']], [point.y for point in G.edge_gdf['center_wgs']])]
+        coords = geom_utils.round_coordinates(coords)
+        G.edge_gdf['aqi'] = [x.item() for x in aqi_raster.sample(coords)]
+        G.update_edge_attr_to_graph(df_attr='aqi', edge_attr='aqi')
