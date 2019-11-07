@@ -30,8 +30,9 @@ class AqiProcessor:
         self.AWS_SECRET_ACCESS_KEY = creds['Secret access key'][0]
 
     def fetch_enfuser(self, outpath):
-        """Downloads a current zip file containing multiple netcdf files to a directory. 
-        Do not type a filename for the output as the filename is automatically defined by the function.
+        """Downloads the current zip file containing multiple netcdf files to a directory. 
+        Note:
+            Filename for the exported zip file is defined by the function - only a folder name is needed as the outpath.
         """
         # connect to S3
         s3 = boto3.client('s3',
@@ -62,19 +63,17 @@ class AqiProcessor:
                 archive.extract(file, outpath)
 
     def aqi_to_raster(self, inputfile, outputfile):
-        """Converts the netCDF file to a georeferenced raster file. xarray and rioxarray automatically scale  and offset 
+        """Converts a netCDF file to a georeferenced raster file. xarray and rioxarray automatically scale  and offset 
         each netCDF file opened with proper values from the file itself. No manual scaling or adding offset required.
         CRS of the exported GeoTiff is set to WGS84.
-        """
-        
-        # Read .nc file containing the AQI layer as multidimensional array
+        """        
+        # Read .nc file containing the AQI layer as a multidimensional array
         data = xarray.open_dataset(inputfile)
                 
         # Retrieve AQI, AQI.data has shape (time, lat, lon)
         # the values are automatically scaled and offset AQI values
         AQI = data['AQI']
-        AQI = AQI.rio.set_crs('epsg:4326')
-        print('AQI crs', AQI.rio.crs)
-        
+
         # save AQI to raster (.tif geotiff file recommended)
+        AQI = AQI.rio.set_crs('epsg:4326')
         AQI.rio.to_raster(outputfile)

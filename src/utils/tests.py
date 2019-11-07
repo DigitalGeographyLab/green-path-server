@@ -4,7 +4,7 @@ This module provides functions needed in the tests.
 """
 
 from typing import List, Set, Dict, Tuple, Optional
-from flask import jsonify
+# from flask import jsonify
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import shape, GeometryCollection
@@ -85,7 +85,7 @@ def get_short_quiet_paths(G, from_latLon, to_latLon, logging=False) -> dict:
         path_finder.find_least_cost_paths()
         path_FC, edge_FC = path_finder.process_paths_to_FC()
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return None # jsonify({'error': str(e)})
     finally:
         path_finder.delete_added_graph_features()
 
