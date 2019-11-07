@@ -25,10 +25,13 @@ This project is used as a backend for the web map application of the green path 
 $ git clone git@github.com:DigitalGeographyLab/hope-green-path-server.git
 $ cd hope-green-path-server/src
 
-# create environment for graph construction
+# create an environment for graph construction
 $ conda env create -f env_graph_construction.yml
 
-# create environment for green path server
+# create an environment for aqi processor
+$ conda env create -f env_aqi_processing.yml
+
+# create an environment for green path server
 $ conda env create -f env_gp_server.yml
 ```
 
@@ -42,6 +45,10 @@ $ python green_paths_app.py
 ```
 $ cd hope-green-path-server/src
 $ conda activate gp-server
+
 $ python test_green_paths_app.py -b
 $ python -m pytest test_utils.py
+
+$ conda activate aqi-processing
+$ python test_aqi_processor.py -b
 ```

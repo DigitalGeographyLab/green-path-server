@@ -1,0 +1,17 @@
+name: aqi-processing
+
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - pylint
+  - pytest
+  - jupyterlab
+  - apscheduler
+  - geopandas
+  - networkx
+  - requests
+  - rasterio
+  - rioxarray
+  - xarray
+  - boto3
