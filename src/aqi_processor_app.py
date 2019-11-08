@@ -18,6 +18,7 @@ def process_aqi_updates_to_csv():
     aqi_raster = AQI.convert_aqi_nc_to_raster(aqi_nc)
     AQI.fillna_in_raster(aqi_raster, na_val=1.0)
     edge_aqi_updates_file = AQI.create_edge_aqi_update_csv(G, aqi_raster)
+    AQI.remove_temp_files()
     return edge_aqi_updates_file
 
 edge_aqi_updates_file = process_aqi_updates_to_csv()

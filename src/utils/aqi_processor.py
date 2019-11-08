@@ -1,3 +1,4 @@
+import os
 import zipfile
 import rioxarray
 import xarray
@@ -32,6 +33,7 @@ class AqiProcessor:
         self.region = 'eu-central-1'
         self.AWS_ACCESS_KEY_ID: str = ''
         self.AWS_SECRET_ACCESS_KEY: str = ''
+        self.files_to_rm: list = []
 
     def set_aws_secrets(self) -> None:
         creds = pd.read_csv('credentials.csv', sep=',', encoding='utf-8')
@@ -112,6 +114,7 @@ class AqiProcessor:
         aqi_date_str = aqi_nc[:-3][-13:]
         raster_name = 'aqi_'+ aqi_date_str +'.tif'
         aqi.rio.to_raster(self.aqi_dir + raster_name)
+        self.files_to_rm.append(raster_name)
         return raster_name
 
     def fillna_in_raster(self, aqi_file: str, na_val: float = 1.0) -> None:
@@ -165,7 +168,7 @@ class AqiProcessor:
         coords = [(x,y) for x, y in zip([point.x for point in G.edge_gdf['center_wgs']], [point.y for point in G.edge_gdf['center_wgs']])]
         coords = geom_utils.round_coordinates(coords)
         # extract aqi values at coordinates from raster using sample method from rasterio
-        G.edge_gdf['aqi'] = [round(x.item(),2) for x in aqi_raster.sample(coords)]
+        G.edge_gdf['aqi'] = [round(x.item(), 3) for x in aqi_raster.sample(coords)]
         
         # save edge keys and corresponding aqi values as csv for later use
         edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi']].copy())
@@ -174,3 +177,15 @@ class AqiProcessor:
         edge_aqi_updates_df.to_csv(self.aqi_dir + aqi_edge_updates_csv, index=False)
 
         return aqi_edge_updates_csv
+
+    def remove_temp_files(self):
+        rm_count = 0
+        error_count = 0
+        for rm_filename in self.files_to_rm:
+            try:
+                os.remove(self.aqi_dir + rm_filename)
+                rm_count += 1
+            except Exception:
+                error_count += 1
+                pass
+        print('removed', rm_count, 'temp files of', len(self.files_to_rm))
