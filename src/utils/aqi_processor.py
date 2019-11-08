@@ -44,8 +44,8 @@ class AqiProcessor:
         # define a filename and a key based on the current UTC time e.g. 2019-11-08T11
         curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
         key = 'Finland/pks/allPollutants_' + curdt + '.zip'
-        filename = 'allPollutants_' + curdt + '.zip'
-        return (key, filename)
+        aqi_zip_filename = 'allPollutants_' + curdt + '.zip'
+        return (key, aqi_zip_filename)
 
     def fetch_enfuser_data(self, key: str, filename: str) -> str:
         """Downloads the current zip file containing multiple netcdf files to a directory. 
@@ -61,12 +61,12 @@ class AqiProcessor:
                         aws_access_key_id=self.AWS_ACCESS_KEY_ID,
                         aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
         
-        key, aqi_zip = self.get_current_enfuser_key_filename()
+        key, aqi_zip_filename = self.get_current_enfuser_key_filename()
         
         # download the netcdf file to a specified location
-        file_out = self.aqi_dir + '/' + aqi_zip
-        s3.download_file(key, file_out, Bucket=self.bucketname)
-        return aqi_zip
+        file_out = self.aqi_dir + '/' + aqi_zip_filename
+        s3.download_file(self.bucketname, key, file_out)
+        return aqi_zip_filename
 
     def extract_zipped_aqi(self, aqi_zip: str) -> str:
         """Extracts the contents of a zip file containing netcdf files. 
