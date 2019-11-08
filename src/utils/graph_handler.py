@@ -1,6 +1,8 @@
 from typing import List, Set, Dict, Tuple
 from datetime import datetime
 import time
+import ast
+import pandas as pd
 import geopandas as gpd
 import networkx as nx
 from shapely.ops import nearest_points
@@ -22,9 +24,10 @@ class GraphHandler:
         * Try python-igraph (or other faster) library
     """
 
-    def __init__(self, subset: bool = False):
+    def __init__(self, subset: bool = False, aqi_dir: str = 'aqi_cache/'):
         """Initializes all graph related features needed in routing.
         """
+        self.aqi_dir = aqi_dir
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
         print('graph of', self.graph.size(), 'edges read, subset:', subset)
@@ -72,6 +75,11 @@ class GraphHandler:
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
+
+    def set_aqi_to_edges(self, aqi_updates_csv: str):
+        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters={'uvkey': ast.literal_eval})
+        print(edge_aqi_updates.head(3))
+        self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
     
     def update_current_time_to_graph(self, debug: bool = False):
         timenow = datetime.now().strftime("%H:%M:%S")

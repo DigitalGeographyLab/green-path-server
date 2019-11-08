@@ -145,22 +145,30 @@ class AqiProcessor:
         aqi_raster_fillna.write(aqi_band_fillna, 1)
         aqi_raster_fillna.close()
     
-    def aqi_sjoin_aqi_to_edges(self, G: GraphHandler, aqi_file: str) -> None:
-        """Joins aqi values from an AQI raster file to edges on a graph by spatial sampling. 
-        Center points of the edges are used in the spatial join.
+    def create_edge_aqi_update_csv(self, G: GraphHandler, aqi_raster_file: str) -> None:
+        """Joins AQI values from an AQI raster file to edges (edge_gdf) of a graph by spatial sampling. 
+        Column 'aqi' will be added to the G.edge_gdf. Center points of the edges are used in the spatial join. 
+        Exports a csv file of ege keys and corresponding AQI values to use for updating AQI values to a graph.
 
         Args:
             G: A GraphHandler object that has edge_gdf and graph as properties.
-            aqi_file: The filename of an AQI raster (GeoTiff) file. 
+            aqi_raster_file: The filename of an AQI raster (GeoTiff) file. 
 
         Todo:
             Implement more precise join for longer edges. 
         """
-        aqi_filepath = self.aqi_dir + aqi_file
+        aqi_filepath = self.aqi_dir + aqi_raster_file
         aqi_raster = rasterio.open(aqi_filepath)
         # get coordinates of edge centers as list of tuples
         coords = [(x,y) for x, y in zip([point.x for point in G.edge_gdf['center_wgs']], [point.y for point in G.edge_gdf['center_wgs']])]
         coords = geom_utils.round_coordinates(coords)
         # extract aqi values at coordinates from raster using sample method from rasterio
-        G.edge_gdf['aqi'] = [x.item() for x in aqi_raster.sample(coords)]
-        G.update_edge_attr_to_graph(df_attr='aqi', edge_attr='aqi')
+        G.edge_gdf['aqi'] = [round(x.item(),2) for x in aqi_raster.sample(coords)]
+        
+        # save edge keys and corresponding aqi values as csv for later use
+        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi']].copy())
+        aqi_edge_updates_csv = aqi_raster_file[:-4] + '.csv'
+        print('saving edge aqi updates to file:', self.aqi_dir + aqi_edge_updates_csv)
+        edge_aqi_updates_df.to_csv(self.aqi_dir + aqi_edge_updates_csv, index=False)
+
+        return aqi_edge_updates_csv
