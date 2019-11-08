@@ -45,7 +45,7 @@ class AqiProcessor:
                         aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
         
         # define a key based on the current time
-        curdt = datetime.now().strftime('%Y-%m-%dT%H')
+        curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
         key = 'Finland/pks/allPollutants_' + curdt + '.zip'
         
         # download the netcdf file to a specified location
