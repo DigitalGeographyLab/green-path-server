@@ -5,6 +5,8 @@ import boto3
 import pandas as pd
 import datetime
 import rasterio
+import numpy as np
+from rasterio import fill
 from datetime import datetime
 import utils.geometry as geom_utils
 from utils.graph_handler import GraphHandler
@@ -17,7 +19,7 @@ class AqiProcessor:
 
     Notes:
         The required python environment for using the class can be installed with: conda env create -f env_aqi_processing.yml
-        Add file credentials.csv containing the required aws secrets to src/.
+        Add file credentials.csv containing the required aws secrets to src/
     """
 
     def _init_(self):
@@ -26,12 +28,12 @@ class AqiProcessor:
         self.AWS_ACCESS_KEY_ID: str = ''
         self.AWS_SECRET_ACCESS_KEY: str = ''
 
-    def set_aws_secrets(self):
+    def set_aws_secrets(self) -> None:
         creds = pd.read_csv('credentials.csv', sep=',', encoding='utf-8')
         self.AWS_ACCESS_KEY_ID = creds['Access key ID'][0]
         self.AWS_SECRET_ACCESS_KEY = creds['Secret access key'][0]
 
-    def fetch_enfuser(self, outpath):
+    def fetch_enfuser(self, outpath: str) -> None:
         """Downloads the current zip file containing multiple netcdf files to a directory. 
         Note:
             Filename for the exported zip file is defined by the function - only a folder name is needed as the outpath.
@@ -51,7 +53,7 @@ class AqiProcessor:
         file_out = outpath + '/' + filename
         s3.download_file(key, file_out, Bucket=self.bucketname)
 
-    def extract_zipped_aqi(self, zippedfile, outpath):
+    def extract_zipped_aqi(self, zippedfile: str, outpath: str) -> None:
         """Extracts the contents of a zip file containing netcdf files. 
         """
         # read zip file in
@@ -64,21 +66,26 @@ class AqiProcessor:
                 # extract selected file to outpath directory
                 archive.extract(file, outpath)
 
-    def aqi_to_raster(self, inputfile, outputfile):
+    def convert_aqi_nc_to_raster(self, inputfile: str, outputfile: str) -> None:
         """Converts a netCDF file to a georeferenced raster file. xarray and rioxarray automatically scale  and offset 
         each netCDF file opened with proper values from the file itself. No manual scaling or adding offset required.
         CRS of the exported GeoTiff is set to WGS84.
-        """        
-        # Read .nc file containing the AQI layer as a multidimensional array
+
+        Args:
+            inputfile: e.g. allPollutants_2019-09-11T15.nc
+            outputfile: e.g. allPollutants_2019-09-11T15.tif
+        """
+        # read .nc file containing the AQI layer as a multidimensional array
         data = xarray.open_dataset(inputfile)
                 
-        # Retrieve AQI, AQI.data has shape (time, lat, lon)
+        # retrieve AQI, AQI.data has shape (time, lat, lon)
         # the values are automatically scaled and offset AQI values
-        AQI = data['AQI']
+        aqi = data['AQI']
 
         # save AQI to raster (.tif geotiff file recommended)
-        AQI = AQI.rio.set_crs('epsg:4326')
-        AQI.rio.to_raster(outputfile)
+        aqi = aqi.rio.set_crs('epsg:4326')
+        aqi.rio.to_raster(outputfile)
+
     def fillna_in_raster(self, filename: str, na_val: float = 1.0) -> None:
         """Fills nodata values in a raster by interpolating values from surrounding cells. 
         
