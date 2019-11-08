@@ -6,15 +6,15 @@ from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 import utils.graphs as graph_utils
 
+AQI = AqiProcessor(aqi_dir='data/tests/aqi_cache/')
+
 class TestAqiProcessing(unittest.TestCase):
-    AQI = AqiProcessor()
 
     def test_aqi_nc_to_geotiff_conversion(self):
-        nc_file = 'data/tests/allPollutants_2019-09-11T15.nc'
-        tiff_out = 'data/tests/allPollutants_2019-09-11T15.tif'
-        self.AQI.convert_aqi_nc_to_raster(nc_file, tiff_out)
+        nc_file = 'allPollutants_2019-09-11T15.nc'
+        tiff_file = AQI.convert_aqi_nc_to_raster(nc_file)
         # validate metadata of aqi raster
-        aqi_raster = rasterio.open(tiff_out)
+        aqi_raster = rasterio.open(AQI.aqi_dir + tiff_file)
         self.assertEqual(aqi_raster.driver, 'GTiff', msg='wrong driver in the exported raster')
         self.assertEqual(aqi_raster.meta['dtype'], 'float32', msg='wrong data type')
         self.assertEqual(aqi_raster.crs, rasterio.crs.CRS.from_epsg(4326), msg='CRS should be WGS84')
@@ -25,9 +25,9 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertEqual(np.sum(aqi_band == 0.0), 0)
 
     def test_aqi_raster_fillna(self):
-        aqi_file = 'data/tests/allPollutants_2019-09-11T15.tif'
-        self.AQI.fillna_in_raster(aqi_file, na_val=1.0)
-        aqi_raster = rasterio.open(aqi_file)
+        aqi_file = 'allPollutants_2019-09-11T15.tif'
+        AQI.fillna_in_raster(aqi_file, na_val=1.0)
+        aqi_raster = rasterio.open(AQI.aqi_dir + aqi_file)
         aqi_band = aqi_raster.read(1)
         # validate metadata of aqi raster
         self.assertEqual(aqi_raster.driver, 'GTiff', msg='wrong driver in the exported raster')
@@ -41,8 +41,8 @@ class TestAqiProcessing(unittest.TestCase):
 
     def test_aqi_edge_gdf_sjoin(self):
         G = GraphHandler(subset=True)
-        aqi_test_tif = 'data/tests/allPollutants_2019-09-11T15_fillnodata.tif'
-        self.AQI.aqi_sjoin_aqi_to_edges(G, aqi_test_tif)
+        aqi_test_tif = 'allPollutants_2019-09-11T15_fillnodata.tif'
+        AQI.aqi_sjoin_aqi_to_edges(G, aqi_test_tif)
         # get & validate joined aqi values
         aqi_max = G.edge_gdf['aqi'].max()
         aqi_mean = G.edge_gdf['aqi'].mean()
