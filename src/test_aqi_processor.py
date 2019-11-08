@@ -27,7 +27,7 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertEqual(np.sum(aqi_band == 0.0), 0)
 
     def test_aqi_raster_fillna(self):
-        aqi_file = 'allPollutants_2019-09-11T15.tif'
+        aqi_file = 'aqi_2019-09-11T15.tif'
         AQI.fillna_in_raster(aqi_file, na_val=1.0)
         aqi_raster = rasterio.open(AQI.aqi_dir + aqi_file)
         aqi_band = aqi_raster.read(1)
@@ -42,7 +42,7 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertEqual(np.sum(aqi_band == 0.0), 0)
 
     def test_aqi_edge_gdf_sjoin_to_csv(self):
-        aqi_test_tif = 'allPollutants_2019-09-11T15_fillnodata.tif'
+        aqi_test_tif = 'const_aqi_2019-09-11T15_fillnodata.tif'
         aqi_edge_updates_csv = AQI.create_edge_aqi_update_csv(G, aqi_test_tif)
         # get & validate joined aqi values
         aqi_max = G.edge_gdf['aqi'].max()
@@ -55,7 +55,7 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertAlmostEqual(edge_updates['aqi'].mean(), 1.708, places=3)
 
     def test_aqi_graph_join(self):
-        aqi_edge_updates_csv = 'edge_aqi_updates.csv'
+        aqi_edge_updates_csv = 'const_aqi_2019-09-11T15.csv'
         G.set_aqi_to_edges(aqi_edge_updates_csv)
         # test that all edges in the graph got aqi value
         edge_dicts = graph_utils.get_all_edge_dicts(G.graph)

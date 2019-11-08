@@ -107,8 +107,10 @@ class AqiProcessor:
 
         # save AQI to raster (.tif geotiff file recommended)
         aqi = aqi.rio.set_crs('epsg:4326')
-
-        raster_name = aqi_nc[:-3] +'.tif'
+        
+        # parse date & time from nc filename and export raster
+        aqi_date_str = aqi_nc[:-3][-13:]
+        raster_name = 'aqi_'+ aqi_date_str +'.tif'
         aqi.rio.to_raster(self.aqi_dir + raster_name)
         return raster_name
 
