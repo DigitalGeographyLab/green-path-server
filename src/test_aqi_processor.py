@@ -2,11 +2,13 @@ import unittest
 import pytest
 import rasterio
 import numpy as np
+import pandas as pd
 from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 import utils.graphs as graph_utils
 
 AQI = AqiProcessor(aqi_dir='data/tests/aqi_cache/')
+G = GraphHandler(subset=True, aqi_dir='data/tests/aqi_cache/')
 
 class TestAqiProcessing(unittest.TestCase):
 
@@ -39,16 +41,22 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertEqual(np.sum(aqi_band == 1.0), 0)
         self.assertEqual(np.sum(aqi_band == 0.0), 0)
 
-    def test_aqi_edge_gdf_sjoin(self):
-        G = GraphHandler(subset=True)
+    def test_aqi_edge_gdf_sjoin_to_csv(self):
         aqi_test_tif = 'allPollutants_2019-09-11T15_fillnodata.tif'
-        AQI.aqi_sjoin_aqi_to_edges(G, aqi_test_tif)
+        aqi_edge_updates_csv = AQI.create_edge_aqi_update_csv(G, aqi_test_tif)
         # get & validate joined aqi values
         aqi_max = G.edge_gdf['aqi'].max()
         aqi_mean = G.edge_gdf['aqi'].mean()
         print('aqi mean:', aqi_mean)
-        self.assertAlmostEqual(aqi_max, 2.375, places=3)
+        self.assertAlmostEqual(aqi_max, 2.38, places=2)
         self.assertAlmostEqual(aqi_mean, 1.708, places=3)
+        edge_updates = pd.read_csv(AQI.aqi_dir + aqi_edge_updates_csv)
+        self.assertAlmostEqual(edge_updates['aqi'].max(), 2.38, places=2)
+        self.assertAlmostEqual(edge_updates['aqi'].mean(), 1.708, places=3)
+
+    def test_aqi_graph_join(self):
+        aqi_edge_updates_csv = 'edge_aqi_updates.csv'
+        G.set_aqi_to_edges(aqi_edge_updates_csv)
         # test that all edges in the graph got aqi value
         edge_dicts = graph_utils.get_all_edge_dicts(G.graph)
         all_edges_have_aqi = True
@@ -58,9 +66,7 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertEqual(all_edges_have_aqi, True, msg='One or more edges did not get aqi')
         eg_edge = edge_dicts[0]
         eg_aqi = eg_edge['aqi']
-        print('eg_aqi', eg_aqi)
-        print('eg_aqi', type(eg_aqi))
-        self.assertAlmostEqual(eg_aqi, 1.751, places=3)
+        self.assertAlmostEqual(eg_aqi, 1.75, places=2)
 
 if __name__ == '__main__':
     unittest.main()
