@@ -79,10 +79,53 @@ class AqiProcessor:
         # save AQI to raster (.tif geotiff file recommended)
         AQI = AQI.rio.set_crs('epsg:4326')
         AQI.rio.to_raster(outputfile)
+    def fillna_in_raster(self, filename: str, na_val: float = 1.0) -> None:
+        """Fills nodata values in a raster by interpolating values from surrounding cells. 
+        
+        Args:
+            filename: The path to a raster file to be processed.
+            na_val: A value that represents nodata in the raster.
+        """
+        # open AQI band from AQI raster file
+        aqi_raster = rasterio.open(filename)
+        aqi_band = aqi_raster.read(1)
 
-    def aqi_sjoin_aqi_to_edges(self, G: GraphHandler, aqi_file: str):
+        # create a nodata mask (map nodata values to 0)
+        aqi_nodata_mask = np.where(aqi_band==na_val, 0, aqi_band) 
+        # fill nodata in aqi_band using nodata mask
+        aqi_band_fillna = fill.fillnodata(aqi_band, mask=aqi_nodata_mask)
+
+        # write raster with filled nodata
+        aqi_raster_fillna = rasterio.open(
+            filename,
+            'w',
+            driver='GTiff',
+            height=aqi_raster.shape[0],
+            width=aqi_raster.shape[1],
+            count=1,
+            dtype='float32',
+            transform=aqi_raster.transform,
+            crs=aqi_raster.crs
+        )
+
+        aqi_raster_fillna.write(aqi_band_fillna, 1)
+        aqi_raster_fillna.close()
+    
+    def aqi_sjoin_aqi_to_edges(self, G: GraphHandler, aqi_file: str) -> None:
+        """Joins aqi values from an AQI raster file to edges on a graph by spatial sampling. 
+        Center points of the edges are used in the spatial join.
+
+        Args:
+            G: A GraphHandler object that has edge_gdf and graph as properties.
+            aqi_file: The filename of an AQI raster (GeoTiff) file. 
+
+        Todo:
+            Implement more precise join for longer edges. 
+        """
         aqi_raster = rasterio.open(aqi_file)
+        # get coordinates of edge centers as list of tuples
         coords = [(x,y) for x, y in zip([point.x for point in G.edge_gdf['center_wgs']], [point.y for point in G.edge_gdf['center_wgs']])]
         coords = geom_utils.round_coordinates(coords)
+        # extract aqi values at coordinates from raster using sample method from rasterio
         G.edge_gdf['aqi'] = [x.item() for x in aqi_raster.sample(coords)]
         G.update_edge_attr_to_graph(df_attr='aqi', edge_attr='aqi')
