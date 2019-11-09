@@ -1,12 +1,13 @@
 import os
+from os import listdir
 import zipfile
 import rioxarray
 import xarray
 import boto3
+import numpy as np
 import pandas as pd
 import datetime
 import rasterio
-import numpy as np
 from rasterio import fill
 from datetime import datetime
 import utils.geometry as geom_utils
@@ -27,18 +28,42 @@ class AqiProcessor:
         Add file credentials.csv containing the required aws secrets to src/
     """
 
-    def __init__(self, aqi_dir: str = ''):
+    def __init__(self, aqi_dir: str = 'aqi_cache/', set_aws_secrets: bool = False):
+        self.wip_edge_aqi_csv: str = ''
+        self.latest_edge_aqi_csv: str = ''
         self.aqi_dir = aqi_dir
-        self.bucketname = 'enfusernow2'
-        self.region = 'eu-central-1'
+        self.bucketname: str = 'enfusernow2'
+        self.region: str = 'eu-central-1'
         self.AWS_ACCESS_KEY_ID: str = ''
         self.AWS_SECRET_ACCESS_KEY: str = ''
         self.temp_files_to_rm: list = []
+        if (set_aws_secrets == True): self.set_aws_secrets()
 
     def set_aws_secrets(self) -> None:
         creds = pd.read_csv('credentials.csv', sep=',', encoding='utf-8')
         self.AWS_ACCESS_KEY_ID = creds['Access key ID'][0]
         self.AWS_SECRET_ACCESS_KEY = creds['Secret access key'][0]
+
+    def get_current_edge_aqi_csv_name(self) -> str:
+        """Returns the name of the current edge aqi updates csv file. Note: it might not exist.
+        """
+        curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
+        return 'aqi_'+ curdt +'.csv'
+
+    def set_wip_edge_aqi_csv_name(self) -> None:
+        self.wip_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
+
+    def reset_wip_edge_aqi_csv_name(self) -> None:
+        self.wip_edge_aqi_csv = ''
+
+    def new_aqi_available(self) -> bool:
+        current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
+        if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
+            return False
+        elif (self.wip_edge_aqi_csv == current_edge_aqi_csv):
+            return False
+        else:
+            return True
 
     def get_current_enfuser_key_filename(self) -> Tuple[str, str]:
         """Returns a key pointing to the current enfuser zip file in aws s3 bucket. 
@@ -176,17 +201,37 @@ class AqiProcessor:
         edge_aqi_updates_df['exp_aqi'] = edge_aqi_updates_df.apply(lambda row: { round(row['length'], 2): row['aqi'] }, axis=1)
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
         edge_aqi_updates_df[['uvkey', 'aqi', 'exp_aqi']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
+        self.latest_edge_aqi_csv = edge_aqi_csv_name
+        self.reset_wip_edge_aqi_csv_name()
         return edge_aqi_csv_name
 
-    def remove_temp_files(self):
+    def remove_temp_files(self) -> None:
         rm_count = 0
         error_count = 0
         for rm_filename in self.temp_files_to_rm:
             try:
                 os.remove(self.aqi_dir + rm_filename)
                 rm_count += 1
-                print('removed file:', rm_filename)
+                # print('removed file:', rm_filename)
             except Exception:
                 error_count += 1
                 pass
-        print('removed', rm_count, 'temp files of', len(self.temp_files_to_rm))
+        print('removed', rm_count, 'temp files')
+        if (error_count > 0):
+            print('could not remove', error_count, 'files')
+
+    def remove_old_edge_aqi_csv_files(self) -> None:
+        rm_count = 0
+        error_count = 0
+        for file_n in listdir(self.aqi_dir):
+            if (file_n.endswith('.csv') and file_n != self.latest_edge_aqi_csv):
+                try:
+                    os.remove(self.aqi_dir + file_n)
+                    rm_count += 1
+                    # print('removed file:', file_n)
+                except Exception:
+                    error_count += 1
+                    pass
+        print('removed', rm_count, 'old edge aqi csv files')
+        if (error_count > 0):
+            print('could not remove', error_count, 'old edge aqi csv files')

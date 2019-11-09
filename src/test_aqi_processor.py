@@ -8,8 +8,8 @@ from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 import utils.graphs as graph_utils
 
-AQI = AqiProcessor(aqi_dir='data/tests/aqi_cache/')
-G = GraphHandler(subset=True, aqi_dir='data/tests/aqi_cache/')
+AQI = AqiProcessor(aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)
+G = GraphHandler(subset=True, add_wgs_center=True, aqi_dir='data/tests/aqi_cache/')
 
 class TestAqiProcessing(unittest.TestCase):
 
@@ -19,6 +19,17 @@ class TestAqiProcessing(unittest.TestCase):
     #     aqi_zip_name = AQI.fetch_enfuser_data(enfuser_data_key, aqi_zip_name)
     #     filelist = listdir(AQI.aqi_dir)
     #     self.assertIn(aqi_zip_name, filelist, msg='zip file not present in directory aqi_dir')
+
+    def test_edge_aqi_file_checks(self):
+        current_edge_aqi_csv_name = AQI.get_current_edge_aqi_csv_name()
+        AQI.set_wip_edge_aqi_csv_name()
+        self.assertEqual(len(AQI.wip_edge_aqi_csv), 21)
+        self.assertEqual(AQI.new_aqi_available(), False)
+        AQI.latest_edge_aqi_csv = current_edge_aqi_csv_name
+        AQI.reset_wip_edge_aqi_csv_name()
+        self.assertEqual(AQI.new_aqi_available(), False)
+        AQI.latest_edge_aqi_csv = ''
+        self.assertEqual(AQI.new_aqi_available(), True)
 
     def test_extract_aqi_from_enfuser(self):
         AQI.extract_zipped_aqi('allPollutants_2019-11-08T14.zip')
