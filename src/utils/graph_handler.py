@@ -77,7 +77,8 @@ class GraphHandler:
         self.update_current_time_to_graph()
 
     def set_aqi_to_edges(self, aqi_updates_csv: str):
-        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters={'uvkey': ast.literal_eval})
+        field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
+        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
         print(edge_aqi_updates.head(3))
         self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
     

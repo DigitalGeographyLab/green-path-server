@@ -169,12 +169,13 @@ class AqiProcessor:
         coords = [(x,y) for x, y in zip([point.x for point in G.edge_gdf['center_wgs']], [point.y for point in G.edge_gdf['center_wgs']])]
         coords = geom_utils.round_coordinates(coords)
         # extract aqi values at coordinates from raster using sample method from rasterio
-        G.edge_gdf['aqi'] = [round(x.item(), 3) for x in aqi_raster.sample(coords)]
+        G.edge_gdf['aqi'] = [round(x.item(), 2) for x in aqi_raster.sample(coords)]
         
         # save edge keys and corresponding aqi values as csv for later use
-        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi']].copy())
+        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi', 'length']].copy())
+        edge_aqi_updates_df['exp_aqi'] = edge_aqi_updates_df.apply(lambda row: { round(row['length'], 2): row['aqi'] }, axis=1)
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
-        edge_aqi_updates_df.to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
+        edge_aqi_updates_df[['uvkey', 'aqi', 'exp_aqi']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
         return edge_aqi_csv_name
 
     def remove_temp_files(self):
