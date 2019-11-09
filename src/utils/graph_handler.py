@@ -1,6 +1,8 @@
 from typing import List, Set, Dict, Tuple
 from datetime import datetime
 import time
+import ast
+import pandas as pd
 import geopandas as gpd
 import networkx as nx
 from shapely.ops import nearest_points
@@ -22,9 +24,10 @@ class GraphHandler:
         * Try python-igraph (or other faster) library
     """
 
-    def __init__(self, subset: bool = False):
+    def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, aqi_dir: str = 'aqi_cache/'):
         """Initializes all graph related features needed in routing.
         """
+        self.aqi_dir = aqi_dir
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
         print('graph of', self.graph.size(), 'edges read, subset:', subset)
@@ -34,7 +37,7 @@ class GraphHandler:
         self.node_gdf = self.get_node_gdf()
         self.nodes_sind = self.node_gdf.sindex
         print('graph nodes collected')
-        self.set_edge_wgs_geoms()
+        self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
         print('projected edges to wgs')
 
     def get_node_gdf(self) -> gpd.GeoDataFrame:
@@ -48,12 +51,14 @@ class GraphHandler:
         gdf_nodes.gdf_name = '{}_nodes'.format(self.graph.graph['name'])
         return gdf_nodes[['geometry']]
     
-    def set_edge_wgs_geoms(self):
+    def set_edge_wgs_geoms(self, add_wgs_geom: bool, add_wgs_center: bool):
         edge_updates = self.edge_gdf.copy()
         edge_updates = edge_updates.to_crs(epsg=4326)
-        self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='geometry', edge_attr='geom_wgs')
-        # add wgs point geom of center points of the edges for joining AQI
-        self.edge_gdf['center_wgs'] = [geom_utils.get_line_middle_point(line) for line in edge_updates['geometry']]
+        if (add_wgs_geom == True):
+            self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='geometry', edge_attr='geom_wgs')
+        if (add_wgs_center == True):
+            # add wgs point geom of center points of the edges for joining AQI
+            self.edge_gdf['center_wgs'] = [geom_utils.get_line_middle_point(line) for line in edge_updates['geometry']]
 
     def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
@@ -72,6 +77,12 @@ class GraphHandler:
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
+
+    def set_aqi_to_edges(self, aqi_updates_csv: str):
+        field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
+        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        print(edge_aqi_updates.head(3))
+        self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
     
     def update_current_time_to_graph(self, debug: bool = False):
         timenow = datetime.now().strftime("%H:%M:%S")
