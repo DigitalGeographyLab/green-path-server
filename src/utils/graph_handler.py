@@ -48,7 +48,7 @@ class GraphHandler:
         self.aqi_dir = aqi_dir
         self.aqi_data_wip = ''
         self.aqi_data_latest = ''
-        self.aqi_data_updatetime: None
+        self.aqi_data_updatetime = None
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
         print('graph of', self.graph.size(), 'edges read, subset:', subset)
@@ -109,7 +109,6 @@ class GraphHandler:
         """
         aqi_data_expected = self.get_expected_aqi_data_name()
         if (aqi_data_expected == self.aqi_data_latest):
-            print('AQI update already done')
             return None
         elif (aqi_data_expected == self.aqi_data_wip):
             print('AQI update already in progress')
@@ -120,6 +119,28 @@ class GraphHandler:
         else:
             print('now new AQI data available for update')
             return None
+
+    def get_aqi_update_time_str(self) -> str:
+        return self.aqi_data_updatetime.strftime('%y/%m/%d %H:%M:%S') if self.aqi_data_updatetime is not None else None
+
+    def get_aqi_updated_since_secs(self) -> int:
+        if (self.aqi_data_updatetime is not None):
+            updated_since_secs = (datetime.utcnow() - self.aqi_data_updatetime).total_seconds()
+            return int(round(updated_since_secs))
+        else:
+            return None
+
+    def bool_graph_aqi_is_up_to_date(self) -> bool:
+        """Returns True if the latest AQI is updated to graph, else returns False. This can be attached to an API endpoint
+        from which clients can ask whether the green path service supports real-time AQ routing at the moment.
+        """
+        if (self.aqi_data_updatetime is None):
+            return False
+        elif (self.get_aqi_updated_since_secs() < 60 * 70):
+            return True
+        else:
+            return False
+
     def update_aqi_to_graph(self, aqi_updates_csv: str):
         self.aqi_data_wip = aqi_updates_csv
         field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
@@ -127,13 +148,13 @@ class GraphHandler:
         print(edge_aqi_updates.head(3))
         self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
         utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
-        print('AQI update succeeded at (utc):', utctime_str)
-        self.aqi_data_updatetime = datetime.now()
+        print('AQI update succeeded at:', utctime_str,'(UTC)')
+        self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv
         self.aqi_data_wip = ''
     
     def update_current_time_to_graph(self, debug: bool = False):
-        timenow = datetime.now().strftime("%H:%M:%S")
+        timenow = datetime.utcnow().strftime("%H:%M:%S")
         self.edge_gdf['updatetime'] =  timenow
         self.update_edge_attr_to_graph(df_attr='updatetime', edge_attr='updatetime')
         if (debug == True): print('updated graph at:', timenow)

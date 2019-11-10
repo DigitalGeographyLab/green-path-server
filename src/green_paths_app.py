@@ -34,7 +34,16 @@ utils.print_duration(start_time, 'graph initialized')
 
 @app.route('/')
 def hello_world():
-    return 'Keep calm and walk quiet paths.'
+    return 'Keep calm and walk green paths.'
+
+@app.route('/aqistatus')
+def aqi_status():
+    response = { 
+        'b_updated': G.bool_graph_aqi_is_up_to_date(), 
+        'latest_data': G.aqi_data_latest, 
+        'update_time_utc': G.get_aqi_update_time_str(), 
+        'updated_since_secs': G.get_aqi_updated_since_secs()}
+    return jsonify(response)
 
 @app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
