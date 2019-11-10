@@ -168,7 +168,10 @@ class AqiProcessor:
         aqi_band = aqi_raster.read(1)
 
         # create a nodata mask (map nodata values to 0)
-        aqi_nodata_mask = np.where(aqi_band==na_val, 0, aqi_band) 
+        aqi_nodata_mask = np.where(aqi_band <= na_val + 0.01, 0, aqi_band)
+        nodata_count = np.sum(aqi_nodata_mask == 0)
+        if (nodata_count < 180000):
+            print('failed to set nodata values in the aqi tif, nodata count:', nodata_count)
         # fill nodata in aqi_band using nodata mask
         aqi_band_fillna = fill.fillnodata(aqi_band, mask=aqi_nodata_mask)
 
