@@ -36,4 +36,4 @@ print('starting AQI processing schedule')
 while True:
     if (AQI.new_aqi_available() == True):
         process_aqi_updates_to_csv()
-    time.sleep(15)
+    time.sleep(10)

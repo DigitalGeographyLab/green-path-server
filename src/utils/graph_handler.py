@@ -14,18 +14,35 @@ import utils.geometry as geom_utils
 import utils.utils as utils
 
 class GraphHandler:
-    """
+    """Graph handler holds a NetworkX graph object and related features (e.g. graph edges as a GeoDataFrame).
+
     Graph handler can be initialized after starting the green paths app. It provides functions for accessing and 
-    manipulating graph during least cost path optimization. Note: All graph manipulation for constructing and initializing 
-    a graph is provided by graph_utils (utils/graphs.py).
+    manipulating graph during least cost path optimization. Also, it is needed by aqi_processor_app to spatially join AQI to edges.
+    
+    Note: 
+        All utils for manipulating a graph in constructing and initializing a graph are provided by utils/graphs.py.
+
+    Attributes:
+        aqi_dir (str): A path to aqi_cache -directory (e.g. 'aqi_cache/').
+        graph: A NetworkX graph object.
+        edge_gdf: The edges of the graph as a GeoDataFrame.
+        edges_sind: Spatial index of the edges GeoDataFrame.
+        node_gdf: The nodes of the graph as a GeoDataFrame.
+        nodes_sind: Spatial index of the nodes GeoDataFrame.
 
     Todo:
-        * Add support for using other edge weights than noise (e.g. AQI)
-        * Try python-igraph (or other faster) library
+        * Add support for using other edge weights than noise (e.g. AQI).
+        * Try python-igraph (or other faster) library.
+        * Calculate and update AQI costs to graph.
     """
 
     def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, aqi_dir: str = 'aqi_cache/'):
-        """Initializes all graph related features needed in routing.
+        """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
+
+        Args:
+            subset: A boolean variable indicating whether a subset of the graph should be loaded (subset is for testing / developing).
+            add_wgs_geom: A boolean variable indicating whether wgs geoms should be added to the edges' attributes.
+            add_wgs_center: A boolean variable indicating whether a wgs center point geom should be added to edge_gdf as a new column.
         """
         self.aqi_dir = aqi_dir
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()

@@ -15,25 +15,32 @@ from utils.graph_handler import GraphHandler
 from typing import List, Set, Dict, Tuple, Optional
 
 class AqiProcessor:
-    """
-    An instance of this class can download, extract and convert air quality index (AQI) data from 
-    FMI's Enfuser model. Specifically, it can download the data as a zip archive file, extract a netCDF 
-    file containing the air quality index layer and convert it into a GeoTIFF raster.
+    """AqiProcessor can download, extract and convert air quality index (AQI) data from FMI's Enfuser model. 
+    
+    Specifically, it can download the data as a zip archive file, extract a netCDF file containing the air quality 
+    index layer and convert it into a GeoTIFF raster. Also, it can delete created temporary and old aqi files.
 
-    Args:
-        aqi_dir: The name of a directory where AQI files will be downloaded to and processed in.
+    Attributes:
+        wip_edge_aqi_csv: The name of an edge_aqi_csv file that is currently being produced (wip = work in progress).
+        latest_edge_aqi_csv: The name of the latest edge_aqi_csv file that was produced.
+        aqi_dir: A filepath pointing to a directory where AQI files will be downloaded to and processed.
+        s3_bucketname: The name of an AWS s3 bucket from where the enfuser data will be fetched from.
+        s3_region: The name of an AWS s3 bucket from where the enfuser data will be fetched from.
+        AWS_ACCESS_KEY_ID: The name of a "secret" aws access key id to enfuser s3 bucket.
+        AWS_SECRET_ACCESS_KEY: The name of a "secret" aws access key to enfuser s3 bucket.
+        temp_files_to_rm (list): A list where names of created temporary files will be collected during processing.
 
     Notes:
-        The required python environment for using the class can be installed with: conda env create -f env_aqi_processing.yml
-        Add file credentials.csv containing the required aws secrets to src/
+        The required python environment for using the class can be installed with: conda env create -f env_aqi_processing.yml.
+        Add file credentials.csv containing the required aws secrets to src/.
     """
 
     def __init__(self, aqi_dir: str = 'aqi_cache/', set_aws_secrets: bool = False):
         self.wip_edge_aqi_csv: str = ''
         self.latest_edge_aqi_csv: str = ''
         self.aqi_dir = aqi_dir
-        self.bucketname: str = 'enfusernow2'
-        self.region: str = 'eu-central-1'
+        self.s3_bucketname: str = 'enfusernow2'
+        self.s3_region: str = 'eu-central-1'
         self.AWS_ACCESS_KEY_ID: str = ''
         self.AWS_SECRET_ACCESS_KEY: str = ''
         self.temp_files_to_rm: list = []
@@ -51,12 +58,17 @@ class AqiProcessor:
         return 'aqi_'+ curdt +'.csv'
 
     def set_wip_edge_aqi_csv_name(self) -> None:
+        """Sets the excpected latest edge_aqi_csv filename to attribute wip_edge_aqi_csv.
+        """
         self.wip_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
 
     def reset_wip_edge_aqi_csv_name(self) -> None:
         self.wip_edge_aqi_csv = ''
 
     def new_aqi_available(self) -> bool:
+        """Returns True if the latest aqi file is either already processed or being processed at the moment 
+        (else returns False).
+        """
         current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
         if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
             return False
@@ -66,8 +78,8 @@ class AqiProcessor:
             return True
 
     def get_current_enfuser_key_filename(self) -> Tuple[str, str]:
-        """Returns a key pointing to the current enfuser zip file in aws s3 bucket. 
-        Also returns a name for the zip file for exporting the file. The names of the key and the zip file include
+        """Returns a key pointing to the expected current enfuser zip file in aws s3 bucket. 
+        Also returns a name for the zip file for exporting the file. The names of the key and the zip file contain
         the current UTC time (e.g. 2019-11-08T11).
         """
         curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
@@ -76,28 +88,28 @@ class AqiProcessor:
         return (enfuser_data_key, aqi_zip_name)
 
     def fetch_enfuser_data(self, enfuser_data_key: str, aqi_zip_name: str) -> str:
-        """Downloads the current zip file containing multiple netcdf files to a directory. 
+        """Downloads the current enfuser data as a zip file containing multiple netcdf files to the aqi_cache directory. 
         
         Returns:
             The name of the downloaded zip file (e.g. allPollutants_2019-11-08T14.zip).
         """
         # connect to S3
         s3 = boto3.client('s3',
-                        region_name=self.region,
+                        region_name=self.s3_region,
                         aws_access_key_id=self.AWS_ACCESS_KEY_ID,
                         aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
                 
         # download the netcdf file to a specified location
         file_out = self.aqi_dir + '/' + aqi_zip_name
-        s3.download_file(self.bucketname, enfuser_data_key, file_out)
+        s3.download_file(self.s3_bucketname, enfuser_data_key, file_out)
         self.temp_files_to_rm.append(aqi_zip_name)
         return aqi_zip_name
 
     def extract_zipped_aqi(self, aqi_zip_name: str) -> str:
-        """Extracts the contents of a zip file containing netcdf files. 
+        """Extracts the contents of a zip file containing enfuser netcdf files. 
 
         Args:
-            aqi_zip_name: The name of the zip file to be extracted from.
+            aqi_zip_name: The name of the zip file to be extracted from (in aqi_cache directory).
         Returns:
             The name of the extracted aqi nc file.
         """
@@ -116,12 +128,13 @@ class AqiProcessor:
         return aqi_nc_name
 
     def convert_aqi_nc_to_raster(self, aqi_nc_name: str) -> str:
-        """Converts a netCDF file to a georeferenced raster file. xarray and rioxarray automatically scale  and offset 
+        """Converts a netCDF file to a georeferenced raster file. xarray and rioxarray automatically scale and offset 
         each netCDF file opened with proper values from the file itself. No manual scaling or adding offset required.
         CRS of the exported GeoTiff is set to WGS84.
 
         Args:
-            aqi_nc_name: e.g. allPollutants_2019-09-11T15.nc
+            aqi_nc_name: The filename of an nc file to be processed (in aqi_cache directory).
+                e.g. allPollutants_2019-09-11T15.nc
         Returns:
             The name of the exported tif file (e.g. aqi_2019-11-08T14.tif).
         """
@@ -146,7 +159,7 @@ class AqiProcessor:
         """Fills nodata values in a raster by interpolating values from surrounding cells. 
         
         Args:
-            aqi_tif_name: The name of the raster file to be processed.
+            aqi_tif_name: The name of a raster file to be processed (in aqi_cache directory).
             na_val: A value that represents nodata in the raster.
         """
         # open AQI band from AQI raster file
@@ -182,7 +195,7 @@ class AqiProcessor:
 
         Args:
             G: A GraphHandler object that has edge_gdf and graph as properties.
-            aqi_tif_name: The filename of an AQI raster (GeoTiff) file. 
+            aqi_tif_name: The filename of an AQI raster (GeoTiff) file (in aqi_cache directory).
         Todo:
             Implement more precise join for longer edges. 
         Returns:
@@ -206,6 +219,8 @@ class AqiProcessor:
         return edge_aqi_csv_name
 
     def remove_temp_files(self) -> None:
+        """Removes temporary files created during AQI processing to aqi_cache, i.e. files in attribute self.temp_files_to_rm.
+        """
         rm_count = 0
         error_count = 0
         for rm_filename in self.temp_files_to_rm:
@@ -221,6 +236,8 @@ class AqiProcessor:
             print('could not remove', error_count, 'files')
 
     def remove_old_edge_aqi_csv_files(self) -> None:
+        """Removes all edge_aqi_csv files older than the latest from from aqi_cache.
+        """
         rm_count = 0
         error_count = 0
         for file_n in listdir(self.aqi_dir):
