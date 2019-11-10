@@ -13,22 +13,22 @@ from utils.graph_handler import GraphHandler
 app = Flask(__name__)
 CORS(app)
 
-graph_aqi_update_interval_secs: int = 20
 debug: bool = False
 
 # initialize graph
 start_time = time.time()
-G = GraphHandler(subset=False)
+G = GraphHandler(subset=True)
 G.set_noise_costs_to_edges()
 
-# setup scheduled graph updater
-def edge_attr_update():
-    # TODO load AQI layer, calculate & update AQI costs to graph
-    G.update_current_time_to_graph(debug)
+# setup scheduled graph aqi updater
+def maybe_update_aqi_to_graph():
+    new_aqi_data_name = G.new_aqi_data_available()
+    if (new_aqi_data_name is not None):
+        G.update_aqi_to_graph(new_aqi_data_name)
 
-graph_updater = BackgroundScheduler()
-graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
-# graph_updater.start()
+graph_aqi_updater = BackgroundScheduler()
+graph_aqi_updater.add_job(maybe_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
+graph_aqi_updater.start()
 
 utils.print_duration(start_time, 'graph initialized')
 

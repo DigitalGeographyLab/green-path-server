@@ -80,7 +80,7 @@ class TestAqiProcessing(unittest.TestCase):
 
     def test_aqi_graph_join(self):
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
-        G.set_aqi_to_edges(aqi_edge_updates_csv)
+        G.update_aqi_to_graph(aqi_edge_updates_csv)
         # test that all edges in the graph got aqi value
         edge_dicts = graph_utils.get_all_edge_dicts(G.graph)
         all_edges_have_aqi = True

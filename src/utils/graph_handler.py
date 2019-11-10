@@ -1,5 +1,6 @@
 from typing import List, Set, Dict, Tuple
 from datetime import datetime
+from os import listdir
 import time
 import ast
 import pandas as pd
@@ -45,6 +46,9 @@ class GraphHandler:
             add_wgs_center: A boolean variable indicating whether a wgs center point geom should be added to edge_gdf as a new column.
         """
         self.aqi_dir = aqi_dir
+        self.aqi_data_wip = ''
+        self.aqi_data_latest = ''
+        self.aqi_data_updatetime: None
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
         print('graph of', self.graph.size(), 'edges read, subset:', subset)
@@ -95,11 +99,38 @@ class GraphHandler:
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
 
-    def set_aqi_to_edges(self, aqi_updates_csv: str):
+    def get_expected_aqi_data_name(self) -> str:
+        curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
+        return 'aqi_'+ curdt +'.csv'
+
+    def new_aqi_data_available(self) -> str:
+        """Returns None if the expected (current) AQI data is either already updated to graph, being updated at the moment 
+        or doesn't exist, else returns the name of the new AQI data file (csv). 
+        """
+        aqi_data_expected = self.get_expected_aqi_data_name()
+        if (aqi_data_expected == self.aqi_data_latest):
+            print('AQI update already done')
+            return None
+        elif (aqi_data_expected == self.aqi_data_wip):
+            print('AQI update already in progress')
+            return None
+        elif (aqi_data_expected in listdir(self.aqi_dir)):
+            print('AQI update will be done')
+            return aqi_data_expected
+        else:
+            print('now new AQI data available for update')
+            return None
+    def update_aqi_to_graph(self, aqi_updates_csv: str):
+        self.aqi_data_wip = aqi_updates_csv
         field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
         edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
         print(edge_aqi_updates.head(3))
         self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
+        utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
+        print('AQI update succeeded at (utc):', utctime_str)
+        self.aqi_data_updatetime = datetime.now()
+        self.aqi_data_latest = aqi_updates_csv
+        self.aqi_data_wip = ''
     
     def update_current_time_to_graph(self, debug: bool = False):
         timenow = datetime.now().strftime("%H:%M:%S")
