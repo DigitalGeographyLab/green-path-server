@@ -29,7 +29,7 @@ def process_aqi_updates_to_csv():
         traceback.print_exc()
     finally:
         AQI.remove_temp_files()
-        AQI.remove_old_edge_aqi_csv_files()
+        AQI.remove_old_aqi_files()
         AQI.reset_wip_edge_aqi_csv_name()
 
 print('starting AQI processing schedule')

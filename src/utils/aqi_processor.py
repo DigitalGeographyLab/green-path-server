@@ -23,6 +23,7 @@ class AqiProcessor:
     Attributes:
         wip_edge_aqi_csv: The name of an edge_aqi_csv file that is currently being produced (wip = work in progress).
         latest_edge_aqi_csv: The name of the latest edge_aqi_csv file that was produced.
+        latest_aqi_tif: The name of the latest aqi tif file that was processed.
         aqi_dir: A filepath pointing to a directory where AQI files will be downloaded to and processed.
         s3_bucketname: The name of an AWS s3 bucket from where the enfuser data will be fetched from.
         s3_region: The name of an AWS s3 bucket from where the enfuser data will be fetched from.
@@ -38,6 +39,7 @@ class AqiProcessor:
     def __init__(self, aqi_dir: str = 'aqi_cache/', set_aws_secrets: bool = False):
         self.wip_edge_aqi_csv: str = ''
         self.latest_edge_aqi_csv: str = ''
+        self.latest_aqi_tif: str = ''
         self.aqi_dir = aqi_dir
         self.s3_bucketname: str = 'enfusernow2'
         self.s3_region: str = 'eu-central-1'
@@ -152,7 +154,7 @@ class AqiProcessor:
         aqi_date_str = aqi_nc_name[:-3][-13:]
         aqi_tif_name = 'aqi_'+ aqi_date_str +'.tif'
         aqi.rio.to_raster(self.aqi_dir + aqi_tif_name)
-        self.temp_files_to_rm.append(aqi_tif_name)
+        self.latest_aqi_tif = aqi_tif_name
         return aqi_tif_name
 
     def fillna_in_raster(self, aqi_tif_name: str, na_val: float = 1.0) -> None:
@@ -238,7 +240,7 @@ class AqiProcessor:
         if (error_count > 0):
             print('could not remove', error_count, 'files')
 
-    def remove_old_edge_aqi_csv_files(self) -> None:
+    def remove_old_aqi_files(self) -> None:
         """Removes all edge_aqi_csv files older than the latest from from aqi_cache.
         """
         rm_count = 0
@@ -248,10 +250,16 @@ class AqiProcessor:
                 try:
                     os.remove(self.aqi_dir + file_n)
                     rm_count += 1
-                    # print('removed file:', file_n)
                 except Exception:
                     error_count += 1
                     pass
-        print('removed', rm_count, 'old edge aqi csv files')
+            if (file_n.endswith('.tif') and file_n != self.latest_aqi_tif):
+                try:
+                    os.remove(self.aqi_dir + file_n)
+                    rm_count += 1
+                except Exception:
+                    error_count += 1
+                    pass
+        print('removed', rm_count, 'old edge aqi csv & tif files')
         if (error_count > 0):
             print('could not remove', error_count, 'old edge aqi csv files')
