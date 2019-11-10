@@ -68,8 +68,8 @@ class AqiProcessor:
         self.wip_edge_aqi_csv = ''
 
     def new_aqi_available(self) -> bool:
-        """Returns True if the latest aqi file is either already processed or being processed at the moment 
-        (else returns False).
+        """Returns False if the expected latest aqi file is either already processed or being processed at the moment, 
+        else returns True.
         """
         current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
         if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
