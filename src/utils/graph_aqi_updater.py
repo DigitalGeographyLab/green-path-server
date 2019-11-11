@@ -5,10 +5,16 @@ from utils.graph_handler import GraphHandler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 class GraphAqiUpdater:
-    """GraphAqiUpdater triggers AQI to graph update if new AQI data is available.
+    """GraphAqiUpdater triggers an AQI to graph update if new AQI data is available in /aqi_cache.
 
     Attributes:
-        aqi_dir (str): A path to aqi_cache -directory (e.g. 'aqi_cache/').
+        graph_handler: A GraphHandler object that can update aqi values to a graph.
+        aqi_dir (str): A path to an aqi_cache -directory (e.g. 'aqi_cache/').
+        aqi_data_wip: The name of an aqi data csv file that is currently being updated to a graph.
+        aqi_data_latest: The name of the aqi data csv file that was last updated to a graph.
+        aqi_data_updatetime: datetime.utcnow() of the latest aqi update.
+        scheduler: A BackgroundScheduler object that will periodically check for new aqi data and
+            update it to a graph if available.
     """
 
     def __init__(self, graph_handler: GraphHandler, aqi_dir: str = 'aqi_cache/', start: bool = False):
@@ -22,11 +28,15 @@ class GraphAqiUpdater:
         if (start == True): self.scheduler.start()
 
     def maybe_update_aqi_to_graph(self):
+        """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
+        """
         new_aqi_data_csv = self.new_aqi_data_available()
         if (new_aqi_data_csv is not None):
             self.update_aqi_to_graph(new_aqi_data_csv)
 
     def get_expected_aqi_data_name(self) -> str:
+        """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
+        """
         curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
         return 'aqi_'+ curdt +'.csv'
 
@@ -52,8 +62,8 @@ class GraphAqiUpdater:
             return False
 
     def new_aqi_data_available(self) -> str:
-        """Returns None if the expected (current) AQI data is either already updated to graph, being updated at the moment 
-        or doesn't exist, else returns the name of the new AQI data file (csv). 
+        """Returns the name of a new AQI csv file if it's not yet updated or being updated to a graph and it exists in aqi_dir.
+        Else returns None.
         """
         aqi_data_expected = self.get_expected_aqi_data_name()
         if (aqi_data_expected == self.aqi_data_latest):

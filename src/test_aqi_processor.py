@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
+from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.graphs as graph_utils
 
 AQI = AqiProcessor(aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)
-G = GraphHandler(subset=True, add_wgs_center=True, aqi_dir='data/tests/aqi_cache/')
+G = GraphHandler(subset=True, add_wgs_center=True)
 
 class TestAqiProcessing(unittest.TestCase):
 
@@ -80,7 +81,7 @@ class TestAqiProcessing(unittest.TestCase):
 
     def test_aqi_graph_join(self):
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
-        G.update_aqi_to_graph(aqi_edge_updates_csv)
+        G.update_aqi_to_graph(AQI.aqi_dir + aqi_edge_updates_csv)
         # test that all edges in the graph got aqi value
         edge_dicts = graph_utils.get_all_edge_dicts(G.graph)
         all_edges_have_aqi = True
@@ -91,6 +92,13 @@ class TestAqiProcessing(unittest.TestCase):
         eg_edge = edge_dicts[0]
         eg_aqi = eg_edge['aqi']
         self.assertAlmostEqual(eg_aqi, 1.87, places=2)
+
+    def test_aqi_updater(self):
+        aqi_updater = GraphAqiUpdater(G, aqi_dir='data/tests/aqi_cache/', start=False)
+        expected_aqi_csv = aqi_updater.get_expected_aqi_data_name()
+        # test expected aqi data file name
+        self.assertEqual(len(expected_aqi_csv), 21)
+        self.assertEqual(expected_aqi_csv, AQI.get_current_edge_aqi_csv_name())
 
 if __name__ == '__main__':
     unittest.main()
