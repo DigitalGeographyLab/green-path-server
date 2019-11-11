@@ -1,6 +1,5 @@
 from typing import List, Set, Dict, Tuple
 from datetime import datetime
-from os import listdir
 import time
 import ast
 import pandas as pd
@@ -24,7 +23,6 @@ class GraphHandler:
         All utils for manipulating a graph in constructing and initializing a graph are provided by utils/graphs.py.
 
     Attributes:
-        aqi_dir (str): A path to aqi_cache -directory (e.g. 'aqi_cache/').
         graph: A NetworkX graph object.
         edge_gdf: The edges of the graph as a GeoDataFrame.
         edges_sind: Spatial index of the edges GeoDataFrame.
@@ -37,18 +35,16 @@ class GraphHandler:
         * Calculate and update AQI costs to graph.
     """
 
-    def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, aqi_dir: str = 'aqi_cache/'):
+    def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, set_noise_costs: bool = False):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
             subset: A boolean variable indicating whether a subset of the graph should be loaded (subset is for testing / developing).
             add_wgs_geom: A boolean variable indicating whether wgs geoms should be added to the edges' attributes.
             add_wgs_center: A boolean variable indicating whether a wgs center point geom should be added to edge_gdf as a new column.
+            set_noise_costs: A boolean variable indicating whether noise costs should be calculated and updated to the graph.
         """
-        self.aqi_dir = aqi_dir
-        self.aqi_data_wip = ''
-        self.aqi_data_latest = ''
-        self.aqi_data_updatetime = None
+        start_time = time.time()
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
         print('graph of', self.graph.size(), 'edges read, subset:', subset)
@@ -60,6 +56,8 @@ class GraphHandler:
         print('graph nodes collected')
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
         print('projected edges to wgs')
+        if (set_noise_costs == True): self.set_noise_costs_to_edges()
+        utils.print_duration(start_time, 'graph initialized')
 
     def get_node_gdf(self) -> gpd.GeoDataFrame:
         """Collects and sets the nodes of a graph as a GeoDataFrame. 
@@ -98,60 +96,12 @@ class GraphHandler:
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
-
-    def get_expected_aqi_data_name(self) -> str:
-        curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
-        return 'aqi_'+ curdt +'.csv'
-
-    def new_aqi_data_available(self) -> str:
-        """Returns None if the expected (current) AQI data is either already updated to graph, being updated at the moment 
-        or doesn't exist, else returns the name of the new AQI data file (csv). 
-        """
-        aqi_data_expected = self.get_expected_aqi_data_name()
-        if (aqi_data_expected == self.aqi_data_latest):
-            return None
-        elif (aqi_data_expected == self.aqi_data_wip):
-            print('AQI update already in progress')
-            return None
-        elif (aqi_data_expected in listdir(self.aqi_dir)):
-            print('AQI update will be done')
-            return aqi_data_expected
-        else:
-            print('now new AQI data available for update')
-            return None
-
-    def get_aqi_update_time_str(self) -> str:
-        return self.aqi_data_updatetime.strftime('%y/%m/%d %H:%M:%S') if self.aqi_data_updatetime is not None else None
-
-    def get_aqi_updated_since_secs(self) -> int:
-        if (self.aqi_data_updatetime is not None):
-            updated_since_secs = (datetime.utcnow() - self.aqi_data_updatetime).total_seconds()
-            return int(round(updated_since_secs))
-        else:
-            return None
-
-    def bool_graph_aqi_is_up_to_date(self) -> bool:
-        """Returns True if the latest AQI is updated to graph, else returns False. This can be attached to an API endpoint
-        from which clients can ask whether the green path service supports real-time AQ routing at the moment.
-        """
-        if (self.aqi_data_updatetime is None):
-            return False
-        elif (self.get_aqi_updated_since_secs() < 60 * 70):
-            return True
-        else:
-            return False
-
-    def update_aqi_to_graph(self, aqi_updates_csv: str):
-        self.aqi_data_wip = aqi_updates_csv
+   
+    def update_aqi_to_graph(self, aqi_filepath: str):
         field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        edge_aqi_updates = pd.read_csv(aqi_filepath, converters=field_type_converters)
         print(edge_aqi_updates.head(3))
         self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
-        utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
-        print('AQI update succeeded at:', utctime_str,'(UTC)')
-        self.aqi_data_updatetime = datetime.utcnow()
-        self.aqi_data_latest = aqi_updates_csv
-        self.aqi_data_wip = ''
     
     def update_current_time_to_graph(self, debug: bool = False):
         timenow = datetime.utcnow().strftime("%H:%M:%S")

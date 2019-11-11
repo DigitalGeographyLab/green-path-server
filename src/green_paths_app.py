@@ -1,12 +1,12 @@
 import time
 from datetime import datetime
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
 import utils.utils as utils
 from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
+from utils.graph_aqi_updater import GraphAqiUpdater
 
 # version: 1.1.0
 
@@ -16,21 +16,10 @@ CORS(app)
 debug: bool = False
 
 # initialize graph
-start_time = time.time()
-G = GraphHandler(subset=True)
-G.set_noise_costs_to_edges()
+G = GraphHandler(subset=True, set_noise_costs=True)
 
-# setup scheduled graph aqi updater
-def maybe_update_aqi_to_graph():
-    new_aqi_data_name = G.new_aqi_data_available()
-    if (new_aqi_data_name is not None):
-        G.update_aqi_to_graph(new_aqi_data_name)
-
-graph_aqi_updater = BackgroundScheduler()
-graph_aqi_updater.add_job(maybe_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
-graph_aqi_updater.start()
-
-utils.print_duration(start_time, 'graph initialized')
+# start graph aqi updater
+aqi_updater = GraphAqiUpdater(G, start=True)
 
 @app.route('/')
 def hello_world():
@@ -39,10 +28,11 @@ def hello_world():
 @app.route('/aqistatus')
 def aqi_status():
     response = { 
-        'b_updated': G.bool_graph_aqi_is_up_to_date(), 
-        'latest_data': G.aqi_data_latest, 
-        'update_time_utc': G.get_aqi_update_time_str(), 
-        'updated_since_secs': G.get_aqi_updated_since_secs()}
+        'b_updated': aqi_updater.bool_graph_aqi_is_up_to_date(), 
+        'latest_data': aqi_updater.aqi_data_latest, 
+        'update_time_utc': aqi_updater.get_aqi_update_time_str(), 
+        'updated_since_secs': aqi_updater.get_aqi_updated_since_secs()
+        }
     return jsonify(response)
 
 @app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')

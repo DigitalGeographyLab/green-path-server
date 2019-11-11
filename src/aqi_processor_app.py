@@ -1,6 +1,5 @@
 import time
 import traceback
-from apscheduler.schedulers.background import BackgroundScheduler
 from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 from datetime import datetime
@@ -26,7 +25,9 @@ def process_aqi_updates_to_csv():
         utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
         print('AQI processing succeeded at (utc):', utctime_str)
     except Exception:
+        print('failed to process aqi data:')
         traceback.print_exc()
+        time.sleep(30)
     finally:
         AQI.remove_temp_files()
         AQI.remove_old_aqi_files()
