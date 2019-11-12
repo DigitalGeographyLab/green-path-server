@@ -68,8 +68,8 @@ class AqiProcessor:
         self.wip_edge_aqi_csv = ''
 
     def new_aqi_available(self) -> bool:
-        """Returns True if the latest aqi file is either already processed or being processed at the moment 
-        (else returns False).
+        """Returns False if the expected latest aqi file is either already processed or being processed at the moment, 
+        else returns True.
         """
         current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
         if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
@@ -172,7 +172,7 @@ class AqiProcessor:
         # create a nodata mask (map nodata values to 0)
         # nodata value may be slightly higher than 1.0, hence try different offsets
         na_offset = 0
-        for offset in [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12]:
+        for offset in [0.0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12]:
             na_offset = na_val + offset
             nodata_count = np.sum(aqi_band <= na_offset)
             print('nodata offset:', offset, 'nodata count:', nodata_count)
@@ -236,18 +236,18 @@ class AqiProcessor:
         """Removes temporary files created during AQI processing to aqi_cache, i.e. files in attribute self.temp_files_to_rm.
         """
         rm_count = 0
-        error_count = 0
+        not_removed = []
         for rm_filename in self.temp_files_to_rm:
             try:
                 os.remove(self.aqi_dir + rm_filename)
                 rm_count += 1
-                # print('removed file:', rm_filename)
             except Exception:
-                error_count += 1
+                not_removed.append(rm_filename)
                 pass
         print('removed', rm_count, 'temp files')
-        if (error_count > 0):
-            print('could not remove', error_count, 'files')
+        if (len(not_removed) > 0):
+            print('could not remove', len(not_removed), 'files')
+        self.temp_files_to_rm = not_removed
 
     def remove_old_aqi_files(self) -> None:
         """Removes all edge_aqi_csv files older than the latest from from aqi_cache.

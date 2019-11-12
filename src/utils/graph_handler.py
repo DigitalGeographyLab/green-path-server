@@ -23,7 +23,6 @@ class GraphHandler:
         All utils for manipulating a graph in constructing and initializing a graph are provided by utils/graphs.py.
 
     Attributes:
-        aqi_dir (str): A path to aqi_cache -directory (e.g. 'aqi_cache/').
         graph: A NetworkX graph object.
         edge_gdf: The edges of the graph as a GeoDataFrame.
         edges_sind: Spatial index of the edges GeoDataFrame.
@@ -36,15 +35,16 @@ class GraphHandler:
         * Calculate and update AQI costs to graph.
     """
 
-    def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, aqi_dir: str = 'aqi_cache/'):
+    def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, set_noise_costs: bool = False):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
             subset: A boolean variable indicating whether a subset of the graph should be loaded (subset is for testing / developing).
             add_wgs_geom: A boolean variable indicating whether wgs geoms should be added to the edges' attributes.
             add_wgs_center: A boolean variable indicating whether a wgs center point geom should be added to edge_gdf as a new column.
+            set_noise_costs: A boolean variable indicating whether noise costs should be calculated and updated to the graph.
         """
-        self.aqi_dir = aqi_dir
+        start_time = time.time()
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
         print('graph of', self.graph.size(), 'edges read, subset:', subset)
@@ -56,6 +56,8 @@ class GraphHandler:
         print('graph nodes collected')
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
         print('projected edges to wgs')
+        if (set_noise_costs == True): self.set_noise_costs_to_edges()
+        utils.print_duration(start_time, 'graph initialized')
 
     def get_node_gdf(self) -> gpd.GeoDataFrame:
         """Collects and sets the nodes of a graph as a GeoDataFrame. 
@@ -94,15 +96,15 @@ class GraphHandler:
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         self.update_current_time_to_graph()
-
-    def set_aqi_to_edges(self, aqi_updates_csv: str):
+   
+    def update_aqi_to_graph(self, aqi_filepath: str):
         field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        edge_aqi_updates = pd.read_csv(aqi_filepath, converters=field_type_converters)
         print(edge_aqi_updates.head(3))
         self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
     
     def update_current_time_to_graph(self, debug: bool = False):
-        timenow = datetime.now().strftime("%H:%M:%S")
+        timenow = datetime.utcnow().strftime("%H:%M:%S")
         self.edge_gdf['updatetime'] =  timenow
         self.update_edge_attr_to_graph(df_attr='updatetime', edge_attr='updatetime')
         if (debug == True): print('updated graph at:', timenow)

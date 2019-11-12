@@ -12,21 +12,11 @@ from utils.graph_handler import GraphHandler
 # graph_aqi_update_interval_secs: int = 20
 debug: bool = True
 
-# load graph data
-start_time = time.time()
-G = GraphHandler(subset=True)
-G.set_noise_costs_to_edges()
+# initialize graph
+G = GraphHandler(subset=True, set_noise_costs=True)
 
-# setup scheduled graph updater
-# def edge_attr_update():
-#     # TODO load AQI layer, calculate & update AQI costs to graph
-#     G.update_current_time_to_graph()
-
-# graph_updater = BackgroundScheduler()
-# graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
-# graph_updater.start()
-
-utils.print_duration(start_time, 'graph initialized')
+# start graph aqi updater
+# aqi_updater = GraphAqiUpdater(G, start=True)
 
 def get_quiet_path_stats(G, od_dict, logging=False):
     FC = tests.get_short_quiet_paths(G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
