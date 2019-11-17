@@ -1,12 +1,12 @@
 from typing import List, Set, Dict, Tuple
 from datetime import datetime
+from shapely.ops import nearest_points
+from shapely.geometry import Point, LineString
 import time
 import ast
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
-from shapely.ops import nearest_points
-from shapely.geometry import Point, LineString
 import utils.files as file_utils
 import utils.noise_exposures as noise_exps
 import utils.graphs as graph_utils
@@ -95,31 +95,21 @@ class GraphHandler:
             edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_updates['noises']]
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
-        self.update_current_time_to_graph()
-   
-    def update_aqi_to_graph(self, aqi_filepath: str):
-        field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(aqi_filepath, converters=field_type_converters)
-        print(edge_aqi_updates.head(3))
-        self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
-    
-    def update_current_time_to_graph(self, debug: bool = False):
-        timenow = datetime.utcnow().strftime("%H:%M:%S")
-        self.edge_gdf['updatetime'] =  timenow
-        self.update_edge_attr_to_graph(df_attr='updatetime', edge_attr='updatetime')
-        if (debug == True): print('updated graph at:', timenow)
 
-    def update_edge_attr_to_graph(self, edge_gdf = None, df_attr: str = None, edge_attr: str = None):
+    def update_edge_attr_to_graph(self, edge_gdf = None, from_dict: bool = False, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
 
         Args:
+            from_dict: A boolean variable indicating whether the provided df_attr column refers to a dictionary that contains
+                both names and values for the edge attributes to be set. If this is given, df_attr and edge_attr are not used.
             df_attr: The name of the column in [edge_df] from which the values for the new edge attribute are read. 
             edge_attr: A name for the edge attribute to which the new attribute values are set.
         """
         if (edge_gdf is None):
             edge_gdf = self.edge_gdf
         for edge in edge_gdf.itertuples():
-            nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: getattr(edge, df_attr)}})
+            update_attr = getattr(edge, df_attr)
+            nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: update_attr } if from_dict == False else update_attr })
 
     def get_node_point_geom(self, node: int) -> Point:
         node_d = self.graph.nodes[node]

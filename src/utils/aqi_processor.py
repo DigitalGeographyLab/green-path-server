@@ -236,9 +236,10 @@ class AqiProcessor:
         
         # save edge keys and corresponding aqi values as csv for later use
         edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi', 'length']].copy())
-        edge_aqi_updates_df['exp_aqi'] = edge_aqi_updates_df.apply(lambda row: { round(row['length'], 2): row['aqi'] }, axis=1)
+        # also save aqi_exp as tuple of (length, aqi)
+        edge_aqi_updates_df['aqi_exp'] = edge_aqi_updates_df.apply(lambda row: ( row['aqi'], round(row['length'], 2) ), axis=1)
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
-        edge_aqi_updates_df[['uvkey', 'aqi', 'exp_aqi']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
+        edge_aqi_updates_df[['uvkey', 'aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
         self.latest_edge_aqi_csv = edge_aqi_csv_name
         self.reset_wip_edge_aqi_csv_name()
         return edge_aqi_csv_name

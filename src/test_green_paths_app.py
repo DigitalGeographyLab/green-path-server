@@ -12,9 +12,6 @@ from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.aq_exposures as aq_exps
 
-# start graph aqi updater
-# aqi_updater = GraphAqiUpdater(G, start=True)
-
 # initialize graph
 G = GraphHandler(subset=True, set_noise_costs=True)
 
