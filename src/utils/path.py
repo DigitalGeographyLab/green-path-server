@@ -13,7 +13,6 @@ class Path:
         self.nodes: List[int] = nodes
         self.edges: List[dict] = []
         self.edge_groups: List[Tuple[int, List[dict]]] = []
-        self.cost_update_time = None
         self.name: str = name
         self.path_type: str = path_type
         self.set_type: str = None
@@ -42,7 +41,6 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
         self.geometry = LineString(path_coords) if (geom == True) else self.geometry
         self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
-        self.cost_update_time = self.edges[0]['cost_update_time'] if ('cost_update_time' in self.edges[0]) else self.cost_update_time
         if (noises == True):
             noises_list = [edge['noises'] for edge in self.edges]
             self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)

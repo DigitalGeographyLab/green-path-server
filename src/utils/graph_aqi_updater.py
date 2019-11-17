@@ -1,8 +1,13 @@
 import time
+import ast
+import traceback
+import pandas as pd
 from os import listdir
 from datetime import datetime
-from utils.graph_handler import GraphHandler
 from apscheduler.schedulers.background import BackgroundScheduler
+from utils.graph_handler import GraphHandler
+import utils.aq_exposures as aq_exps
+from typing import List, Set, Dict, Tuple, Optional
 
 class GraphAqiUpdater:
     """GraphAqiUpdater triggers an AQI to graph update if new AQI data is available in /aqi_cache.
@@ -17,22 +22,30 @@ class GraphAqiUpdater:
             update it to a graph if available.
     """
 
-    def __init__(self, graph_handler: GraphHandler, aqi_dir: str = 'aqi_cache/', start: bool = False):
-        self.graph_handler = graph_handler
+    def __init__(self, G: GraphHandler, aqi_dir: str = 'aqi_cache/', start: bool = False):
+        self.G = G
+        self.sens = aq_exps.get_aq_sensitivities()
+        self.aqi_update_status = ''
         self.aqi_dir = aqi_dir
         self.aqi_data_wip = ''
         self.aqi_data_latest = ''
         self.aqi_data_updatetime = None
         self.scheduler = BackgroundScheduler()
-        self.scheduler.add_job(self.maybe_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
+        self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
         if (start == True): self.scheduler.start()
 
-    def maybe_update_aqi_to_graph(self):
+    def maybe_read_update_aqi_to_graph(self):
         """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
         """
         new_aqi_data_csv = self.new_aqi_data_available()
         if (new_aqi_data_csv is not None):
-            self.update_aqi_to_graph(new_aqi_data_csv)
+            try:
+                self.read_update_aqi_to_graph(new_aqi_data_csv)
+            except Exception:
+                self.aqi_update_status = 'could not complete AQI update from: '+ new_aqi_data_csv
+                print(self.aqi_update_status)
+                traceback.print_exc()
+                time.sleep(60)
 
     def get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
@@ -65,29 +78,39 @@ class GraphAqiUpdater:
         """Returns the name of a new AQI csv file if it's not yet updated or being updated to a graph and it exists in aqi_dir.
         Else returns None.
         """
+        new_aqi_available = None
+        aqi_update_status = ''
+
         aqi_data_expected = self.get_expected_aqi_data_name()
         if (aqi_data_expected == self.aqi_data_latest):
-            return None
+            aqi_update_status = 'latest AQI was updated to graph'
         elif (aqi_data_expected == self.aqi_data_wip):
-            print('AQI update already in progress')
-            return None
+            aqi_update_status = 'AQI update already in progress'
         elif (aqi_data_expected in listdir(self.aqi_dir)):
-            print('AQI update will be done')
-            return aqi_data_expected
+            aqi_update_status = 'AQI update will be done from: '+ aqi_data_expected
+            new_aqi_available = aqi_data_expected
         else:
-            print('expected AQI data is not available')
-            return None
+            aqi_update_status = 'expected AQI data is not available ('+ aqi_data_expected +')'
+        
+        if (aqi_update_status != self.aqi_update_status):
+            print(aqi_update_status)
+            self.aqi_update_status = aqi_update_status
+        return new_aqi_available
 
-    def update_aqi_to_graph(self, aqi_updates_csv: str):
+    def get_aq_update_attrs(self, aqi_exp: Tuple[float, float]):
+        aq_costs = aq_exps.get_aqi_costs(aqi_exp, self.sens)
+        return { **{'aqi': aqi_exp[0] }, **aq_costs }
+    
+    def read_update_aqi_to_graph(self, aqi_updates_csv: str):
         self.aqi_data_wip = aqi_updates_csv
-        try:
-            self.graph_handler.update_aqi_to_graph(self.aqi_dir + aqi_updates_csv)
-            utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
-            print('AQI update succeeded at:', utctime_str,'(UTC)')
-            self.aqi_data_updatetime = datetime.utcnow()
-            self.aqi_data_latest = aqi_updates_csv
-            self.aqi_data_wip = ''
-        except Exception:
-            print('failed to update AQI to graph')
-            time.sleep(15)
-            pass
+        # read aqi update csv
+        field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
+        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        # prepare dictionary of aqi attributes to update
+        edge_aqi_updates['aq_updates'] = edge_aqi_updates.apply(lambda row: self.get_aq_update_attrs(row['aqi_exp']), axis=1)
+        self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')
+        utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
+        print('AQI update succeeded at:', utctime_str,'(UTC)')
+        self.aqi_data_updatetime = datetime.utcnow()
+        self.aqi_data_latest = aqi_updates_csv
+        self.aqi_data_wip = ''

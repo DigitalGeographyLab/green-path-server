@@ -1,12 +1,12 @@
 from typing import List, Set, Dict, Tuple
 from datetime import datetime
+from shapely.ops import nearest_points
+from shapely.geometry import Point, LineString
 import time
 import ast
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
-from shapely.ops import nearest_points
-from shapely.geometry import Point, LineString
 import utils.files as file_utils
 import utils.noise_exposures as noise_exps
 import utils.graphs as graph_utils
@@ -95,31 +95,21 @@ class GraphHandler:
             edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_updates['noises']]
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
-        self.update_current_time_to_graph()
-   
-    def update_aqi_to_graph(self, aqi_filepath: str):
-        field_type_converters = { 'uvkey': ast.literal_eval, 'exp_aqi': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(aqi_filepath, converters=field_type_converters)
-        print(edge_aqi_updates.head(3))
-        self.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aqi', edge_attr='aqi')
-    
-    def update_current_time_to_graph(self, debug: bool = False):
-        timenow = datetime.utcnow().strftime("%H:%M:%S")
-        self.edge_gdf['updatetime'] =  timenow
-        self.update_edge_attr_to_graph(df_attr='updatetime', edge_attr='updatetime')
-        if (debug == True): print('updated graph at:', timenow)
 
-    def update_edge_attr_to_graph(self, edge_gdf = None, df_attr: str = None, edge_attr: str = None):
+    def update_edge_attr_to_graph(self, edge_gdf = None, from_dict: bool = False, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
 
         Args:
+            from_dict: A boolean variable indicating whether the provided df_attr column refers to a dictionary that contains
+                both names and values for the edge attributes to be set. If this is given, df_attr and edge_attr are not used.
             df_attr: The name of the column in [edge_df] from which the values for the new edge attribute are read. 
             edge_attr: A name for the edge attribute to which the new attribute values are set.
         """
         if (edge_gdf is None):
             edge_gdf = self.edge_gdf
         for edge in edge_gdf.itertuples():
-            nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: getattr(edge, df_attr)}})
+            update_attr = getattr(edge, df_attr)
+            nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: update_attr } if from_dict == False else update_attr })
 
     def get_node_point_geom(self, node: int) -> Point:
         node_d = self.graph.nodes[node]
@@ -182,7 +172,7 @@ class GraphHandler:
 
     def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
-        Loads edge attributes 'cost_update_time', 'length', 'noises', 'dBrange' and 'coords'.
+        Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
         """
         path_edges = []
         for idx in range(0, len(path)):
@@ -194,7 +184,6 @@ class GraphHandler:
             node_2 = path[idx+1]
             edges = self.graph[node_1][node_2]
             edge = graph_utils.get_least_cost_edge(edges, cost_attr)
-            edge_d['cost_update_time'] = edge['updatetime'] if ('updatetime' in edge) else {}
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
@@ -251,8 +240,8 @@ class GraphHandler:
         link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
         link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
         # combine link attributes to prepare adding them as new edges
-        link1_attrs = { **link1_geom_attrs, **link1_cost_attrs, 'updatetime': edge['updatetime'] }
-        link2_attrs = { **link2_geom_attrs, **link2_cost_attrs, 'updatetime': edge['updatetime'] }
+        link1_attrs = { **link1_geom_attrs, **link1_cost_attrs }
+        link2_attrs = { **link2_geom_attrs, **link2_cost_attrs }
         # add linking edges with noise cost attributes to graph
         self.graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
         self.graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])

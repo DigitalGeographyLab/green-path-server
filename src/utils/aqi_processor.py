@@ -46,6 +46,7 @@ class AqiProcessor:
         self.AWS_ACCESS_KEY_ID: str = ''
         self.AWS_SECRET_ACCESS_KEY: str = ''
         self.temp_files_to_rm: list = []
+        self.status: str = ''
         if (set_aws_secrets == True): self.set_aws_secrets()
 
     def set_aws_secrets(self) -> None:
@@ -71,13 +72,23 @@ class AqiProcessor:
         """Returns False if the expected latest aqi file is either already processed or being processed at the moment, 
         else returns True.
         """
+        b_available = True
+        status = ''
         current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
         if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
-            return False
+            status = 'latest AQI data is processed'
+            b_available = False
         elif (self.wip_edge_aqi_csv == current_edge_aqi_csv):
-            return False
+            status = 'latest AQI data is being processed'
+            b_available = False
         else:
-            return True
+            status = 'new AQI data available: '+ current_edge_aqi_csv
+            b_available = True
+
+        if (self.status != status):
+            print(status)
+            self.status = status
+        return b_available
 
     def get_current_enfuser_key_filename(self) -> Tuple[str, str]:
         """Returns a key pointing to the expected current enfuser zip file in aws s3 bucket. 
@@ -225,9 +236,10 @@ class AqiProcessor:
         
         # save edge keys and corresponding aqi values as csv for later use
         edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi', 'length']].copy())
-        edge_aqi_updates_df['exp_aqi'] = edge_aqi_updates_df.apply(lambda row: { round(row['length'], 2): row['aqi'] }, axis=1)
+        # also save aqi_exp as tuple of (length, aqi)
+        edge_aqi_updates_df['aqi_exp'] = edge_aqi_updates_df.apply(lambda row: ( row['aqi'], round(row['length'], 2) ), axis=1)
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
-        edge_aqi_updates_df[['uvkey', 'aqi', 'exp_aqi']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
+        edge_aqi_updates_df[['uvkey', 'aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
         self.latest_edge_aqi_csv = edge_aqi_csv_name
         self.reset_wip_edge_aqi_csv_name()
         return edge_aqi_csv_name
