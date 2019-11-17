@@ -182,7 +182,7 @@ class GraphHandler:
 
     def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
-        Loads edge attributes 'cost_update_time', 'length', 'noises', 'dBrange' and 'coords'.
+        Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
         """
         path_edges = []
         for idx in range(0, len(path)):
@@ -194,7 +194,6 @@ class GraphHandler:
             node_2 = path[idx+1]
             edges = self.graph[node_1][node_2]
             edge = graph_utils.get_least_cost_edge(edges, cost_attr)
-            edge_d['cost_update_time'] = edge['updatetime'] if ('updatetime' in edge) else {}
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
@@ -251,8 +250,8 @@ class GraphHandler:
         link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
         link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
         # combine link attributes to prepare adding them as new edges
-        link1_attrs = { **link1_geom_attrs, **link1_cost_attrs, 'updatetime': edge['updatetime'] }
-        link2_attrs = { **link2_geom_attrs, **link2_cost_attrs, 'updatetime': edge['updatetime'] }
+        link1_attrs = { **link1_geom_attrs, **link1_cost_attrs }
+        link2_attrs = { **link2_geom_attrs, **link2_cost_attrs }
         # add linking edges with noise cost attributes to graph
         self.graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
         self.graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])
