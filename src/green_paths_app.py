@@ -15,8 +15,8 @@ from utils.logger import Logger
 app = Flask(__name__)
 CORS(app)
 
+# set logging to use gunicorn logger & logging level
 if __name__ != '__main__':
-    # set logging to use gunicorn logger & logging level
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)

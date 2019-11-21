@@ -10,39 +10,40 @@ class Logger:
 
     def print_log(self, text, level):
         log_prefix = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S') + ' ['+ level +'] '
-        print (log_prefix + text)
+        if (self.b_printing == True):
+            print(log_prefix + text)
         if (self.log_file is not None):
             with open(self.log_file, 'a') as the_file:
                 the_file.write(log_prefix + text + '\n')
 
     def debug(self, text: str):
-        if (self.b_printing == True):
+        if (self.b_printing == True or self.log_file is not None):
             self.print_log(text, 'DEBUG')
-        elif (self.app_logger is not None):
+        if (self.app_logger is not None):
             self.app_logger.debug(text)
 
     def info(self, text: str):
-        if (self.b_printing == True):
+        if (self.b_printing == True or self.log_file is not None):
             self.print_log(text, 'INFO')
-        elif (self.app_logger is not None):
+        if (self.app_logger is not None):
             self.app_logger.info(text)
 
     def warning(self, text: str):
-        if (self.b_printing == True):
+        if (self.b_printing == True or self.log_file is not None):
             self.print_log(text, 'WARNING')
-        elif (self.app_logger is not None):
+        if (self.app_logger is not None):
             self.app_logger.warning(text)
 
     def error(self, text: str):
-        if (self.b_printing == True):
+        if (self.b_printing == True or self.log_file is not None):
             self.print_log(text, 'ERROR')
-        elif (self.app_logger is not None):
+        if (self.app_logger is not None):
             self.app_logger.error(text)
 
     def critical(self, text: str):
-        if (self.b_printing == True):
+        if (self.b_printing == True or self.log_file is not None):
             self.print_log(text, 'CRITICAL')
-        elif (self.app_logger is not None):
+        if (self.app_logger is not None):
             self.app_logger.critical(text)
 
     def duration(self, time1, text, round_n: int = 3, unit: str = 's', log_level: str = 'debug') -> None:
@@ -54,8 +55,8 @@ class Logger:
             time_elapsed = round((time.time() - time1) * 1000)
             log_str = '--- %s ms --- %s' % (time_elapsed, text)
 
-        if (self.b_printing == True):
-            level = 'DEBUG' if log_level == 'debug' else 'INFO' if log_level == 'info' else 'WARN'
+        if (self.b_printing == True or self.log_file is not None):
+            level = 'DEBUG' if log_level == 'debug' else 'INFO' if log_level == 'info' else 'WARNING'
             self.print_log(log_str, level)
         elif (log_level == 'debug'):
             self.debug(log_str)

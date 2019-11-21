@@ -78,7 +78,7 @@ class AqiProcessor:
         status = ''
         current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
         if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
-            status = 'latest AQI data is processed'
+            status = 'latest AQI data already processed'
             b_available = False
         elif (self.wip_edge_aqi_csv == current_edge_aqi_csv):
             status = 'latest AQI data is being processed'
