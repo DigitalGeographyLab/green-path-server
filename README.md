@@ -38,6 +38,11 @@ $ conda env create -f env_gp_server.yml
 ## Running the server locally
 ```
 $ conda activate gp-server
+
+# run with gunicorn
+$ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info green_paths_app:app
+
+# or with python (flask)
 $ python green_paths_app.py
 ```
 

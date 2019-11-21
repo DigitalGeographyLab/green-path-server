@@ -16,8 +16,9 @@ import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 import utils.utils as utils
 from utils.graph_handler import GraphHandler
+from utils.logger import Logger
 
-def get_nearest_node(G: GraphHandler, point: Point, link_edges: dict = None, debug=False) -> Dict:
+def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dict = None) -> Dict:
     """Finds (or creates) the nearest node to a given point. 
     If the nearest node is further than the nearest edge to the point, a new node is created
     on the nearest edge on the nearest point on the edge.
@@ -42,10 +43,10 @@ def get_nearest_node(G: GraphHandler, point: Point, link_edges: dict = None, deb
         'nearest_edge_point' which is a Shapely Point object located on the nearest point on the nearest edge.
         (The last two objects are needed for creating the linking edges for newly created nodes)
     """
-    nearest_edge = G.find_nearest_edge(point, debug=debug)
+    nearest_edge = G.find_nearest_edge(point)
     if (nearest_edge is None):
         raise Exception('Nearest edge not found')
-    nearest_node = G.find_nearest_node(point, debug=debug)
+    nearest_node = G.find_nearest_node(point)
     start_time = time.time()
     nearest_node_geom = G.get_node_point_geom(nearest_node)
     nearest_edge_point = geom_utils.get_closest_point_on_line(nearest_edge['geometry'], point)
@@ -63,10 +64,10 @@ def get_nearest_node(G: GraphHandler, point: Point, link_edges: dict = None, deb
     # new edges from the new node to existing nodes need to be created to the graph
     # hence return the geometry of the nearest edge and the nearest point on the nearest edge
     links_to = { 'nearest_edge': nearest_edge, 'nearest_edge_point': nearest_edge_point }
-    if (debug == True): utils.print_duration(start_time, 'got geoms for adding node & links', unit='ms')
+    log.duration(start_time, 'got geoms for adding node & links', unit='ms')
     return { 'node': new_node, 'offset': round(nearest_edge_point.distance(point), 1), 'add_links': True, **links_to }
 
-def get_orig_dest_nodes_and_linking_edges(G: GraphHandler, orig_point: Point, dest_point: Point, sens: List[float], db_costs: Dict[int,float], debug=False):
+def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_point: Point, dest_point: Point, sens: List[float], db_costs: Dict[int,float]):
     """Finds the nearest nodes to origin and destination as well as the newly created edges that connect 
     the origin and destination nodes to the graph.
 
@@ -89,19 +90,19 @@ def get_orig_dest_nodes_and_linking_edges(G: GraphHandler, orig_point: Point, de
     dest_link_edges = None
 
     try:
-        orig_node = get_nearest_node(G, orig_point, debug=debug)
+        orig_node = get_nearest_node(log, G, orig_point)
         # add linking edges to graph if new node was created on the nearest edge
         if (orig_node is not None and orig_node['add_links'] == True):
             orig_link_edges = G.create_linking_edges_for_new_node(
-                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], sens, db_costs, debug=debug)
+                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], sens, db_costs)
     except Exception:
         raise Exception('Could not find origin')
     try:
-        dest_node = get_nearest_node(G, dest_point, link_edges=orig_link_edges, debug=debug)
+        dest_node = get_nearest_node(log, G, dest_point, link_edges=orig_link_edges)
         # add linking edges to graph if new node was created on the nearest edge
         if (dest_node is not None and dest_node['add_links'] == True):
             dest_link_edges = G.create_linking_edges_for_new_node(
-                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], sens, db_costs, debug=debug)
+                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], sens, db_costs)
     except Exception:
         raise Exception('Could not find destination')
 

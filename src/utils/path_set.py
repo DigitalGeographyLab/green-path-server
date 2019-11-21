@@ -4,16 +4,17 @@ import utils.paths_overlay_filter as path_overlay_filter
 import utils.utils as utils
 from utils.path import Path
 import utils.geometry as geom_utils
+from utils.logger import Logger
 
 class PathSet:
     """An instance of PathSet holds, manipulates and filters both shortest and least cost paths.
     """
 
-    def __init__(self, set_type: str, debug_mode: bool = False):
+    def __init__(self, logger: Logger, set_type: str):
+        self.log = logger
         self.set_type: str = set_type # either 'quiet' or 'clean'
         self.shortest_path: Path = None
         self.green_paths: List[Path] = []
-        self.debug_mode: bool = debug_mode
 
     def set_shortest_path(self, s_path: Path):
         s_path.set_set_type(self.set_type)
@@ -46,7 +47,7 @@ class PathSet:
                 gp.aggregate_path_attrs(geom=geom, length=length, noises=noises)
 
     def filter_out_unique_len_paths(self):
-        if (self.debug_mode == True): print('green path count:', len(self.green_paths))
+        self.log.debug('green path count: '+ str(len(self.green_paths)))
         filtered = []
         prev_len = self.shortest_path.length
         for path in self.green_paths:
@@ -54,13 +55,13 @@ class PathSet:
                 filtered.append(path)
             prev_len = path.length
         self.green_paths = filtered
-        if (self.debug_mode == True): print('green path count after filter by unique length:', len(self.green_paths))
+        self.log.debug('green path count after filter by unique length: '+ str(len(self.green_paths)))
 
     def filter_out_unique_geom_paths(self, buffer_m=50):
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
         """
         cost_attr = 'nei_norm' if (self.set_type == 'quiet') else ''
-        unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(self.get_all_paths(), buffer_m=buffer_m, cost_attr=cost_attr, debug=self.debug_mode)
+        unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(self.log, self.get_all_paths(), buffer_m=buffer_m, cost_attr=cost_attr)
         if (unique_paths_names is not None):
             self.filter_paths_by_names(unique_paths_names)
 
@@ -69,7 +70,7 @@ class PathSet:
         """
         filtered_green_paths = [path for path in self.green_paths if path.name in filter_names]
         if ('short_p' not in filter_names):
-            if (self.debug_mode == True): print('replace shortest path with shortest green path')
+            self.log.debug('replacing shortest path with shortest green path')
             shortest_green_path = filtered_green_paths[0]
             shortest_green_path.set_path_type('short')
             shortest_green_path.set_path_name('short_p')

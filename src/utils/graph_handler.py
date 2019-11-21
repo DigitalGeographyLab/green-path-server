@@ -12,6 +12,7 @@ import utils.noise_exposures as noise_exps
 import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 import utils.utils as utils
+from utils.logger import Logger
 
 class GraphHandler:
     """Graph handler holds a NetworkX graph object and related features (e.g. graph edges as a GeoDataFrame).
@@ -35,7 +36,7 @@ class GraphHandler:
         * Calculate and update AQI costs to graph.
     """
 
-    def __init__(self, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, set_noise_costs: bool = False):
+    def __init__(self, logger: Logger, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, set_noise_costs: bool = False):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
@@ -44,20 +45,21 @@ class GraphHandler:
             add_wgs_center: A boolean variable indicating whether a wgs center point geom should be added to edge_gdf as a new column.
             set_noise_costs: A boolean variable indicating whether noise costs should be calculated and updated to the graph.
         """
+        self.log = logger
         start_time = time.time()
         if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
         else: self.graph = file_utils.load_graph_full_noise()
-        print('graph of', self.graph.size(), 'edges read, subset:', subset)
+        self.log.info('graph of '+ str(self.graph.size()) + ' edges read, subset: '+ str(subset))
         self.edge_gdf = graph_utils.get_edge_gdf(self.graph, attrs=['geometry', 'length', 'noises'])
         self.edges_sind = self.edge_gdf.sindex
-        print('graph edges collected')
+        self.log.debug('graph edges collected')
         self.node_gdf = self.get_node_gdf()
         self.nodes_sind = self.node_gdf.sindex
-        print('graph nodes collected')
+        self.log.debug('graph nodes collected')
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
-        print('projected edges to wgs')
+        self.log.info('projected edges to wgs')
         if (set_noise_costs == True): self.set_noise_costs_to_edges()
-        utils.print_duration(start_time, 'graph initialized')
+        self.log.duration(start_time, 'graph initialized', log_level='info')
 
     def get_node_gdf(self) -> gpd.GeoDataFrame:
         """Collects and sets the nodes of a graph as a GeoDataFrame. 
@@ -115,7 +117,7 @@ class GraphHandler:
         node_d = self.graph.nodes[node]
         return Point(node_d['x'], node_d['y'])
 
-    def find_nearest_node(self, point: Point, debug=False) -> int:
+    def find_nearest_node(self, point: Point) -> int:
         """Finds the nearest node to a given point.
 
         Args:
@@ -131,7 +133,7 @@ class GraphHandler:
             if (len(possible_matches_index) == 0):
                 continue
         if (len(possible_matches_index) == 0):
-            print('no near node found')
+            self.log.warning('no near node found')
             return None
         possible_matches = self.node_gdf.iloc[possible_matches_index]
         points_union = possible_matches.geometry.unary_union
@@ -139,10 +141,10 @@ class GraphHandler:
         nearest = possible_matches.geometry.geom_equals(nearest_geom)
         nearest_point =  possible_matches.loc[nearest]
         nearest_node = nearest_point.index.tolist()[0]
-        if (debug == True): utils.print_duration(start_time, 'found nearest node', unit='ms')
+        self.log.duration(start_time, 'found nearest node', unit='ms')
         return nearest_node
     
-    def find_nearest_edge(self, point: Point, debug=False) -> Dict:
+    def find_nearest_edge(self, point: Point) -> Dict:
         """Finds the nearest edge to a given point.
 
         Args:
@@ -163,11 +165,11 @@ class GraphHandler:
                 if (shortest_dist < radius):
                     break
         if (len(possible_matches_index) == 0):
-            print('no near edges found')
+            self.log.error('no near edges found')
             return None
         nearest = possible_matches['distance'] == shortest_dist
         nearest_edge_dict =  possible_matches.loc[nearest].iloc[0].to_dict()
-        if (debug == True): utils.print_duration(start_time, 'found nearest edge', unit='ms')
+        self.log.duration(start_time, 'found nearest edge', unit='ms')
         return nearest_edge_dict
 
     def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
@@ -214,7 +216,7 @@ class GraphHandler:
         self.graph.add_node(attrs['id'], ref='', x=attrs['x'], y=attrs['y'], lon=attrs['lon'], lat=attrs['lat'])
         return attrs['id']
 
-    def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict, debug=False) -> dict:
+    def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
         for the new edges based on attributes of the original edge on which the new node was added. 
 
@@ -249,7 +251,7 @@ class GraphHandler:
         self.graph.add_edges_from([ (new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs }) ])
         link1_d = { 'uvkey': (new_node, node_from), **link1_attrs }
         link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
-        if (debug == True): utils.print_duration(start_time, 'added links for new node', unit='ms')
+        self.log.duration(start_time, 'added links for new node', unit='ms')
         return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
     def get_least_cost_path(self, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
@@ -297,5 +299,5 @@ class GraphHandler:
                 removed_node = True
             except Exception:
                 pass
-            if (removed_count == 0): print('Could not remove linking edges')
-            if (removed_node == False): print('Could not remove new node')
+            if (removed_count == 0): self.log.error('Could not remove linking edges')
+            if (removed_node == False): self.log.error('Could not remove new node')

@@ -7,6 +7,7 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from utils.graph_handler import GraphHandler
 import utils.aq_exposures as aq_exps
+from utils.logger import Logger
 from typing import List, Set, Dict, Tuple, Optional
 
 class GraphAqiUpdater:
@@ -22,7 +23,8 @@ class GraphAqiUpdater:
             update it to a graph if available.
     """
 
-    def __init__(self, G: GraphHandler, aqi_dir: str = 'aqi_cache/', start: bool = False):
+    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_cache/', start: bool = False):
+        self.log = logger
         self.G = G
         self.sens = aq_exps.get_aq_sensitivities()
         self.aqi_update_status = ''
@@ -43,7 +45,7 @@ class GraphAqiUpdater:
                 self.read_update_aqi_to_graph(new_aqi_data_csv)
             except Exception:
                 self.aqi_update_status = 'could not complete AQI update from: '+ new_aqi_data_csv
-                print(self.aqi_update_status)
+                self.log.error(self.aqi_update_status)
                 traceback.print_exc()
                 time.sleep(60)
 
@@ -93,7 +95,10 @@ class GraphAqiUpdater:
             aqi_update_status = 'expected AQI data is not available ('+ aqi_data_expected +')'
         
         if (aqi_update_status != self.aqi_update_status):
-            print(aqi_update_status)
+            if ('not available' in aqi_update_status):
+                self.log.warning(aqi_update_status)
+            else:
+                self.log.info(aqi_update_status)
             self.aqi_update_status = aqi_update_status
         return new_aqi_available
 
@@ -109,8 +114,7 @@ class GraphAqiUpdater:
         # prepare dictionary of aqi attributes to update
         edge_aqi_updates['aq_updates'] = edge_aqi_updates.apply(lambda row: self.get_aq_update_attrs(row['aqi_exp']), axis=1)
         self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')
-        utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
-        print('AQI update succeeded at:', utctime_str,'(UTC)')
+        self.log.info('AQI update succeeded')
         self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv
         self.aqi_data_wip = ''

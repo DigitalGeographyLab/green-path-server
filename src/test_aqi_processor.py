@@ -9,9 +9,11 @@ from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.graphs as graph_utils
+from utils.logger import Logger
 
-aqi_processor = AqiProcessor(aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)
-G = GraphHandler(subset=True, add_wgs_center=True)
+logger = Logger(b_printing=True, log_file='test_aqi_processor.log')
+aqi_processor = AqiProcessor(logger, aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)
+G = GraphHandler(logger, subset=True, add_wgs_center=True)
 
 class TestAqiProcessing(unittest.TestCase):
 
@@ -73,7 +75,7 @@ class TestAqiProcessing(unittest.TestCase):
         # get & validate joined aqi values
         aqi_max = G.edge_gdf['aqi'].max()
         aqi_mean = G.edge_gdf['aqi'].mean()
-        print('aqi mean:', aqi_mean)
+        logger.info('aqi mean: '+ str(round(aqi_mean, 3)))
         self.assertAlmostEqual(aqi_max, 2.51, places=2)
         self.assertAlmostEqual(aqi_mean, 1.88, places=2)
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }

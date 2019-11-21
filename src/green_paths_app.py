@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 from flask import Flask
@@ -7,19 +8,26 @@ import utils.utils as utils
 from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
+from utils.logger import Logger
 
 # version: 1.1.0
 
 app = Flask(__name__)
 CORS(app)
 
-debug: bool = False
+# set logging to use gunicorn logger & logging level
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
+logger = Logger(app_logger=app.logger)
 
 # initialize graph
-G = GraphHandler(subset=True, set_noise_costs=True)
+G = GraphHandler(logger, subset=True, set_noise_costs=True)
 
 # start graph aqi updater
-aqi_updater = GraphAqiUpdater(G, start=True)
+aqi_updater = GraphAqiUpdater(logger, G, start=True)
 
 @app.route('/')
 def hello_world():
@@ -39,7 +47,7 @@ def aqi_status():
 def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
 
     error = None
-    path_finder = PathFinder('quiet', G, orig_lat, orig_lon, dest_lat, dest_lon, debug=debug)
+    path_finder = PathFinder(logger, 'quiet', G, orig_lat, orig_lon, dest_lat, dest_lon)
 
     try:
         path_finder.find_origin_dest_nodes()

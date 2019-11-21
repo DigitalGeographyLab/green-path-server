@@ -58,10 +58,8 @@ def load_graphml(filename, folder=None, node_type=int, directed=None, noises=Tru
 
     # read as directed or undirected graph
     if (directed == True):
-        print('loading directed graph')
         G = nx.MultiDiGraph(nx.read_graphml(path, node_type=node_type))
     else:
-        print('loading undirected graph')
         G = nx.MultiGraph(nx.read_graphml(path, node_type=node_type))
 
     # convert graph crs attribute from saved string to correct dict data type

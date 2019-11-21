@@ -12,6 +12,7 @@ from rasterio import fill
 from datetime import datetime
 import utils.geometry as geom_utils
 from utils.graph_handler import GraphHandler
+from utils.logger import Logger
 from typing import List, Set, Dict, Tuple, Optional
 
 class AqiProcessor:
@@ -36,7 +37,8 @@ class AqiProcessor:
         Add file credentials.csv containing the required aws secrets to src/.
     """
 
-    def __init__(self, aqi_dir: str = 'aqi_cache/', set_aws_secrets: bool = False):
+    def __init__(self, logger: Logger, aqi_dir: str = 'aqi_cache/', set_aws_secrets: bool = False):
+        self.log = logger
         self.wip_edge_aqi_csv: str = ''
         self.latest_edge_aqi_csv: str = ''
         self.latest_aqi_tif: str = ''
@@ -76,7 +78,7 @@ class AqiProcessor:
         status = ''
         current_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
         if (self.latest_edge_aqi_csv == current_edge_aqi_csv):
-            status = 'latest AQI data is processed'
+            status = 'latest AQI data already processed'
             b_available = False
         elif (self.wip_edge_aqi_csv == current_edge_aqi_csv):
             status = 'latest AQI data is being processed'
@@ -86,7 +88,7 @@ class AqiProcessor:
             b_available = True
 
         if (self.status != status):
-            print(status)
+            self.log.info(status)
             self.status = status
         return b_available
 
@@ -186,12 +188,12 @@ class AqiProcessor:
         for offset in [0.0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12]:
             na_offset = na_val + offset
             nodata_count = np.sum(aqi_band <= na_offset)
-            print('nodata offset:', offset, 'nodata count:', nodata_count)
+            self.log.info('nodata offset: '+ str(offset) + ' nodata count: '+ str(nodata_count))
             # check if nodata values can be mapped with the current offset
             if (nodata_count > 180000):
                 break
         if (nodata_count < 180000):
-            print('failed to set nodata values in the aqi tif, nodata count:', nodata_count)
+            self.log.info('failed to set nodata values in the aqi tif, nodata count: ', str(nodata_count))
 
         aqi_nodata_mask = np.where(aqi_band <= na_offset, 0, aqi_band)
         # fill nodata in aqi_band using nodata mask
@@ -256,9 +258,9 @@ class AqiProcessor:
             except Exception:
                 not_removed.append(rm_filename)
                 pass
-        print('removed', rm_count, 'temp files')
+        self.log.info('removed '+ str(rm_count) +' temp files')
         if (len(not_removed) > 0):
-            print('could not remove', len(not_removed), 'files')
+            self.log.warning('could not remove '+ str(len(not_removed)) + ' files')
         self.temp_files_to_rm = not_removed
 
     def remove_old_aqi_files(self) -> None:
@@ -281,6 +283,6 @@ class AqiProcessor:
                 except Exception:
                     error_count += 1
                     pass
-        print('removed', rm_count, 'old edge aqi csv & tif files')
+        self.log.info('removed '+ str(rm_count) +' old edge aqi csv & tif files')
         if (error_count > 0):
-            print('could not remove', error_count, 'old edge aqi csv files')
+            self.log.warn('could not remove '+ error_count +' old edge aqi csv files')
