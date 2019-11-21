@@ -35,7 +35,8 @@ def process_aqi_updates_to_csv():
         AQI.remove_old_aqi_files()
         AQI.reset_wip_edge_aqi_csv_name()
 
-log.info('starting AQI processing schedule')
+log.info('starting AQI processor app')
+
 while True:
     if (AQI.new_aqi_available() == True):
         process_aqi_updates_to_csv()

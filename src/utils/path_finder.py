@@ -76,6 +76,7 @@ class PathFinder:
                 self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:
+            self.log.error('exception in finding least cost paths:')
             traceback.print_exc()
             raise Exception('Could not find paths')
 
@@ -115,6 +116,7 @@ class PathFinder:
             return (path_FC, edge_FC) if (edges == True) else path_FC
         
         except Exception:
+            self.log.error('exception in processing paths:')
             traceback.print_exc()
             raise Exception('Error in processing paths')
 
