@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 from flask import Flask
@@ -7,11 +8,13 @@ import utils.utils as utils
 from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
+from utils.logger import Logger
 
 # version: 1.1.0
 
 app = Flask(__name__)
 CORS(app)
+logger = Logger(app_logger=app.logger)
 
 debug: bool = False
 
@@ -58,6 +61,12 @@ def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
             return error
 
     return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
+
+if __name__ != '__main__':
+    # set logging to use gunicorn logger & logging level
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
