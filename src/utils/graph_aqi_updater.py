@@ -119,6 +119,8 @@ class GraphAqiUpdater:
         # read aqi update csv
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
         edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        self.G.edge_gdf = self.G.edge_gdf.merge(edge_aqi_updates, on='uvkey', how='left')
+        self.log.debug('joined edge_gdf has columns: ' + str(self.G.edge_gdf.columns))
         # prepare dictionary of aqi attributes to update
         edge_aqi_updates['aq_updates'] = edge_aqi_updates.apply(lambda row: self.get_aq_update_attrs(row['aqi_exp']), axis=1)
         self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')

@@ -34,9 +34,9 @@ def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen:
     given as parameter. If sensitivity value is specified, the cost is multiplied by it.
     """
     if aqi_coeff is not None:
-        return round(length * aqi_coeff, 2) * sen
+        return round(length * aqi_coeff * sen, 2)
     elif aqi is not None:
-        return round(length * get_aqi_coeff(aqi), 2) * sen
+        return round(length * get_aqi_coeff(aqi) * sen, 2)
     else:
         raise ValueError('Either aqi_coeff or aqi argument must be defined')
 
@@ -49,3 +49,14 @@ def get_aqi_costs(aqi_exp: Tuple[float, float], sens: List[float]) -> Dict[str, 
     aqi_coeff = get_aqi_coeff(aqi_exp[0])
     aq_costs = { 'aqc_'+ str(sen) : get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen) for sen in sens }
     return aq_costs
+
+def get_link_edge_aqi_cost_estimates(sens, log, edge_dict=None, link_geom=None) -> dict:
+    """Estimates aqi exposures and costs for a split edge based on aqi exposures on the original edge
+    (from which the edge was split). 
+    """
+    if ('aqi_exp' not in edge_dict.keys()):
+        log.debug('aqi not in edge dictionary, cannot add aqi costs to linking edge')
+        return {}
+    link_aqi_exp = (edge_dict['aqi_exp'][0], edge_dict['geometry'].length)
+    aqi_costs = get_aqi_costs(link_aqi_exp, sens)
+    return { 'aqi': edge_dict['aqi_exp'][0], **aqi_costs }

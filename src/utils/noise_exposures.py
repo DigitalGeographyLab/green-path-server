@@ -250,9 +250,9 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
     (from which the edge was split). 
     """
-    link_len_ratio = link_geom.length / edge_dict['geometry'].length
+    cost_attrs = {}
     # estimate link costs based on link length - edge length -ratio and edge noises
-    cost_attrs = { 'length': round(edge_dict['length'] * link_len_ratio, 2) }
+    link_len_ratio = link_geom.length / edge_dict['geometry'].length
     cost_attrs['noises'] = interpolate_link_noises(link_len_ratio, link_geom, edge_dict['geometry'], edge_dict['noises'])
     # calculate noise sensitivity specific noise costs
     for sen in sens:
