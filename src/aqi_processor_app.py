@@ -3,7 +3,9 @@ import traceback
 from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 from datetime import datetime
+from utils.logger import Logger
 
+logger = Logger(b_printing=True, log_file='aqi_processor_app.log')
 G = GraphHandler(subset=True, add_wgs_center=True)
 AQI = AqiProcessor(set_aws_secrets=True)
 

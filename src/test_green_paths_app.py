@@ -11,12 +11,14 @@ import utils.graphs as graph_utils
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.aq_exposures as aq_exps
+from utils.logger import Logger
 
 # initialize graph
-G = GraphHandler(subset=True, set_noise_costs=True)
+logger = Logger(b_printing=True, log_file='test_green_paths_app.log')
+G = GraphHandler(logger, subset=True, set_noise_costs=True)
 
 def get_quiet_path_stats(G, od_dict, logging=False):
-    FC = tests.get_short_quiet_paths(G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
+    FC = tests.get_short_quiet_paths(logger, G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
     path_props = [feat['properties'] for feat in FC]
     paths_df = pd.DataFrame(path_props)
     sp = paths_df[paths_df['type'] == 'short']
@@ -48,13 +50,13 @@ class TestAqiExposures(unittest.TestCase):
 class TestGraphAqiUpdater(unittest.TestCase):
 
     def test_aqi_updater(self):
-        aqi_updater = GraphAqiUpdater(G, aqi_dir='data/tests/aqi_cache/', start=False)
+        aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
         expected_aqi_csv = aqi_updater.get_expected_aqi_data_name()
         # test expected aqi data file name
         self.assertEqual(len(expected_aqi_csv), 21)
 
     def test_graph_aqi_updater(self):
-        aqi_updater = GraphAqiUpdater(G, aqi_dir='data/tests/aqi_cache/', start=False)
+        aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
         aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
         edge_dicts = graph_utils.get_all_edge_dicts(G.graph)

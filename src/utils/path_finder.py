@@ -10,6 +10,7 @@ import utils.graphs as graph_utils
 from utils.path import Path
 from utils.path_set import PathSet
 from utils.graph_handler import GraphHandler
+from utils.logger import Logger
 
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
@@ -19,23 +20,24 @@ class PathFinder:
         Implement AQI based routing.
     """
 
-    def __init__(self, finder_type: str, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon, debug: bool = False):
+    def __init__(self, logger: Logger, finder_type: str, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon):
+        self.log = logger
         self.finder_type: str = finder_type # either 'quiet' or 'clean'
         self.G = G
         orig_latLon = {'lat': float(orig_lat), 'lon': float(orig_lon)}
         dest_latLon = {'lat': float(dest_lat), 'lon': float(dest_lon)}
-        print('initializing path finder from', orig_latLon, 'to', dest_latLon)
+        self.log.debug('initializing path finder from: '+ str(orig_latLon))
+        self.log.debug('to: '+ str(dest_latLon))
         self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
         sens_subset = self.orig_point.distance(self.dest_point) > 2000
         self.sens = noise_exps.get_noise_sensitivities(subset=sens_subset)
         self.db_costs = noise_exps.get_db_costs()
-        self.PathSet = PathSet(set_type=finder_type, debug_mode=debug)
+        self.PathSet = PathSet(self.log, set_type=finder_type)
         self.orig_node = None
         self.dest_node = None
         self.orig_link_edges = None
         self.dest_link_edges = None
-        self.debug_mode = debug
 
     def find_origin_dest_nodes(self):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
@@ -46,14 +48,14 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                self.G, self.orig_point, self.dest_point, self.sens, self.db_costs, debug=self.debug_mode)
+                self.log, self.G, self.orig_point, self.dest_point, self.sens, self.db_costs)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
             self.dest_link_edges = dest_link_edges
-            utils.print_duration(start_time, 'origin & destination nodes set', unit='ms')
+            self.log.duration(start_time, 'origin & destination nodes set', unit='ms', log_level='info')
         except Exception as e:
-            print('exception in finding nearest nodes:')
+            self.log.error('exception in finding nearest nodes:')
             traceback.print_exc()
             raise Exception(str(e))
 
@@ -65,19 +67,19 @@ class PathFinder:
         """
         try:
             start_time = time.time()
-            self.path_set = PathSet(set_type='quiet', debug_mode=self.debug_mode)
+            self.path_set = PathSet(self.log, set_type='quiet')
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
             self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
             for sen in self.sens:
                 noise_cost_attr = 'nc_'+ str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
                 self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
-            utils.print_duration(start_time, 'routing done', unit='ms')
+            self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:
             traceback.print_exc()
             raise Exception('Could not find paths')
 
-    def process_paths_to_FC(self, edges: bool = True) -> dict:
+    def process_paths_to_FC(self, edges: bool = True, FCs_to_files: bool = False) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
         paths based on geometries and length. 
 
@@ -94,16 +96,16 @@ class PathFinder:
             self.path_set.set_path_noise_attrs(self.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
             self.path_set.set_green_path_diff_attrs()
-            utils.print_duration(start_time, 'aggregated paths', unit='ms')
+            self.log.duration(start_time, 'aggregated paths', unit='ms')
             
             start_time = time.time()
             path_FC = self.path_set.get_paths_as_feature_collection()
             if (edges == True): 
                 edge_FC = self.path_set.get_edges_as_feature_collection()
             
-            utils.print_duration(start_time, 'processed paths & edges to FC', unit='ms')
+            self.log.duration(start_time, 'processed paths & edges to FC', unit='ms', log_level='info')
 
-            if (self.debug_mode == True):
+            if (FCs_to_files == True):
                 with open('debug/path_fc.geojson', 'w') as outfile:
                     json.dump(path_FC, outfile, indent=3, sort_keys=True)
                 if (edges == True):
@@ -119,6 +121,6 @@ class PathFinder:
     def delete_added_graph_features(self):
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
         """
-        if (self.debug_mode == True): print("deleting created nodes & edges from the graph")
+        self.log.debug('deleting created nodes & edges from the graph')
         self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
         self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)

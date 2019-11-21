@@ -14,15 +14,20 @@ from utils.logger import Logger
 
 app = Flask(__name__)
 CORS(app)
+
+if __name__ != '__main__':
+    # set logging to use gunicorn logger & logging level
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
 logger = Logger(app_logger=app.logger)
 
-debug: bool = False
-
 # initialize graph
-G = GraphHandler(subset=True, set_noise_costs=True)
+G = GraphHandler(logger, subset=True, set_noise_costs=True)
 
 # start graph aqi updater
-aqi_updater = GraphAqiUpdater(G, start=True)
+aqi_updater = GraphAqiUpdater(logger, G, start=True)
 
 @app.route('/')
 def hello_world():
@@ -42,7 +47,7 @@ def aqi_status():
 def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
 
     error = None
-    path_finder = PathFinder('quiet', G, orig_lat, orig_lon, dest_lat, dest_lon, debug=debug)
+    path_finder = PathFinder(logger, 'quiet', G, orig_lat, orig_lon, dest_lat, dest_lon)
 
     try:
         path_finder.find_origin_dest_nodes()
@@ -61,12 +66,6 @@ def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
             return error
 
     return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
-
-if __name__ != '__main__':
-    # set logging to use gunicorn logger & logging level
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
