@@ -36,6 +36,14 @@ class GraphAqiUpdater:
         self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
         if (start == True): self.scheduler.start()
 
+    def get_aqi_update_status_response(self):
+        return { 
+            'b_updated': self.bool_graph_aqi_is_up_to_date(), 
+            'latest_data': self.aqi_data_latest, 
+            'update_time_utc': self.get_aqi_update_time_str(), 
+            'updated_since_secs': self.get_aqi_updated_since_secs()
+            }
+
     def maybe_read_update_aqi_to_graph(self):
         """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
         """
