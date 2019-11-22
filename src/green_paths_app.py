@@ -41,7 +41,10 @@ def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
 
 @app.route('/cleanpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def get_short_clean_paths(orig_lat, orig_lon, dest_lat, dest_lon):
-    return get_green_paths('green', orig_lat, orig_lon, dest_lat, dest_lon)
+    if (aqi_updater.get_aqi_updated_since_secs() is not None):
+        return get_green_paths('clean', orig_lat, orig_lon, dest_lat, dest_lon)
+    else:
+        return jsonify({'error': 'latest air quality data not available'})
 
 def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
     error = None
