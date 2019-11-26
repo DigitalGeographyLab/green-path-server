@@ -55,11 +55,23 @@ class TestGraphAqiUpdater(unittest.TestCase):
         # test expected aqi data file name
         self.assertEqual(len(expected_aqi_csv), 21)
 
-    def test_graph_aqi_updater(self):
+    def test_edge_gdf_aqi_update(self):
+        aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
+        aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
+        aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
+        logger.debug('edge_gdf.columns: '+ str(G.edge_gdf.columns))
+        self.assertIn('aqi_exp', G.edge_gdf.columns)
+        # check that column count doesn't increase after second AQI update
+        edge_gdf_col_count = len(G.edge_gdf.columns)
+        aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
+        self.assertEqual(len(G.edge_gdf.columns), edge_gdf_col_count)
+
+    def test_graph_aqi_update(self):
         aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
         aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
         edge_dicts = graph_utils.get_all_edge_dicts(G.graph)
+        logger.debug('edge_dicts count: '+ str(len(edge_dicts)))
         # test that all edges got aqi attr
         all_edges_have_aqi = True
         for edge in edge_dicts:
