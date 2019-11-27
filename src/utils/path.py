@@ -104,7 +104,7 @@ class Path:
             'len_diff_rat' : self.len_diff_rat,
             'cost_coeff' : self.cost_coeff
         }
-        # TODO add aqi exposure props here
-        exposure_props = self.noise_attrs.get_noise_props_dict()
-        feature_d['properties'] = { **props, **exposure_props }
+        noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs is not None else {}
+        aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs is not None else {}
+        feature_d['properties'] = { **props, **noise_props, **aqi_props }
         return feature_d

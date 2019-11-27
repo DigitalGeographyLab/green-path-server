@@ -52,7 +52,7 @@ class TestAqiExposures(unittest.TestCase):
         aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
         aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
         aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        self.assertAlmostEqual(aqi_attrs.m_aqi, 2.14, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqi_m, 2.14, places=2)
         self.assertAlmostEqual(aqi_attrs.aqc, 5.69, places=2)
         self.assertAlmostEqual(aqi_attrs.aqc_norm, 0.28, places=2)
         aqi_class_pcts_sum = sum(aqi_attrs.aqi_pcts.values())
@@ -67,7 +67,7 @@ class TestAqiExposures(unittest.TestCase):
         s_path_aqi_attrs = PathAqiAttrs('clean', s_path_aqi_exp_list)
         s_path_aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
         aqi_attrs.set_aqi_diff_attrs(s_path_aqi_attrs, len_diff=2)
-        self.assertAlmostEqual(aqi_attrs.m_aqi_diff, -1.07, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqi_m_diff, -1.07, places=2)
         self.assertAlmostEqual(aqi_attrs.aqc_diff, -4.25, places=2)
         self.assertAlmostEqual(aqi_attrs.aqc_diff_rat, -42.8, places=2)
         self.assertAlmostEqual(aqi_attrs.aqc_diff_score, 2.1, places=2)

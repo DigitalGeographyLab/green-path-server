@@ -30,18 +30,18 @@ class PathNoiseAttrs:
         self.mdB_diff = round(self.mdB - s_path_noise_attrs.mdB, 1)
         self.nei_diff = round(self.nei - s_path_noise_attrs.nei, 1)
         self.nei_diff_rat = round((self.nei_diff / s_path_noise_attrs.nei) * 100, 1) if s_path_noise_attrs.nei > 0 else 0
-        self.nei_diff_score = round((self.nei_diff/len_diff) * -1, 1) if len_diff > 0 else 0
+        self.nei_diff_score = round(self.nei_diff/len_diff * -1, 1) if len_diff > 0 else 0
 
     def get_noise_props_dict(self) -> dict:
-        noise_props = {}
-        noise_props['noises'] = self.noises
-        noise_props['mdB'] = self.mdB
-        noise_props['nei'] = self.nei
-        noise_props['nei_norm'] = round(self.nei_norm, 2)
-        noise_props['noise_pcts'] = self.noise_pcts
-        noise_props['noises_diff'] = self.noises_diff
-        noise_props['mdB_diff'] =  self.mdB_diff
-        noise_props['nei_diff'] =  self.nei_diff
-        noise_props['nei_diff_rat'] = self.nei_diff_rat 
-        noise_props['path_score'] = self.nei_diff_score
-        return noise_props
+        return {
+            'noises': self.noises,
+            'mdB': self.mdB,
+            'nei': self.nei,
+            'nei_norm': round(self.nei_norm, 2),
+            'noise_pcts': self.noise_pcts,
+            'noises_diff': self.noises_diff,
+            'mdB_diff':  self.mdB_diff,
+            'nei_diff':  self.nei_diff,
+            'nei_diff_rat': self.nei_diff_rat,
+            'path_score': self.nei_diff_score
+            }

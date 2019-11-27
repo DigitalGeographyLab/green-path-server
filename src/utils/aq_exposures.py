@@ -104,6 +104,7 @@ def aggregate_aqi_class_exps(aqi_exp_list: List[Tuple[float, float]]) -> Dict[in
             aqi_cl_exps[aqi_cl] += aqi_exp
         else:
             aqi_cl_exps[aqi_cl] = aqi_exp
+    # round aqi class exposures
     for aqi_cl in aqi_cl_exps.keys():
         aqi_cl_exps[aqi_cl] = round(aqi_cl_exps[aqi_cl], 2)
     return aqi_cl_exps
