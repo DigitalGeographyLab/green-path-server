@@ -30,10 +30,10 @@ class PathFinder:
         self.log.debug('to: '+ str(dest_latLon))
         self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
-        sens_subset = self.orig_point.distance(self.dest_point) > 2000
-        self.sens = noise_exps.get_noise_sensitivities(subset=sens_subset)
+        b_sens_subset = self.orig_point.distance(self.dest_point) > 2000
+        self.sens = noise_exps.get_noise_sensitivities(subset=b_sens_subset)
         self.db_costs = noise_exps.get_db_costs()
-        self.PathSet = PathSet(self.log, set_type=finder_type)
+        self.path_set = PathSet(self.log, set_type=self.finder_type)
         self.orig_node = None
         self.dest_node = None
         self.orig_link_edges = None
@@ -67,13 +67,14 @@ class PathFinder:
         """
         try:
             start_time = time.time()
-            self.path_set = PathSet(self.log, set_type='quiet')
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
             self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
             for sen in self.sens:
-                noise_cost_attr = 'nc_'+ str(sen)
-                least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=noise_cost_attr)
-                self.path_set.add_green_path(Path(nodes=least_cost_path, name='q_'+str(sen), path_type='quiet', cost_attr=noise_cost_attr, cost_coeff=sen))
+                # use aqi costs if optimizing clean paths - else use noise costs
+                cost_attr = 'aqc_'+ str(sen) if (self.finder_type == 'clean') else 'nc_'+ str(sen)
+                path_name = 'aq_'+ str(sen) if (self.finder_type == 'clean') else 'q_'+ str(sen)
+                least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
+                self.path_set.add_green_path(Path(nodes=least_cost_path, name=path_name, path_type=self.finder_type, cost_attr=cost_attr, cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:
             self.log.error('exception in finding least cost paths:')
@@ -92,9 +93,9 @@ class PathFinder:
         start_time = time.time()
         try:
             self.path_set.set_path_edges(self.G)
-            self.path_set.aggregate_path_attrs(noises=True if self.finder_type == 'quiet' else False)
+            self.path_set.aggregate_path_attrs()
             self.path_set.filter_out_unique_len_paths()
-            self.path_set.set_path_noise_attrs(self.db_costs)
+            self.path_set.set_path_exp_attrs(self.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
             self.path_set.set_green_path_diff_attrs()
             self.log.duration(start_time, 'aggregated paths', unit='ms')
