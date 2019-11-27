@@ -16,19 +16,17 @@ class PathSet:
         self.shortest_path: Path = None
         self.green_paths: List[Path] = []
 
-    def set_shortest_path(self, s_path: Path):
-        s_path.set_set_type(self.set_type)
+    def set_shortest_path(self, s_path: Path) -> None:
         self.shortest_path = s_path
 
-    def add_green_path(self, q_path: Path):
-        q_path.set_set_type(self.set_type)
+    def add_green_path(self, q_path: Path) -> None:
         self.green_paths.append(q_path)
 
     def get_all_paths(self) -> List[Path]: return [self.shortest_path] + self.green_paths
 
     def get_green_path_count(self) -> int: return len(self.green_paths)
 
-    def set_path_edges(self, G):
+    def set_path_edges(self, G) -> None:
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
         """
         if (self.shortest_path is not None):
@@ -46,7 +44,7 @@ class PathSet:
             for gp in self.green_paths:
                 gp.aggregate_path_attrs(geom=geom, length=length, noises=noises)
 
-    def filter_out_unique_len_paths(self):
+    def filter_out_unique_len_paths(self) -> None:
         self.log.debug('green path count: '+ str(len(self.green_paths)))
         filtered = []
         prev_len = self.shortest_path.length
@@ -57,7 +55,7 @@ class PathSet:
         self.green_paths = filtered
         self.log.debug('green path count after filter by unique length: '+ str(len(self.green_paths)))
 
-    def filter_out_unique_geom_paths(self, buffer_m=50):
+    def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
         """
         cost_attr = 'nei_norm' if (self.set_type == 'quiet') else ''
@@ -65,7 +63,7 @@ class PathSet:
         if (unique_paths_names is not None):
             self.filter_paths_by_names(unique_paths_names)
 
-    def filter_paths_by_names(self, filter_names: List[str]):
+    def filter_paths_by_names(self, filter_names: List[str]) -> None:
         """Filters out short / green paths by list of path names to keep.
         """
         filtered_green_paths = [path for path in self.green_paths if path.name in filter_names]
@@ -83,7 +81,7 @@ class PathSet:
         for path in self.green_paths:
             path.set_noise_attrs(db_costs)
 
-    def set_green_path_diff_attrs(self):
+    def set_green_path_diff_attrs(self) -> None:
         for path in self.green_paths:
             path.set_green_path_diff_attrs(self.shortest_path)
 
@@ -91,7 +89,7 @@ class PathSet:
         feats = [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
         return geom_utils.as_geojson_feature_collection(feats)
 
-    def get_edges_as_feature_collection(self):
+    def get_edges_as_feature_collection(self) -> dict:
         if (self.set_type == 'quiet'):
             edge_group_attr = 'dBrange'
         
