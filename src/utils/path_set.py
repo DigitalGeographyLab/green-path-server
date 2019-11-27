@@ -35,14 +35,14 @@ class PathSet:
             for gp in self.green_paths:
                 gp.set_path_edges(G)
 
-    def aggregate_path_attrs(self, geom=True, length=True, noises=False):
+    def aggregate_path_attrs(self) -> None:
         """Aggregates edge level path attributes to paths.
         """
         if (self.shortest_path is not None):
-            self.shortest_path.aggregate_path_attrs(geom=geom, length=length, noises=noises)
+            self.shortest_path.aggregate_path_attrs(geom=True, noises=True, aqi=True)
         if (len(self.green_paths) > 0):
             for gp in self.green_paths:
-                gp.aggregate_path_attrs(geom=geom, length=length, noises=noises)
+                gp.aggregate_path_attrs(geom=True, noises=True, aqi=True)
 
     def filter_out_unique_len_paths(self) -> None:
         self.log.debug('green path count: '+ str(len(self.green_paths)))
@@ -76,10 +76,12 @@ class PathSet:
             filtered_green_paths = filtered_green_paths[1:]
         self.green_paths = filtered_green_paths
 
-    def set_path_noise_attrs(self, db_costs):
+    def set_path_exp_attrs(self, db_costs) -> None:
         self.shortest_path.set_noise_attrs(db_costs)
+        self.shortest_path.set_aqi_attrs()
         for path in self.green_paths:
             path.set_noise_attrs(db_costs)
+            path.set_aqi_attrs()
 
     def set_green_path_diff_attrs(self) -> None:
         for path in self.green_paths:

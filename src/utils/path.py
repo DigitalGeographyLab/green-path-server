@@ -3,10 +3,11 @@ from typing import List, Set, Dict, Tuple, Optional
 import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 from utils.path_noises import PathNoiseAttrs
+from utils.path_aqi_attrs import PathAqiAttrs
 from utils.graph_handler import GraphHandler
 
 class Path:
-    """An instance of Path contains all path specific attributes and methods for manipulating them.
+    """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
     def __init__(self, nodes: List[int], name: str, path_type: str, cost_attr: str, cost_coeff: float = 0.0):
@@ -15,7 +16,6 @@ class Path:
         self.edge_groups: List[Tuple[int, List[dict]]] = []
         self.name: str = name
         self.path_type: str = path_type
-        self.set_type: str = None
         self.cost_attr: str = cost_attr
         self.cost_coeff: float = cost_coeff
         self.geometry = None
@@ -23,19 +23,18 @@ class Path:
         self.len_diff: float = 0
         self.len_diff_rat: float = None
         self.noise_attrs: PathNoiseAttrs = None
+        self.aqi_attrs: PathAqiAttrs = None
     
     def set_path_name(self, path_name: str): self.name = path_name
 
     def set_path_type(self, path_type: str): self.path_type = path_type
 
-    def set_set_type(self, set_type: str): self.set_type = set_type
-
-    def set_path_edges(self, G: GraphHandler):
+    def set_path_edges(self, G: GraphHandler) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
         """
         self.edges = G.get_edges_from_nodelist(self.nodes, self.cost_attr)
 
-    def aggregate_path_attrs(self, geom=True, length=True, noises=False):
+    def aggregate_path_attrs(self, geom: bool = True, length: bool = True, noises: bool = True, aqi: bool = False) -> None:
         """Aggregates path attributes form list of edges.
         """
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
@@ -44,17 +43,28 @@ class Path:
         if (noises == True):
             noises_list = [edge['noises'] for edge in self.edges]
             self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)
+        if (aqi == True):
+            aqi_exp_list = [edge['aqi_exp'] for edge in self.edges if edge['aqi_exp'] is not None]
+            if (len(aqi_exp_list) > 0):
+                self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
 
-    def set_noise_attrs(self, db_costs: dict):
-        self.noise_attrs.set_noise_attrs(db_costs, self.length)
-    
-    def set_green_path_diff_attrs(self, shortest_path):
+    def set_noise_attrs(self, db_costs: dict) -> None:
+        if (self.noise_attrs is not None):
+            self.noise_attrs.set_noise_attrs(db_costs, self.length)
+
+    def set_aqi_attrs(self) -> None:
+        if (self.aqi_attrs is not None):
+            self.aqi_attrs.set_aqi_stats(self.length)
+
+    def set_green_path_diff_attrs(self, shortest_path: 'Path') -> None:
         self.len_diff = round(self.length - shortest_path.length, 1)
         self.len_diff_rat = round((self.len_diff / shortest_path.length) * 100, 1) if shortest_path.length > 0 else 0
-        if (self.path_type == 'quiet'):
+        if (self.noise_attrs is not None and shortest_path.noise_attrs is not None):
             self.noise_attrs.set_noise_diff_attrs(shortest_path.noise_attrs, len_diff=self.len_diff)
+        if (self.aqi_attrs is not None and shortest_path.aqi_attrs is not None):
+            self.aqi_attrs.set_aqi_diff_attrs(shortest_path.aqi_attrs, len_diff=self.len_diff)
     
-    def aggregate_edge_groups_by_attr(self, group_attr: str):
+    def aggregate_edge_groups_by_attr(self, group_attr: str) -> None:
         cur_group = []
         cur_group_id: int = 0
         for edge in self.edges:
@@ -95,6 +105,6 @@ class Path:
             'cost_coeff' : self.cost_coeff
         }
         # TODO add aqi exposure props here
-        exposure_props = self.noise_attrs.get_noise_props_dict() if self.set_type == 'quiet' else {}
+        exposure_props = self.noise_attrs.get_noise_props_dict()
         feature_d['properties'] = { **props, **exposure_props }
         return feature_d

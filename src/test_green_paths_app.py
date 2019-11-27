@@ -12,6 +12,7 @@ from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.aq_exposures as aq_exps
 from utils.logger import Logger
+from utils.path_aqi_attrs import PathAqiAttrs
 
 # initialize graph
 logger = Logger(b_printing=True, log_file='test_green_paths_app.log')
@@ -46,6 +47,30 @@ class TestAqiExposures(unittest.TestCase):
         sens = [0.5, 1, 2]
         aq_costs = aq_exps.get_aqi_costs((2.0, 10.0), sens)
         self.assertDictEqual(aq_costs, { 'aqc_0.5': 1.25, 'aqc_1': 2.5, 'aqc_2': 5.0 })
+    
+    def test_aqi_attrs(self):
+        aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
+        aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
+        aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
+        self.assertAlmostEqual(aqi_attrs.m_aqi, 2.14, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqc, 5.69, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqc_norm, 0.28, places=2)
+        aqi_class_pcts_sum = sum(aqi_attrs.aqi_pcts.values())
+        self.assertAlmostEqual(aqi_class_pcts_sum, 100)
+        self.assertEqual(len(aqi_attrs.aqi_pcts.keys()), 3)
+
+    def test_aqi_diff_attrs(self):
+        aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
+        aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
+        aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
+        s_path_aqi_exp_list = [ (2.5, 1), (2.25, 5), (3.5, 10), (4.5, 2) ]
+        s_path_aqi_attrs = PathAqiAttrs('clean', s_path_aqi_exp_list)
+        s_path_aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
+        aqi_attrs.set_aqi_diff_attrs(s_path_aqi_attrs, len_diff=2)
+        self.assertAlmostEqual(aqi_attrs.m_aqi_diff, -1.07, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqc_diff, -4.25, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqc_diff_rat, -42.8, places=2)
+        self.assertAlmostEqual(aqi_attrs.aqc_diff_score, 2.1, places=2)
 
 class TestGraphAqiUpdater(unittest.TestCase):
 

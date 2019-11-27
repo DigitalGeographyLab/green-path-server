@@ -188,6 +188,9 @@ class GraphHandler:
             edges = self.graph[node_1][node_2]
             edge = graph_utils.get_least_cost_edge(edges, cost_attr)
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
+            edge_d['aqi'] = edge['aqi'] if ('aqi' in edge) else None
+            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi']) if ('aqi' in edge) else None
+            edge_d['aqi_exp'] = (edge['aqi'], edge['length']) if ('aqi' in edge) else None
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
