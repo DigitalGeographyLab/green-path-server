@@ -92,7 +92,9 @@ class PathSet:
         return geom_utils.as_geojson_feature_collection(feats)
 
     def get_edges_as_feature_collection(self) -> dict:
-        if (self.set_type == 'quiet'):
+        if (self.set_type == 'clean'):
+            edge_group_attr = 'aqi_cl'
+        else:
             edge_group_attr = 'dBrange'
         
         for path in [self.shortest_path] + self.green_paths:
