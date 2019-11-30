@@ -40,14 +40,15 @@ def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen:
     else:
         raise ValueError('Either aqi_coeff or aqi argument must be defined')
 
-def get_aqi_costs(aqi_exp: Tuple[float, float], sens: List[float]) -> Dict[str, float]:
+def get_aqi_costs(aqi_exp: Tuple[float, float], sens: List[float], length: float = 0) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
     
     Args:
         aqi_exp: A tuple containing an AQI value and distance (exposure) in meters (aqi: float, distance: float).
+        length: A length value to use as a base cost.
     """
     aqi_coeff = get_aqi_coeff(aqi_exp[0])
-    aq_costs = { 'aqc_'+ str(sen) : get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen) for sen in sens }
+    aq_costs = { 'aqc_'+ str(sen) : length + get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen) for sen in sens }
     return aq_costs
 
 def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'LineString') -> dict:
@@ -58,7 +59,7 @@ def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'Lin
         log.debug('aqi not in edge dictionary, cannot add aqi costs to linking edge')
         return {}
     link_aqi_exp = (edge_dict['aqi_exp'][0], link_geom.length)
-    aqi_costs = get_aqi_costs(link_aqi_exp, sens)
+    aqi_costs = get_aqi_costs(link_aqi_exp, sens, length=link_geom.length)
     return { 'aqi': edge_dict['aqi_exp'][0], **aqi_costs }
 
 def get_aqi_cost_from_exp(aqi_exp: Tuple[float, float], sen: float = 1.0) -> float:

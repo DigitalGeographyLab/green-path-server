@@ -45,8 +45,8 @@ class TestAqiExposures(unittest.TestCase):
 
     def test_aq_costs(self):
         sens = [0.5, 1, 2]
-        aq_costs = aq_exps.get_aqi_costs((2.0, 10.0), sens)
-        self.assertDictEqual(aq_costs, { 'aqc_0.5': 1.25, 'aqc_1': 2.5, 'aqc_2': 5.0 })
+        aq_costs = aq_exps.get_aqi_costs((2.0, 10.0), sens, length=10)
+        self.assertDictEqual(aq_costs, { 'aqc_0.5': 11.25, 'aqc_1': 12.5, 'aqc_2': 15.0 })
     
     def test_aqi_attrs(self):
         aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
@@ -112,7 +112,7 @@ class TestGraphAqiUpdater(unittest.TestCase):
         eg_edge = edge_dicts[0]
         eg_aqi = eg_edge['aqi']
         self.assertAlmostEqual(eg_aqi, 1.87, places=2)
-        self.assertAlmostEqual(eg_edge['aqc_3'], 82.9, places=1, msg='Expected aqc_3 cost was not set')
+        self.assertAlmostEqual(eg_edge['aqc_3'], 209.95, places=2, msg='Expected aqc_3 cost was not set')
 
 class TestGreenPaths(unittest.TestCase):
     
