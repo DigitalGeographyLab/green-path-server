@@ -38,6 +38,8 @@ def get_least_cost_path(paths: List[Path], cost_attr: str = 'nei_norm') -> Path:
     def get_cost(path):
         if (cost_attr == 'nei_norm'):
             return path.noise_attrs.nei_norm
+        if (cost_attr == 'aqc_norm'):
+            return path.aqi_attrs.aqc_norm
     ordered.sort(key=get_cost)
     return ordered[0]
 

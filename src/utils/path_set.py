@@ -58,7 +58,7 @@ class PathSet:
     def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
         """
-        cost_attr = 'nei_norm' if (self.set_type == 'quiet') else ''
+        cost_attr = 'aqc_norm' if (self.set_type == 'clean') else 'nei_norm'
         unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(self.log, self.get_all_paths(), buffer_m=buffer_m, cost_attr=cost_attr)
         if (unique_paths_names is not None):
             self.filter_paths_by_names(unique_paths_names)
