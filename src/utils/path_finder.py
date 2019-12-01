@@ -68,7 +68,7 @@ class PathFinder:
         try:
             start_time = time.time()
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
-            self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short_p', path_type='short', cost_attr='length'))
+            self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short', path_type='short', cost_attr='length'))
             for sen in self.sens:
                 # use aqi costs if optimizing clean paths - else use noise costs
                 cost_attr = 'aqc_'+ str(sen) if (self.finder_type == 'clean') else 'nc_'+ str(sen)

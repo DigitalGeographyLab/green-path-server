@@ -67,11 +67,11 @@ class PathSet:
         """Filters out short / green paths by list of path names to keep.
         """
         filtered_green_paths = [path for path in self.green_paths if path.name in filter_names]
-        if ('short_p' not in filter_names):
+        if ('short' not in filter_names):
             self.log.debug('replacing shortest path with shortest green path')
             shortest_green_path = filtered_green_paths[0]
             shortest_green_path.set_path_type('short')
-            shortest_green_path.set_path_name('short_p')
+            shortest_green_path.set_path_name('short')
             self.set_shortest_path(shortest_green_path)
             filtered_green_paths = filtered_green_paths[1:]
         self.green_paths = filtered_green_paths
