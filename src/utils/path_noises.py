@@ -11,6 +11,7 @@ class PathNoiseAttrs:
         self.mdB: float = None
         self.nei: float = None
         self.nei_norm: float = None
+        self.noise_range_exps: dict = None
         self.noise_pcts: dict = None
         self.noises_diff: dict = None
         self.mdB_diff: float = None
@@ -23,7 +24,8 @@ class PathNoiseAttrs:
             self.mdB = noise_exps.get_mean_noise_level(self.noises, length)
             self.nei = round(noise_exps.get_noise_cost(noises=self.noises, db_costs=db_costs), 1)
             self.nei_norm = round(self.nei / (0.6 * length), 4)
-            self.noise_pcts = noise_exps.get_noise_range_pcts(self.noises, length)
+            self.noise_range_exps = noise_exps.get_noise_range_exps(self.noises, length)
+            self.noise_pcts = noise_exps.get_noise_range_pcts(self.noise_range_exps, length)
 
     def set_noise_diff_attrs(self, s_path_noise_attrs, len_diff=0) -> None:
         self.noises_diff = noise_exps.get_noises_diff(s_path_noise_attrs.noises, self.noises)
@@ -38,6 +40,7 @@ class PathNoiseAttrs:
             'mdB': self.mdB,
             'nei': self.nei,
             'nei_norm': round(self.nei_norm, 2),
+            'noise_range_exps': self.noise_range_exps,
             'noise_pcts': self.noise_pcts,
             'noises_diff': self.noises_diff,
             'mdB_diff':  self.mdB_diff,
