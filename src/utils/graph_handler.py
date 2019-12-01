@@ -9,6 +9,7 @@ import geopandas as gpd
 import networkx as nx
 import utils.files as file_utils
 import utils.noise_exposures as noise_exps
+import utils.aq_exposures as aq_exps
 import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 import utils.utils as utils
@@ -187,6 +188,9 @@ class GraphHandler:
             edges = self.graph[node_1][node_2]
             edge = graph_utils.get_least_cost_edge(edges, cost_attr)
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
+            edge_d['aqi'] = edge['aqi'] if ('aqi' in edge) else None
+            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi']) if ('aqi' in edge) else None
+            edge_d['aqi_exp'] = (edge['aqi'], edge['length']) if ('aqi' in edge) else None
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
@@ -236,14 +240,18 @@ class GraphHandler:
         link1, link2 = geom_utils.split_line_at_point(node_from_p, node_to_p, edge['geometry'], split_point)
 
         # set geometry attributes for links
-        link1_geom_attrs = { 'geometry': link1, 'geom_wgs': geom_utils.project_geom(link1, from_epsg=3879, to_epsg=4326) }
-        link2_geom_attrs = { 'geometry': link2, 'geom_wgs': geom_utils.project_geom(link2, from_epsg=3879, to_epsg=4326) }
-        # interpolate noise cost attributes for new linking edges so that they work in quiet path routing
-        link1_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
-        link2_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
+        link1_geom_attrs = { 'geometry': link1, 'length': round(link1.length, 2), 'geom_wgs': geom_utils.project_geom(link1, from_epsg=3879, to_epsg=4326) }
+        link2_geom_attrs = { 'geometry': link2, 'length': round(link2.length, 2), 'geom_wgs': geom_utils.project_geom(link2, from_epsg=3879, to_epsg=4326) }
+        # calculate & add noise cost attributes for new linking edges
+        link1_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
+        link2_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
+        # calculate & add aq cost attributes for new linking edges 
+        link1_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(sens, self.log, edge_dict=edge, link_geom=link1)
+        link2_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(sens, self.log, edge_dict=edge, link_geom=link2)
+        self.log.debug('link aqi attrs: '+ str(link1_aqi_cost_attrs))
         # combine link attributes to prepare adding them as new edges
-        link1_attrs = { **link1_geom_attrs, **link1_cost_attrs }
-        link2_attrs = { **link2_geom_attrs, **link2_cost_attrs }
+        link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
+        link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
         # add linking edges with noise cost attributes to graph
         self.graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
         self.graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])

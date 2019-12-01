@@ -36,6 +36,14 @@ class GraphAqiUpdater:
         self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
         if (start == True): self.scheduler.start()
 
+    def get_aqi_update_status_response(self):
+        return { 
+            'b_updated': self.bool_graph_aqi_is_up_to_date(), 
+            'latest_data': self.aqi_data_latest, 
+            'update_time_utc': self.get_aqi_update_time_str(), 
+            'updated_since_secs': self.get_aqi_updated_since_secs()
+            }
+
     def maybe_read_update_aqi_to_graph(self):
         """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
         """
@@ -103,16 +111,21 @@ class GraphAqiUpdater:
         return new_aqi_available
 
     def get_aq_update_attrs(self, aqi_exp: Tuple[float, float]):
-        aq_costs = aq_exps.get_aqi_costs(aqi_exp, self.sens)
-        return { **{'aqi': aqi_exp[0] }, **aq_costs }
+        aq_costs = aq_exps.get_aqi_costs(aqi_exp, self.sens, length=aqi_exp[1])
+        return { 'aqi': aqi_exp[0], **aq_costs }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):
         self.aqi_data_wip = aqi_updates_csv
         # read aqi update csv
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
         edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        if ('aqi_exp' in self.G.edge_gdf.columns): 
+            self.G.edge_gdf = self.G.edge_gdf.drop(columns=['aqi_exp']).merge(edge_aqi_updates, on='uvkey', how='left')
+        else:
+            self.G.edge_gdf = self.G.edge_gdf.merge(edge_aqi_updates, on='uvkey', how='left')
+        self.log.debug('joined edge_gdf has columns: ' + str(self.G.edge_gdf.columns))
         # prepare dictionary of aqi attributes to update
-        edge_aqi_updates['aq_updates'] = edge_aqi_updates.apply(lambda row: self.get_aq_update_attrs(row['aqi_exp']), axis=1)
+        edge_aqi_updates['aq_updates'] = [self.get_aq_update_attrs(aqi_exp) for aqi_exp in edge_aqi_updates['aqi_exp']]
         self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')
         self.log.info('AQI update succeeded')
         self.aqi_data_updatetime = datetime.utcnow()

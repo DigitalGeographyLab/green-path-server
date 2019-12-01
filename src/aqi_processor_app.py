@@ -24,8 +24,7 @@ def process_aqi_updates_to_csv():
         AQI.fillna_in_raster(aqi_tif_name, na_val=1.0)
         edge_aqi_csv_name = AQI.create_edge_aqi_csv(G, aqi_tif_name)
         log.info('exported edge_aqi_csv '+ edge_aqi_csv_name)
-        utctime_str = datetime.utcnow().strftime('%y/%m/%d %H:%M:%S')
-        log.info('AQI processing succeeded at (utc): '+ utctime_str)
+        log.info('AQI processing succeeded')
     except Exception:
         log.error('failed to process aqi data to: '+ AQI.wip_edge_aqi_csv)
         traceback.print_exc()

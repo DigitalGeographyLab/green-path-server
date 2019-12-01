@@ -25,8 +25,6 @@ logger = Logger(app_logger=app.logger)
 
 # initialize graph
 G = GraphHandler(logger, subset=True, set_noise_costs=True)
-
-# start graph aqi updater
 aqi_updater = GraphAqiUpdater(logger, G, start=True)
 
 @app.route('/')
@@ -35,19 +33,22 @@ def hello_world():
 
 @app.route('/aqistatus')
 def aqi_status():
-    response = { 
-        'b_updated': aqi_updater.bool_graph_aqi_is_up_to_date(), 
-        'latest_data': aqi_updater.aqi_data_latest, 
-        'update_time_utc': aqi_updater.get_aqi_update_time_str(), 
-        'updated_since_secs': aqi_updater.get_aqi_updated_since_secs()
-        }
-    return jsonify(response)
+    return jsonify(aqi_updater.get_aqi_update_status_response())
 
 @app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
+    return get_green_paths('quiet', orig_lat, orig_lon, dest_lat, dest_lon)
 
+@app.route('/cleanpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_short_clean_paths(orig_lat, orig_lon, dest_lat, dest_lon):
+    if (aqi_updater.get_aqi_updated_since_secs() is not None):
+        return get_green_paths('clean', orig_lat, orig_lon, dest_lat, dest_lon)
+    else:
+        return jsonify({'error': 'latest air quality data not available'})
+
+def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
     error = None
-    path_finder = PathFinder(logger, 'quiet', G, orig_lat, orig_lon, dest_lat, dest_lon)
+    path_finder = PathFinder(logger, path_type, G, orig_lat, orig_lon, dest_lat, dest_lon)
 
     try:
         path_finder.find_origin_dest_nodes()
@@ -55,11 +56,10 @@ def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
         path_FC, edge_FC = path_finder.process_paths_to_FC()
 
     except Exception as e:
-        # PathFinder throws only pretty exception strings so they can be sent to UI
         error = jsonify({'error': str(e)})
 
     finally:
-        # keep graph clean by removing created nodes & edges
+        # keep the graph clean by removing nodes & edges created during routing
         path_finder.delete_added_graph_features()
 
         if (error is not None):
