@@ -48,7 +48,7 @@ def get_aqi_costs(aqi_exp: Tuple[float, float], sens: List[float], length: float
         length: A length value to use as a base cost.
     """
     aqi_coeff = get_aqi_coeff(aqi_exp[0])
-    aq_costs = { 'aqc_'+ str(sen) : length + get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen) for sen in sens }
+    aq_costs = { 'aqc_'+ str(sen) : round(length + get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen), 2) for sen in sens }
     return aq_costs
 
 def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'LineString') -> dict:
