@@ -62,6 +62,10 @@ class GraphHandler:
         if (set_noise_costs == True): self.set_noise_costs_to_edges()
         self.log.duration(start_time, 'graph initialized', log_level='info')
 
+    def set_edge_gdf(self, edge_gdf):
+        self.edge_gdf = edge_gdf
+        self.edges_sind = self.edge_gdf.sindex
+
     def get_node_gdf(self) -> gpd.GeoDataFrame:
         """Collects and sets the nodes of a graph as a GeoDataFrame. 
         Names of the nodes are set as the row ids in the GeoDataFrame.
@@ -130,7 +134,7 @@ class GraphHandler:
         """
         start_time = time.time()
         for radius in [100, 300, 700]:
-            possible_matches_index = list(self.nodes_sind.intersection(point.buffer(radius).bounds))
+            possible_matches_index = list(self.node_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) == 0):
                 continue
         if (len(possible_matches_index) == 0):
@@ -158,7 +162,7 @@ class GraphHandler:
         """
         start_time = time.time()
         for radius in [80, 150, 250, 350, 650]:
-            possible_matches_index = list(self.edges_sind.intersection(point.buffer(radius).bounds))
+            possible_matches_index = list(self.edge_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
                 possible_matches = self.edge_gdf.iloc[possible_matches_index].copy()
                 possible_matches['distance'] = [geom.distance(point) for geom in possible_matches['geometry']]
