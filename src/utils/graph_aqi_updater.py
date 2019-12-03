@@ -1,5 +1,6 @@
 import time
 import ast
+import random
 import traceback
 import pandas as pd
 from os import listdir
@@ -33,8 +34,13 @@ class GraphAqiUpdater:
         self.aqi_data_latest = ''
         self.aqi_data_updatetime = None
         self.scheduler = BackgroundScheduler()
-        self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=10, max_instances=2)
-        if (start == True): self.scheduler.start()
+        self.check_interval = 5 + random.randint(1, 10)
+        self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=self.check_interval, max_instances=2)
+        if (start == True): self.start()
+
+    def start(self):
+        self.log.info('starting graph aqi updater with check interval (s): '+ str(self.check_interval))
+        self.scheduler.start()
 
     def get_aqi_update_status_response(self):
         return { 
