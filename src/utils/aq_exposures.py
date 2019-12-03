@@ -56,8 +56,15 @@ def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'Lin
     (from which the edge was split). 
     """
     if ('aqi_exp' not in edge_dict):
-        log.debug('aqi not in edge dictionary, cannot add aqi costs to linking edge')
+        log.warning('aqi not in edge dictionary, cannot add aqi costs to linking edge')
         return {}
+    if (not isinstance(edge_dict['aqi_exp'], tuple)):
+        log.warning('type of aqi_exp is not tuple but: '+ str(type(edge_dict['aqi_exp'])))
+        return {}
+    if (not isinstance(edge_dict['aqi_exp'][0], float)):
+        log.warning('type of aqi in aqi_exp is not float but: '+ str(type(edge_dict['aqi_exp'][0])))
+        return {}
+
     link_aqi_exp = (edge_dict['aqi_exp'][0], link_geom.length)
     aqi_costs = get_aqi_costs(link_aqi_exp, sens, length=link_geom.length)
     return { 'aqi': edge_dict['aqi_exp'][0], **aqi_costs }
