@@ -6,7 +6,7 @@ from datetime import datetime
 from utils.logger import Logger
 
 log = Logger(b_printing=True, log_file='aqi_processor_app.log')
-G = GraphHandler(log, subset=True, add_wgs_center=True)
+G = GraphHandler(log, subset=False, add_wgs_center=True)
 AQI = AqiProcessor(log, set_aws_secrets=True)
 
 def process_aqi_updates_to_csv():
