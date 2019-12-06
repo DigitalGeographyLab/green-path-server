@@ -109,10 +109,7 @@ class GraphAqiUpdater:
             aqi_update_status = 'expected aqi data is not available ('+ aqi_data_expected +')'
         
         if (aqi_update_status != self.aqi_update_status):
-            if ('not available' in aqi_update_status):
-                self.log.warning(aqi_update_status)
-            else:
-                self.log.info(aqi_update_status)
+            self.log.info(aqi_update_status)
             self.aqi_update_status = aqi_update_status
         return new_aqi_available
 
