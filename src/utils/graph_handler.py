@@ -61,10 +61,6 @@ class GraphHandler:
         if (set_noise_costs == True): self.set_noise_costs_to_edges()
         self.log.duration(start_time, 'graph initialized', log_level='info')
 
-    def set_edge_gdf(self, edge_gdf):
-        self.edge_gdf = edge_gdf
-        self.edges_sind = self.edge_gdf.sindex
-
     def get_node_gdf(self) -> gpd.GeoDataFrame:
         """Collects and sets the nodes of a graph as a GeoDataFrame. 
         Names of the nodes are set as the row ids in the GeoDataFrame.
@@ -101,6 +97,10 @@ class GraphHandler:
             edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_updates['noises']]
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
+        
+        # drop columns that were needed only for noise updates (edge attributes can be accessed from the graph from now on)
+        self.edge_gdf = self.edge_gdf.drop(columns=['noises', 'length'])
+        self.edges_sind = self.edge_gdf.sindex
 
     def update_edge_attr_to_graph(self, edge_gdf = None, from_dict: bool = False, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
@@ -152,7 +152,6 @@ class GraphHandler:
         try:
             edge_d = self.graph[uvkey[0]][uvkey[1]][uvkey[2]]
             edge_d['uvkey'] = uvkey
-            self.log.debug('found edge: '+ str(edge_d))
             return edge_d
         except Exception:
             self.log.warning('could not find edge by uvkey: '+ str(uvkey))
@@ -260,7 +259,6 @@ class GraphHandler:
         # calculate & add aq cost attributes for new linking edges 
         link1_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(sens, self.log, edge_dict=edge, link_geom=link1)
         link2_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(sens, self.log, edge_dict=edge, link_geom=link2)
-        self.log.debug('link aqi attrs: '+ str(link1_aqi_cost_attrs))
         # combine link attributes to prepare adding them as new edges
         link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }

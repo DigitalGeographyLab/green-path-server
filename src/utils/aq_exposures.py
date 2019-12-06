@@ -56,7 +56,7 @@ def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'Lin
     (from which the edge was split). 
     """
     if ('aqi_exp' not in edge_dict):
-        log.warning('aqi not in edge dictionary, cannot add aqi costs to linking edge')
+        log.warning('aqi_exp not in edge dictionary, cannot add aqi costs to linking edge')
         return {}
     if (not isinstance(edge_dict['aqi_exp'], tuple)):
         log.warning('type of aqi_exp is not tuple but: '+ str(type(edge_dict['aqi_exp'])))

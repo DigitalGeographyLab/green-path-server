@@ -101,12 +101,12 @@ class GraphAqiUpdater:
         if (aqi_data_expected == self.aqi_data_latest):
             aqi_update_status = 'latest AQI was updated to graph'
         elif (aqi_data_expected == self.aqi_data_wip):
-            aqi_update_status = 'AQI update already in progress'
+            aqi_update_status = 'aqi update already in progress'
         elif (aqi_data_expected in listdir(self.aqi_dir)):
-            aqi_update_status = 'AQI update will be done from: '+ aqi_data_expected
+            aqi_update_status = 'aqi update will be done from: '+ aqi_data_expected
             new_aqi_available = aqi_data_expected
         else:
-            aqi_update_status = 'expected AQI data is not available ('+ aqi_data_expected +')'
+            aqi_update_status = 'expected aqi data is not available ('+ aqi_data_expected +')'
         
         if (aqi_update_status != self.aqi_update_status):
             if ('not available' in aqi_update_status):
@@ -121,6 +121,7 @@ class GraphAqiUpdater:
         return { 'aqi_exp': aqi_exp, **aq_costs }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):
+        self.log.info('starting aqi update from: '+ aqi_updates_csv)
         self.aqi_data_wip = aqi_updates_csv
         # read aqi update csv
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
@@ -130,31 +131,17 @@ class GraphAqiUpdater:
         edge_key_count = self.G.edge_gdf['uvkey'].nunique()
         update_key_count = edge_aqi_updates['uvkey'].nunique()
         if (edge_key_count != update_key_count):
-            self.log.warning('Non matching edge key vs update key counts: '+ str(edge_key_count) +' '+ str(update_key_count))
+            self.log.error('non matching edge key vs update key counts: '+ str(edge_key_count) +' '+ str(update_key_count))
 
         # validate aqi_exps to update
         aqi_data_ok = self.validate_aqi_exps(edge_aqi_updates)
         if (aqi_data_ok == False):
-            self.log.warning('Invalid aqi_exp data in aqi_updates_csv')
-        
-        # update aqi_exp to edge_gdf
-        edge_gdf_copy = self.G.edge_gdf.copy()
-        if ('aqi_exp' in edge_gdf_copy.columns): 
-            edge_gdf_copy = edge_gdf_copy.drop(columns=['aqi_exp']).merge(edge_aqi_updates, on='uvkey', how='left')
-        else:
-            edge_gdf_copy = edge_gdf_copy.merge(edge_aqi_updates, on='uvkey', how='left')
-        self.G.set_edge_gdf(edge_gdf_copy)
-        self.log.debug('joined edge_gdf has columns: ' + str(self.G.edge_gdf.columns))
+            self.log.warning('invalid aqi_exp data in aqi_updates_csv')
 
-        # validate aqi_exp updates to edge_gdf
-        aqi_edge_updates_ok = self.validate_aqi_exps(self.G.edge_gdf)
-        if (aqi_edge_updates_ok == False):
-            self.log.warning('Failed to update all aqi_exps to edge_gdf')
-
-        # prepare dictionary of aqi attributes to update
+        # update aqi_exps to graph
         edge_aqi_updates['aq_updates'] = [self.get_aq_update_attrs(aqi_exp) for aqi_exp in edge_aqi_updates['aqi_exp']]
         self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')
-        self.log.info('AQI update succeeded')
+        self.log.info('aqi update succeeded')
         self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv
         self.aqi_data_wip = ''
