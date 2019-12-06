@@ -2,7 +2,6 @@
 This module provides functions for solving the least cost path problem between two points. 
 
 Todo:
-    * Add support for using other edge weights than noise (e.g. AQI)
     * Try python-igraph library
 
 """

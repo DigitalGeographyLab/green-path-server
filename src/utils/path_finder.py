@@ -16,8 +16,6 @@ class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
     origin & destination nodes to returning the paths as GeoJSON feature collection.
     
-    Todo:
-        Implement AQI based routing.
     """
 
     def __init__(self, logger: Logger, finder_type: str, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon):

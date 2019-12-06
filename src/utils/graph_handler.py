@@ -32,7 +32,6 @@ class GraphHandler:
         nodes_sind: Spatial index of the nodes GeoDataFrame.
 
     Todo:
-        * Add support for using other edge weights than noise (e.g. AQI).
         * Try python-igraph (or other faster) library.
         * Calculate and update AQI costs to graph.
     """
