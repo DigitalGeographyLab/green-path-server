@@ -6,6 +6,7 @@ exposures to air pollution between paths.
 """
 
 from typing import List, Set, Dict, Tuple
+from utils.logger import Logger
 
 def get_aq_sensitivities(subset: bool = False) -> List[float]:
     """Returns a set of AQ sensitivity coefficients that can be used in calculating AQI based costs to edges and
@@ -135,3 +136,47 @@ def get_mean_aqi(aqi_exp_list: List[Tuple[float, float]]) -> float:
     total_dist = sum([aqi_exp[1] for aqi_exp in aqi_exp_list])
     total_aqi = sum([aqi_exp[0] * aqi_exp[1] for aqi_exp in aqi_exp_list])
     return round(total_aqi/total_dist, 2)
+
+def validate_df_aqi(log: Logger, edge_gdf: 'pandas DataFrame') -> bool:
+    def validate_aqi_exp(aqi):
+        if (not isinstance(aqi, float)):
+            return False
+        else:
+            return True
+
+    edge_gdf_copy = edge_gdf.copy()
+    edge_gdf_copy['aqi_ok'] = [validate_aqi_exp(aqi) for aqi in edge_gdf_copy['aqi']]
+    row_count = len(edge_gdf_copy.index)
+    aqi_ok_count = len(edge_gdf_copy[edge_gdf_copy['aqi_ok'] == True].index)
+    
+    if (row_count == aqi_ok_count):
+        return True
+    else:
+        valid_ratio = round(100 * aqi_ok_count/row_count)
+        log.warning('row count: '+ str(row_count) +' of which has valid aqi: '+
+            str(aqi_ok_count)+ ' = '+ str(valid_ratio) + ' %')
+        return False
+
+def validate_df_aqi_exps(log: Logger, edge_gdf: 'pandas DataFrame') -> bool:
+    def validate_aqi_exp(aqi_exp):
+        if (not isinstance(aqi_exp, tuple)):
+            return False
+        elif (not isinstance(aqi_exp[0], float)):
+            return False
+        elif (not isinstance(aqi_exp[1], float)):
+            return False
+        else:
+            return True
+
+    edge_gdf_copy = edge_gdf.copy()
+    edge_gdf_copy['exp_ok'] = [validate_aqi_exp(aqi_exp) for aqi_exp in edge_gdf_copy['aqi_exp']]
+    row_count = len(edge_gdf_copy.index)
+    aqi_exp_ok_count = len(edge_gdf_copy[edge_gdf_copy['exp_ok'] == True].index)
+    
+    if (row_count == aqi_exp_ok_count):
+        return True
+    else:
+        valid_ratio = round(100 * aqi_exp_ok_count/row_count)
+        log.warning('row count: '+ str(row_count) +' of which has valid aqi exp: '+
+            str(aqi_exp_ok_count)+ ' = '+ str(valid_ratio) + ' %')
+        return False

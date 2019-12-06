@@ -131,11 +131,12 @@ class GraphAqiUpdater:
         edge_key_count = self.G.edge_gdf['uvkey'].nunique()
         update_key_count = edge_aqi_updates['uvkey'].nunique()
         if (edge_key_count != update_key_count):
+            self.log.info('edge_gdf row count: '+ str(len(self.G.edge_gdf)))
+            self.log.info('edge_aqi_updates row count: '+ str(len(edge_aqi_updates)))
             self.log.error('non matching edge key vs update key counts: '+ str(edge_key_count) +' '+ str(update_key_count))
-
+        
         # validate aqi_exps to update
-        aqi_data_ok = self.validate_aqi_exps(edge_aqi_updates)
-        if (aqi_data_ok == False):
+        if (aq_exps.validate_df_aqi_exps(self.log, edge_aqi_updates) == False):
             self.log.warning('invalid aqi_exp data in aqi_updates_csv')
 
         # update aqi_exps to graph
@@ -145,26 +146,3 @@ class GraphAqiUpdater:
         self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv
         self.aqi_data_wip = ''
-
-    def validate_aqi_exps(self, edge_gdf: pd.DataFrame) -> bool:
-        def validate_aqi_exp(aqi_exp):
-            if (not isinstance(aqi_exp, tuple)):
-                return False
-            elif (not isinstance(aqi_exp[0], float)):
-                return False
-            elif (not isinstance(aqi_exp[1], float)):
-                return False
-            else:
-                return True
-
-        edge_gdf_copy = edge_gdf.copy()
-        edge_gdf_copy['exp_ok'] = [validate_aqi_exp(aqi_exp) for aqi_exp in edge_gdf_copy['aqi_exp']]
-
-        row_count = len(edge_gdf_copy.index)
-        aqi_exp_count = len(edge_gdf_copy[edge_gdf_copy['exp_ok'] == True].index)
-
-        if (row_count == aqi_exp_count):
-            return True
-        else:
-            self.log.warning('row count: '+ str(row_count) +' of which has valid aqi exp: '+ str(aqi_exp_count))
-            return False

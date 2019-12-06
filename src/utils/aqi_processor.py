@@ -11,6 +11,7 @@ import rasterio
 from rasterio import fill
 from datetime import datetime
 import utils.geometry as geom_utils
+import utils.aq_exposures as aq_exps
 from utils.graph_handler import GraphHandler
 from utils.logger import Logger
 from typing import List, Set, Dict, Tuple, Optional
@@ -235,11 +236,20 @@ class AqiProcessor:
         coords = geom_utils.round_coordinates(coords)
         # extract aqi values at coordinates from raster using sample method from rasterio
         G.edge_gdf['aqi'] = [round(x.item(), 2) for x in aqi_raster.sample(coords)]
-        
+
+        # validate sampled aqi values
+        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf) == False):
+            self.log.error('aqi sampling failed')
+
         # save edge keys and corresponding aqi values as csv for later use
         edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi', 'length']].copy())
         # also save aqi_exp as tuple of (length, aqi)
         edge_aqi_updates_df['aqi_exp'] = edge_aqi_updates_df.apply(lambda row: ( row['aqi'], round(row['length'], 2) ), axis=1)
+        
+        # validate aqi_exps
+        if (aq_exps.validate_df_aqi_exps(self.log, edge_aqi_updates_df) == False):
+            self.log.error('conversion to aqi_exp failed')
+        
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
         edge_aqi_updates_df[['uvkey', 'aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
         self.latest_edge_aqi_csv = edge_aqi_csv_name
