@@ -118,7 +118,7 @@ class GraphAqiUpdater:
 
     def get_aq_update_attrs(self, aqi_exp: Tuple[float, float]):
         aq_costs = aq_exps.get_aqi_costs(aqi_exp, self.sens, length=aqi_exp[1])
-        return { 'aqi': aqi_exp[0], **aq_costs }
+        return { 'aqi_exp': aqi_exp, **aq_costs }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):
         self.aqi_data_wip = aqi_updates_csv

@@ -148,6 +148,16 @@ class GraphHandler:
         nearest_node = nearest_point.index.tolist()[0]
         self.log.duration(start_time, 'found nearest node', unit='ms')
         return nearest_node
+
+    def get_edge_by_uvkey(self, uvkey) -> Dict:
+        try:
+            edge_d = self.graph[uvkey[0]][uvkey[1]][uvkey[2]]
+            edge_d['uvkey'] = uvkey
+            self.log.debug('found edge: '+ str(edge_d))
+            return edge_d
+        except Exception:
+            self.log.warning('could not find edge by uvkey: '+ str(uvkey))
+            return {}
     
     def find_nearest_edge(self, point: Point) -> Dict:
         """Finds the nearest edge to a given point.
@@ -173,9 +183,9 @@ class GraphHandler:
             self.log.error('no near edges found')
             return None
         nearest = possible_matches['distance'] == shortest_dist
-        nearest_edge_dict =  possible_matches.loc[nearest].iloc[0].to_dict()
         self.log.duration(start_time, 'found nearest edge', unit='ms')
-        return nearest_edge_dict
+        uvkey = possible_matches.loc[nearest]['uvkey'].iloc[0]
+        return self.get_edge_by_uvkey(uvkey)
 
     def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
@@ -192,9 +202,8 @@ class GraphHandler:
             edges = self.graph[node_1][node_2]
             edge = graph_utils.get_least_cost_edge(edges, cost_attr)
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
-            edge_d['aqi'] = edge['aqi'] if ('aqi' in edge) else None
-            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi']) if ('aqi' in edge) else None
-            edge_d['aqi_exp'] = (edge['aqi'], edge['length']) if ('aqi' in edge) else None
+            edge_d['aqi_exp'] = edge['aqi_exp'] if ('aqi_exp' in edge) else None
+            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi_exp'][0]) if ('aqi_exp' in edge) else None
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)

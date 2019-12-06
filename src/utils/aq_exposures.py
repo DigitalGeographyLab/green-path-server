@@ -65,9 +65,9 @@ def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'Lin
         log.warning('type of aqi in aqi_exp is not float but: '+ str(type(edge_dict['aqi_exp'][0])))
         return {}
 
-    link_aqi_exp = (edge_dict['aqi_exp'][0], link_geom.length)
+    link_aqi_exp = (edge_dict['aqi_exp'][0], round(link_geom.length, 2))
     aqi_costs = get_aqi_costs(link_aqi_exp, sens, length=link_geom.length)
-    return { 'aqi': edge_dict['aqi_exp'][0], **aqi_costs }
+    return { 'aqi_exp': link_aqi_exp, **aqi_costs }
 
 def get_aqi_cost_from_exp(aqi_exp: Tuple[float, float], sen: float = 1.0) -> float:
     """Returns an AQI cost for a single AQI exposure (aqi, exposure as meters). 
