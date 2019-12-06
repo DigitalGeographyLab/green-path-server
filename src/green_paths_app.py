@@ -10,7 +10,7 @@ from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 from utils.logger import Logger
 
-# version: 1.1.0
+# version: 1.2.0
 
 app = Flask(__name__)
 CORS(app)
