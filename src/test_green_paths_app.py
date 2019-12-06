@@ -80,17 +80,6 @@ class TestGraphAqiUpdater(unittest.TestCase):
         # test expected aqi data file name
         self.assertEqual(len(expected_aqi_csv), 21)
 
-    def test_edge_gdf_aqi_update(self):
-        aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
-        aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
-        aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
-        logger.debug('edge_gdf.columns: '+ str(G.edge_gdf.columns))
-        self.assertIn('aqi_exp', G.edge_gdf.columns)
-        # check that column count doesn't increase after second AQI update
-        edge_gdf_col_count = len(G.edge_gdf.columns)
-        aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
-        self.assertEqual(len(G.edge_gdf.columns), edge_gdf_col_count)
-
     def test_graph_aqi_update(self):
         aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
@@ -100,9 +89,9 @@ class TestGraphAqiUpdater(unittest.TestCase):
         # test that all edges got aqi attr
         all_edges_have_aqi = True
         for edge in edge_dicts:
-            if ('aqi' not in edge):
+            if ('aqi_exp' not in edge):
                 all_edges_have_aqi = False
-        self.assertEqual(all_edges_have_aqi, True, msg='One or more edges did not get aqi')
+        self.assertEqual(all_edges_have_aqi, True, msg='One or more edges did not get aqi_exp')
         # test that all edges got aqi cost attrs
         all_edges_have_aqi_cost = True
         for edge in edge_dicts:
@@ -110,7 +99,7 @@ class TestGraphAqiUpdater(unittest.TestCase):
                 all_edges_have_aqi_cost = False
         self.assertEqual(all_edges_have_aqi_cost, True, msg='One or more edges did not get aqi costs')
         eg_edge = edge_dicts[0]
-        eg_aqi = eg_edge['aqi']
+        eg_aqi = eg_edge['aqi_exp'][0]
         self.assertAlmostEqual(eg_aqi, 1.87, places=2)
         self.assertAlmostEqual(eg_edge['aqc_3'], 209.95, places=2, msg='Expected aqc_3 cost was not set')
 
