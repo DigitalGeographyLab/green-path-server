@@ -4,7 +4,7 @@ This module provides functions needed in the tests.
 """
 
 from typing import List, Set, Dict, Tuple, Optional
-from flask import jsonify
+# from flask import jsonify
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import shape, GeometryCollection
@@ -16,6 +16,7 @@ import utils.utils as utils
 from utils.path import Path
 from utils.path_set import PathSet
 from utils.path_finder import PathFinder
+from utils.logger import Logger
 
 def get_update_test_walk_line() -> gpd.GeoDataFrame:
     """Returns a GeoDataFrame containing line geometry to use in tests.
@@ -70,22 +71,21 @@ def get_qp_feat_props_from_FC(FC):
 
     return qp_prop_dict
 
-def get_short_quiet_paths(G, from_latLon, to_latLon, logging=False) -> dict:
+def get_short_quiet_paths(logger: Logger, G, from_latLon, to_latLon, logging=False) -> dict:
     """Calculates and aggregates short and quiet paths similarly as in the quiet paths application.
 
     Returns:
         A FeatureCollection (GeoJSON schema) containing a short & quiet paths.
     """
-    debug = False
 
-    path_finder = PathFinder('quiet', G, from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'], debug=debug)
+    path_finder = PathFinder(logger, 'quiet', G, from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'])
 
     try:
         path_finder.find_origin_dest_nodes()
         path_finder.find_least_cost_paths()
         path_FC, edge_FC = path_finder.process_paths_to_FC()
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return None # jsonify({'error': str(e)})
     finally:
         path_finder.delete_added_graph_features()
 

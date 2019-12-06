@@ -115,14 +115,15 @@ def get_noise_range(dB: float) -> int:
     elif dB >= 50.0: return 50
     else: return 40
 
-def get_noise_range_pcts(noises: dict, total_length: float) -> Dict[int, float]:
-    """Calculates percentages of aggregated exposures to different noise levels of total length.
+def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
+    """Calculates aggregated exposures to different noise level ranges.
 
     Note:
-        Noise levels exceeding 70 dB are aggregated and as well as noise levels lower than 50 dB. 
+        Noise levels exceeding 70 dB and noise levels lower than 50 dB will be aggregated (separately).
+
     Returns:
-        A dictionary containing noise level values with respective percentages.
-        (e.g. { 50: 35, 60: 65 })
+        A dictionary containing exposures (m) to different noise level ranges.
+        (e.g. { 40: 15.2, 50: 62.4, 55: 10.5 })
     """
     # interpolate 40 dB distance
     noise_dists = dict(noises)
@@ -137,10 +138,26 @@ def get_noise_range_pcts(noises: dict, total_length: float) -> Dict[int, float]:
         if (dB_range in dB_range_lens.keys()): dB_range_lens[dB_range] += noise_dists[dB]
         else: dB_range_lens[dB_range] = noise_dists[dB]
     
+    # round exposures
+    dB_range_exps = {}
+    for dB_range in dB_range_lens.keys():
+        dB_range_exps[dB_range] = round(dB_range_lens[dB_range], 2)
+
+    return dB_range_exps
+
+def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]:
+    """Calculates percentages of aggregated exposures to different noise levels of total length.
+
+    Note:
+        Noise levels exceeding 70 dB are aggregated and as well as noise levels lower than 50 dB. 
+    Returns:
+        A dictionary containing noise level values with respective percentages.
+        (e.g. { 50: 35, 60: 65 })
+    """
     # calculate ratio (%) of each range's length to total length
     range_pcts = {}
-    for dB_range in dB_range_lens.keys():
-        range_pcts[dB_range] = round(dB_range_lens[dB_range]*100/total_length, 1)
+    for dB_range in dB_range_exps.keys():
+        range_pcts[dB_range] = round(dB_range_exps[dB_range]*100/length, 1)
 
     return range_pcts
 
@@ -250,9 +267,9 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
     (from which the edge was split). 
     """
-    link_len_ratio = link_geom.length / edge_dict['geometry'].length
+    cost_attrs = {}
     # estimate link costs based on link length - edge length -ratio and edge noises
-    cost_attrs = { 'length': round(edge_dict['length'] * link_len_ratio, 2) }
+    link_len_ratio = link_geom.length / edge_dict['geometry'].length
     cost_attrs['noises'] = interpolate_link_noises(link_len_ratio, link_geom, edge_dict['geometry'], edge_dict['noises'])
     # calculate noise sensitivity specific noise costs
     for sen in sens:

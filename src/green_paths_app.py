@@ -1,46 +1,54 @@
+import logging
 import time
 from datetime import datetime
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
 import utils.utils as utils
 from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
+from utils.graph_aqi_updater import GraphAqiUpdater
+from utils.logger import Logger
 
-# version: 1.1.0
+# version: 1.2.0
 
 app = Flask(__name__)
 CORS(app)
 
-graph_aqi_update_interval_secs: int = 20
-debug: bool = False
+# set logging to use gunicorn logger & logging level
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
+logger = Logger(app_logger=app.logger)
 
 # initialize graph
-start_time = time.time()
-G = GraphHandler(subset=False)
-G.set_noise_costs_to_edges()
-
-# setup scheduled graph updater
-def edge_attr_update():
-    # TODO load AQI layer, calculate & update AQI costs to graph
-    G.update_current_time_to_graph(debug)
-
-graph_updater = BackgroundScheduler()
-graph_updater.add_job(edge_attr_update, 'interval', seconds=graph_aqi_update_interval_secs)
-# graph_updater.start()
-
-utils.print_duration(start_time, 'graph initialized')
+G = GraphHandler(logger, subset=False, set_noise_costs=True)
+aqi_updater = GraphAqiUpdater(logger, G, start=True)
 
 @app.route('/')
 def hello_world():
-    return 'Keep calm and walk quiet paths.'
+    return 'Keep calm and walk green paths.'
+
+@app.route('/aqistatus')
+def aqi_status():
+    return jsonify(aqi_updater.get_aqi_update_status_response())
 
 @app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
+    return get_green_paths('quiet', orig_lat, orig_lon, dest_lat, dest_lon)
 
+@app.route('/cleanpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_short_clean_paths(orig_lat, orig_lon, dest_lat, dest_lon):
+    if (aqi_updater.get_aqi_updated_since_secs() is not None):
+        return get_green_paths('clean', orig_lat, orig_lon, dest_lat, dest_lon)
+    else:
+        return jsonify({'error': 'latest air quality data not available'})
+
+def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
     error = None
-    path_finder = PathFinder('quiet', G, orig_lat, orig_lon, dest_lat, dest_lon, debug=debug)
+    path_finder = PathFinder(logger, path_type, G, orig_lat, orig_lon, dest_lat, dest_lon)
 
     try:
         path_finder.find_origin_dest_nodes()
@@ -48,11 +56,10 @@ def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
         path_FC, edge_FC = path_finder.process_paths_to_FC()
 
     except Exception as e:
-        # PathFinder throws only pretty exception strings so they can be sent to UI
         error = jsonify({'error': str(e)})
 
     finally:
-        # keep graph clean by removing created nodes & edges
+        # keep the graph clean by removing nodes & edges created during routing
         path_finder.delete_added_graph_features()
 
         if (error is not None):

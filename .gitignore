@@ -107,4 +107,6 @@ venv.bak/
 .DS_Store
 src/.vscode/settings.json
 src/utils/credentials.csv
+src/credentials.csv
 src/debug/
+src/aqi_cache/

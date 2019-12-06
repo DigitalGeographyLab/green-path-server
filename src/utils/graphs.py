@@ -3,7 +3,6 @@ This module provides various functions for manipulating graphs at graph construc
 All graph manipulation that is done at routing time is taken care by class GraphHandler.
 
 Todo:
-    * Add support for using other edge weights than noise (e.g. AQI)
     * Try python-igraph (or other faster) library
 """
 
