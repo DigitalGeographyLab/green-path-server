@@ -61,7 +61,9 @@ class GraphAqiUpdater:
                 self.aqi_update_status = 'could not complete AQI update from: '+ new_aqi_data_csv
                 self.log.error(self.aqi_update_status)
                 traceback.print_exc()
+                self.log.warning('waiting 60 s after exception before next AQI update attempt')
                 time.sleep(60)
+                self.aqi_data_wip = ''
 
     def get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
@@ -131,6 +133,7 @@ class GraphAqiUpdater:
             self.log.info('edge_gdf row count: '+ str(len(self.G.edge_gdf)))
             self.log.info('edge_aqi_updates row count: '+ str(len(edge_aqi_updates)))
             self.log.error('non matching edge key vs update key counts: '+ str(edge_key_count) +' '+ str(update_key_count))
+            raise ValueError('Read incomplete aqi update data')
         
         # validate aqi_exps to update
         if (aq_exps.validate_df_aqi_exps(self.log, edge_aqi_updates) == False):
