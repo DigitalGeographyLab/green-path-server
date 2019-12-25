@@ -58,7 +58,10 @@ class GraphHandler:
         self.log.debug('graph nodes collected')
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
         self.log.info('projected edges to wgs')
-        if (set_noise_costs == True): self.set_noise_costs_to_edges()
+        self.db_costs: dict = None
+        if (set_noise_costs == True): 
+            self.db_costs = noise_exps.get_db_costs(version=3)
+            self.set_noise_costs_to_edges()
         self.log.duration(start_time, 'graph initialized', log_level='info')
 
     def get_node_gdf(self) -> gpd.GeoDataFrame:
@@ -90,11 +93,10 @@ class GraphHandler:
             edge_gdf: A GeoDataFrame containing at least columns 'uvkey' (tuple) and 'noises' (dict).
         """
         sens = noise_exps.get_noise_sensitivities()
-        db_costs = noise_exps.get_db_costs()
         edge_updates = self.edge_gdf.copy()
         for sen in sens:
             cost_attr = 'nc_'+str(sen)
-            edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_updates['noises']]
+            edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen) for noises in edge_updates['noises']]
             edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
             self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
         

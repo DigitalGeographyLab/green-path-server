@@ -30,7 +30,6 @@ class PathFinder:
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
         b_sens_subset = self.orig_point.distance(self.dest_point) > 2000
         self.sens = noise_exps.get_noise_sensitivities(subset=b_sens_subset)
-        self.db_costs = noise_exps.get_db_costs()
         self.path_set = PathSet(self.log, set_type=self.finder_type)
         self.orig_node = None
         self.dest_node = None
@@ -46,7 +45,7 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                self.log, self.G, self.orig_point, self.dest_point, self.sens, self.db_costs)
+                self.log, self.G, self.orig_point, self.dest_point, self.sens, self.G.db_costs)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
@@ -93,7 +92,7 @@ class PathFinder:
             self.path_set.set_path_edges(self.G)
             self.path_set.aggregate_path_attrs()
             self.path_set.filter_out_unique_len_paths()
-            self.path_set.set_path_exp_attrs(self.db_costs)
+            self.path_set.set_path_exp_attrs(self.G.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
             self.path_set.set_green_path_diff_attrs()
             self.log.duration(start_time, 'aggregated paths', unit='ms')
