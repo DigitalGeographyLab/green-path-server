@@ -12,16 +12,39 @@ import geopandas as gpd
 from shapely.geometry import LineString
 import utils.geometry as geom_utils
 
-def get_db_costs() -> Dict[int, float]:
-    """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base noise cost for edges. 
+def calc_db_cost_v2(db) -> float:
+    """Returns a noise cost for given dB based on a linear scale (dB >= 45 & dB <= 75).
+    """
+    if (db <= 40): 
+        return 0
+    db_cost = (db-40) / (75-40)
+    return round(db_cost, 2)
+
+def calc_db_cost_v3(db) -> float:
+    """Returns a noise cost for given dB: every 10 dB increase doubles the cost (dB >= 45 & dB <= 75).
+    """
+    if (db <= 40): return 0
+    db_cost = 0.125 * pow(2, (db-45)/10)
+    return round(db_cost, 3)
+
+def get_db_costs(version: int = 3) -> Dict[int, float]:
+    """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base (noise) cost for edges. 
     (Alternative noise costs can be calculated by multiplying the base noise cost with different noise sensitivities 
     from get_noise_sensitivities())
 
     Returns:
-        A dictionary of noise cost coefficients where the keys are the lower boundaries of the 5 dB ranges 
+        A dictionary of noise cost coefficients where the keys refer to the lower boundaries of the 5 dB ranges 
         (e.g. key 50 refers to 50-55 dB range) and the values are the dB-specific noise cost coefficients.
     """
-    return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
+    dbs = [45, 50, 55, 60, 65, 70, 75]
+    if (version == 1):
+        return { 50: 0.1, 55: 0.2, 60: 0.3, 65: 0.4, 70: 0.5, 75: 0.6 }
+    elif (version == 2):
+        return { db: calc_db_cost_v2(db) for db in dbs }
+    elif (version == 3):
+        return { db: calc_db_cost_v3(db) for db in dbs }
+    else:
+        raise ValueError('Parameter: version must be either 1, 2 or 3')
 
 def get_noise_sensitivities(subset: bool = False) -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
