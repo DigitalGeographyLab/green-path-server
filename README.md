@@ -52,7 +52,7 @@ $ cd hope-green-path-server/src
 $ conda activate gp-server
 
 $ python test_green_paths_app.py -b
-$ python -m pytest test_utils.py
+$ python test_utils.py -b
 
 $ conda activate aqi-processing
 $ python test_aqi_processor.py -b
