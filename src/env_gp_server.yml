@@ -1,4 +1,4 @@
-name: gp-server
+name: gp-server-3
 
 channels:
   - conda-forge
@@ -9,6 +9,7 @@ dependencies:
   - apscheduler
   - geopandas
   - networkx
+  - python-igraph
   - flask
   - flask-cors
   - flask-testing
