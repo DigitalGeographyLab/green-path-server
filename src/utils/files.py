@@ -5,6 +5,7 @@ This module provides functions for loading noise & graph data from external file
 
 import os
 import ast
+from ast import literal_eval
 import geopandas as gpd
 import networkx as nx
 from shapely import wkt
@@ -63,10 +64,10 @@ def load_graphml(filename, folder=None, node_type=int, directed=None, noises=Tru
         G = nx.MultiGraph(nx.read_graphml(path, node_type=node_type))
 
     # convert graph crs attribute from saved string to correct dict data type
-    G.graph['crs'] = ast.literal_eval(G.graph['crs'])
+    G.graph['crs'] = literal_eval(G.graph['crs'])
 
     if 'streets_per_node' in G.graph:
-        G.graph['streets_per_node'] = ast.literal_eval(G.graph['streets_per_node'])
+        G.graph['streets_per_node'] = literal_eval(G.graph['streets_per_node'])
 
     # convert numeric node tags from string to numeric data types
     for _, data in G.nodes(data=True):
@@ -80,7 +81,7 @@ def load_graphml(filename, folder=None, node_type=int, directed=None, noises=Tru
         # have only 1 value each
         data['length'] = float(data['length'])
         if (noises == True):
-            data['noises'] = ast.literal_eval(data['noises'])
+            data['noises'] = literal_eval(data['noises'])
 
         # if geometry attribute exists, load the string as well-known text to
         # shapely LineString

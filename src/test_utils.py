@@ -2,18 +2,56 @@ import unittest
 import pytest
 import geopandas as gpd
 import time
+from shapely.geometry import LineString
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
 import utils.graphs as graph_utils
-import utils.files as files
+import utils.files as file_utils
 import utils.routing as rt
 import utils.tests as tests
+import utils.igraphs as ig_utils
 
 # read data
 walk = tests.get_update_test_walk_line()
 walk_geom = walk.loc[0, 'geometry']
-noise_polys = files.get_noise_polygons()
+# noise_polys = file_utils.get_noise_polygons()
 
+class TestIgraphUtils(unittest.TestCase):
+
+    def test_convert_nx_graph_to_igraph(self):
+        nx_graph = file_utils.load_graph_kumpula_noise()
+        G = ig_utils.convert_nx_2_igraph(nx_graph)
+        self.assertEqual(G.ecount(), 11931)
+        edge = G.es[0]
+        self.assertIsInstance(edge['edge_id'], int)
+        self.assertIsInstance(edge['uvkey'], tuple)
+        self.assertIsInstance(edge['length'], float)
+        self.assertIsInstance(edge['noises'], dict)
+        self.assertIsInstance(edge['geometry'], LineString)
+        vertex = G.vs[0]
+        self.assertIsInstance(vertex['vertex_id'], int)
+        self.assertIsInstance(vertex['x_coord'], float)
+        self.assertIsInstance(vertex['y_coord'], float)
+
+    def test_export_load_graphml(self):
+        nx_graph = file_utils.load_graph_kumpula_noise()
+        G = ig_utils.convert_nx_2_igraph(nx_graph)
+        ig_utils.save_ig_to_graphml(G, 'ig_export_test.graphml')
+
+        G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+        self.assertEqual(G.ecount(), 11931)
+        edge = G.es[0]
+        self.assertIsInstance(edge['edge_id'], int)
+        self.assertIsInstance(edge['uvkey'], tuple)
+        self.assertIsInstance(edge['length'], float)
+        self.assertIsInstance(edge['noises'], dict)
+        self.assertIsInstance(edge['geometry'], LineString)
+        vertex = G.vs[0]
+        self.assertIsInstance(vertex['vertex_id'], int)
+        self.assertIsInstance(vertex['x_coord'], float)
+        self.assertIsInstance(vertex['y_coord'], float)
+
+@unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):
 
     def test_split_lines(self):
