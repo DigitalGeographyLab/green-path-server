@@ -1,5 +1,7 @@
 import ast
 from shapely import wkt
+from shapely.geometry import Point, LineString
+from fiona.crs import from_epsg
 import numpy as np
 import geopandas as gpd
 import igraph as ig
@@ -7,7 +9,7 @@ import networkx as nx
 import utils.graphs as nx_utils
 import utils.files as file_utils
 
-def convert_edge_attr_types(edge: ig.Edge):
+def convert_edge_attr_types(edge: ig.Edge) -> None:
     attrs = edge.attributes()
     edge['edge_id'] = int(attrs['edge_id'])
     edge['uvkey'] = ast.literal_eval(attrs['uvkey'])
@@ -15,25 +17,25 @@ def convert_edge_attr_types(edge: ig.Edge):
     edge['noises'] = ast.literal_eval(attrs['noises'])
     edge['geometry'] = wkt.loads(attrs['geometry'])
 
-def convert_node_attr_types(N: ig.Vertex):
+def convert_node_attr_types(N: ig.Vertex) -> None:
     attrs = N.attributes()
     N['vertex_id'] = int(attrs['vertex_id'])
     N['x_coord'] = float(attrs['x_coord'])
     N['y_coord'] = float(attrs['y_coord'])
 
-def set_graph_attributes(G: ig.Graph):
+def set_graph_attributes(G: ig.Graph) -> ig.Graph:
     for edge in G.es:
         convert_edge_attr_types(edge)
     for node in G.vs:
         convert_node_attr_types(node)
     return G
 
-def read_ig_graphml(graph_file: str = 'ig_export_test.graphml'):
+def read_ig_graphml(graph_file: str = 'ig_export_test.graphml') -> ig.Graph:
     G = ig.Graph()
     G = G.Read_GraphML('graphs/' + graph_file)
     return set_graph_attributes(G)
 
-def convert_nx_2_igraph(nx_g: nx.Graph):
+def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
     
     # read nodes from nx graph
     nodes, data = zip(*nx_g.nodes(data=True))
@@ -89,3 +91,43 @@ def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
     Gc.es['noises'] = [str(noises) for noises in Gc.es['noises']]
     Gc.es['geometry'] = [str(geometry) for geometry in Gc.es['geometry']]
     Gc.save('graphs/' + graph_out, format='graphml')
+
+
+def get_edge_dicts(G: ig.Graph, get_attrs: list = ['edge_id', 'uvkey', 'geometry']) -> list:
+    edge_dicts = []
+    for edge in G.es:
+        edge_attrs = edge.attributes()
+        edge_dict = {}
+        for attr in get_attrs:
+            if (attr in edge_attrs):
+                edge_dict[attr] = edge_attrs[attr]
+                if (edge_dict['edge_id'] != edge.index):
+                    print('edge_id and index do not match!')
+        edge_dicts.append(edge_dict)
+    return edge_dicts
+
+def get_edge_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
+    edge_dicts = get_edge_dicts(G)
+
+    ids = [ed['edge_id'] for ed in edge_dicts]
+    geometry = [ed['geometry'] for ed in edge_dicts]
+
+    gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
+    print(gdf.head())
+    return gdf
+
+def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
+    node_dicts = []
+    for node in G.vs:
+        node_attrs = node.attributes()
+        if (node_attrs['vertex_id'] != node.index):
+            print('vertex_id and index do not match!')
+        node_dicts.append(node_attrs)
+
+    ids = [nd['vertex_id'] for nd in node_dicts]
+    geometry = [Point(nd['x_coord'], nd['y_coord']) for nd in node_dicts]
+
+    gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
+    print(gdf.head())
+
+    return gdf

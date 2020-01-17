@@ -51,6 +51,16 @@ class TestIgraphUtils(unittest.TestCase):
         self.assertIsInstance(vertex['x_coord'], float)
         self.assertIsInstance(vertex['y_coord'], float)
 
+    def test_get_edge_gdf(self):
+        G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+        edge_gdf = ig_utils.get_edge_gdf(G)
+        self.assertEqual(len(edge_gdf), 11931)
+
+    def test_get_node_gdf(self):
+        G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+        node_gdf = ig_utils.get_node_gdf(G)
+        self.assertEqual(len(node_gdf), 8273)
+        
 @unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):
 
