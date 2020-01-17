@@ -106,25 +106,25 @@ class TestGraphAqiUpdater(unittest.TestCase):
 class TestGreenPaths(unittest.TestCase):
     
     def test_quiet_path_1(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 0, 'sp_len': 813.0, 'qp_len_sum': 0.0, 'noise_total_len': 309.3 }
+        set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 813.0, 'qp_len_sum': 843.3, 'noise_total_len': 402.5 }
         test_stats = get_quiet_path_stats(G, od_dict[1])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_5(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 1648.8, 'qp_len_sum': 5738.1, 'noise_total_len': 5481.6 }
+        set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 1648.8, 'qp_len_sum': 7540.9, 'noise_total_len': 6159.0 }
         qp_stats = {
-            'id': 'q_1',
+            'id': 'q_0.5',
             'length': 1671.45,
             'len_diff': 22.7,
             'len_diff_rat': 1.4,
-            'cost_coeff': 1,
+            'cost_coeff': 0.5,
             'mdB': 53.6,
-            'nei': 247.4,
-            'nei_norm': 0.25,
+            'nei': 370.4,
+            'nei_norm': 0.22,
             'mdB_diff': -3.5,
-            'nei_diff': -88.0,
-            'nei_diff_rat': -26.2,
-            'path_score': 3.9,
+            'nei_diff': -106.2,
+            'nei_diff_rat': -22.3,
+            'path_score': 4.7,
             'noise_diff_sum': -219.06,
             'noise_pcts_sum': 100.0,
             'geom_length': 1671.5
@@ -134,7 +134,7 @@ class TestGreenPaths(unittest.TestCase):
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
 
     def test_quiet_path_6(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 1024.9, 'qp_len_sum': 5385.1, 'noise_total_len': 5759.3 }
+        set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 1024.9, 'qp_len_sum': 3699.8, 'noise_total_len': 4395.5 }
         qp_stats = {
             'id': 'q_1',
             'length': 1081.78,
@@ -142,14 +142,14 @@ class TestGreenPaths(unittest.TestCase):
             'len_diff_rat': 5.6,
             'cost_coeff': 1,
             'mdB': 60.2,
-            'nei': 274.9,
-            'nei_norm': 0.42,
+            'nei': 377.7,
+            'nei_norm': 0.35,
             'mdB_diff': -4.6,
-            'nei_diff': -79.8,
-            'nei_diff_rat': -22.5,
-            'path_score': 1.4,
-            'noise_diff_sum': 56.92,
+            'nei_diff': -86.6,
+            'nei_diff_rat': -18.7,
+            'path_score': 1.5,
             'noise_pcts_sum': 100.1,
+            'noise_diff_sum': 56.92,
             'geom_length': 1081.8
             }
         test_stats = get_quiet_path_stats(G, od_dict[6])
@@ -157,17 +157,17 @@ class TestGreenPaths(unittest.TestCase):
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
 
     def test_quiet_path_7(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 1054.2, 'qp_len_sum': 1366.4, 'noise_total_len': 2197.1 }
+        set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 1054.2, 'qp_len_sum': 1338.5, 'noise_total_len': 2179.1 }
         test_stats = get_quiet_path_stats(G, od_dict[7])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_8(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 799.6, 'qp_len_sum': 3818.8, 'noise_total_len': 3247.4 }
+        set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 812.8, 'qp_len_sum': 2100.8, 'noise_total_len': 1505.8 }
         test_stats = get_quiet_path_stats(G, od_dict[8])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
     def test_quiet_path_9(self):
-        set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 670.6, 'qp_len_sum': 694.1, 'noise_total_len': 806.6 }
+        set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 670.6, 'qp_len_sum': 3009.4, 'noise_total_len': 1776.9 }
         test_stats = get_quiet_path_stats(G, od_dict[9])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
 
