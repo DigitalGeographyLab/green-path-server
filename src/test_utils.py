@@ -2,7 +2,7 @@ import unittest
 import pytest
 import geopandas as gpd
 import time
-from shapely.geometry import LineString
+from shapely.geometry import Point, LineString
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
 import utils.graphs as graph_utils
@@ -10,12 +10,19 @@ import utils.files as file_utils
 import utils.routing as rt
 import utils.tests as tests
 import utils.igraphs as ig_utils
+from utils.graph_handler import GraphHandler
+from utils.logger import Logger
 
 # read data
 walk = tests.get_update_test_walk_line()
 walk_geom = walk.loc[0, 'geometry']
 # noise_polys = file_utils.get_noise_polygons()
 
+# initialize graph
+logger = Logger(b_printing=True, log_file='test_utils.log')
+G = GraphHandler(logger, subset=True, set_noise_costs=True)
+
+# @unittest.SkipTest
 class TestIgraphUtils(unittest.TestCase):
 
     def test_convert_nx_graph_to_igraph(self):
@@ -61,6 +68,26 @@ class TestIgraphUtils(unittest.TestCase):
         node_gdf = ig_utils.get_node_gdf(G)
         self.assertEqual(len(node_gdf), 8273)
         
+class TestGraphHandler(unittest.TestCase):
+
+    def test_find_nearest_edge(self):
+        point = Point(25498334.77938123, 6678297.973057264)
+        edge = G.find_nearest_edge(point)
+        self.assertIsInstance(edge, dict)
+        self.assertEqual(edge['length'], 17.351)
+
+    def test_edges_have_noise_costs(self):
+        point = Point(25498334.77938123, 6678297.973057264)
+        edge = G.find_nearest_edge(point)
+        self.assertIn('nc_0.5', edge)
+        self.assertIn('nc_1', edge)
+
+    def test_find_nearest_node(self):
+        point = Point(25498334.77938123, 6678297.973057264)
+        node_id = G.find_nearest_node(point)
+        self.assertIsInstance(node_id, int)
+        self.assertGreater(node_id, 0)
+
 @unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):
 

@@ -92,7 +92,6 @@ def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
     Gc.es['geometry'] = [str(geometry) for geometry in Gc.es['geometry']]
     Gc.save('graphs/' + graph_out, format='graphml')
 
-
 def get_edge_dicts(G: ig.Graph, get_attrs: list = ['edge_id', 'uvkey', 'geometry']) -> list:
     edge_dicts = []
     for edge in G.es:
@@ -113,7 +112,7 @@ def get_edge_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
     geometry = [ed['geometry'] for ed in edge_dicts]
 
     gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
-    print(gdf.head())
+    # print(gdf.head())
     return gdf
 
 def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
@@ -128,6 +127,6 @@ def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
     geometry = [Point(nd['x_coord'], nd['y_coord']) for nd in node_dicts]
 
     gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
-    print(gdf.head())
+    # print(gdf.head())
 
     return gdf
