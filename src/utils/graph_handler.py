@@ -11,6 +11,7 @@ import utils.files as file_utils
 import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
 import utils.graphs as graph_utils
+import utils.igraphs as ig_utils
 import utils.geometry as geom_utils
 import utils.utils as utils
 from utils.logger import Logger
@@ -47,13 +48,13 @@ class GraphHandler:
         """
         self.log = logger
         start_time = time.time()
-        if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
+        if (subset == True): self.graph = ig_utils.read_ig_graphml('ig_export_test.graphml')
         else: self.graph = file_utils.load_graph_full_noise()
-        self.log.info('graph of '+ str(self.graph.size()) + ' edges read, subset: '+ str(subset))
-        self.edge_gdf = graph_utils.get_edge_gdf(self.graph, attrs=['geometry', 'length', 'noises'])
+        self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read, subset: '+ str(subset))
+        self.edge_gdf = ig_utils.get_edge_gdf(self.graph)
         self.edges_sind = self.edge_gdf.sindex
         self.log.debug('graph edges collected')
-        self.node_gdf = self.get_node_gdf()
+        self.node_gdf = ig_utils.get_node_gdf(self.graph)
         self.nodes_sind = self.node_gdf.sindex
         self.log.debug('graph nodes collected')
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
@@ -63,17 +64,6 @@ class GraphHandler:
             self.db_costs = noise_exps.get_db_costs(version=3)
             self.set_noise_costs_to_edges()
         self.log.duration(start_time, 'graph initialized', log_level='info')
-
-    def get_node_gdf(self) -> gpd.GeoDataFrame:
-        """Collects and sets the nodes of a graph as a GeoDataFrame. 
-        Names of the nodes are set as the row ids in the GeoDataFrame.
-        """
-        nodes, data = zip(*self.graph.nodes(data=True))
-        gdf_nodes = gpd.GeoDataFrame(list(data), index=nodes)
-        gdf_nodes['geometry'] = gdf_nodes.apply(lambda row: Point(row['x'], row['y']), axis=1)
-        gdf_nodes.crs = self.graph.graph['crs']
-        gdf_nodes.gdf_name = '{}_nodes'.format(self.graph.graph['name'])
-        return gdf_nodes[['geometry']]
     
     def set_edge_wgs_geoms(self, add_wgs_geom: bool, add_wgs_center: bool):
         edge_updates = self.edge_gdf.copy()
@@ -86,23 +76,15 @@ class GraphHandler:
 
     def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
-
-        Args:
-            db_cost: A dictionary containing the dB-specific noise cost coefficients.
-            sens: A list of sensitivity values.
-            edge_gdf: A GeoDataFrame containing at least columns 'uvkey' (tuple) and 'noises' (dict).
         """
         sens = noise_exps.get_noise_sensitivities()
-        edge_updates = self.edge_gdf.copy()
-        for sen in sens:
-            cost_attr = 'nc_'+str(sen)
-            edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen) for noises in edge_updates['noises']]
-            edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
-            self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
-        
-        # drop columns that were needed only for noise updates (edge attributes can be accessed from the graph from now on)
-        self.edge_gdf = self.edge_gdf.drop(columns=['noises', 'length'])
-        self.edges_sind = self.edge_gdf.sindex
+
+        for edge in self.graph.es:
+            edge_attrs = edge.attributes()
+            for sen in sens:
+                cost_attr = 'nc_'+str(sen)
+                noise_cost = noise_exps.get_noise_cost(noises=edge_attrs['noises'], db_costs=self.db_costs, sen=sen)
+                self.graph.es[edge.index][cost_attr] = round(edge_attrs['length'] + noise_cost, 2)
 
     def update_edge_attr_to_graph(self, edge_gdf = None, from_dict: bool = False, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
@@ -116,12 +98,12 @@ class GraphHandler:
         if (edge_gdf is None):
             edge_gdf = self.edge_gdf
         for edge in edge_gdf.itertuples():
-            update_attr = getattr(edge, df_attr)
-            nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: update_attr } if from_dict == False else update_attr })
-
-    def get_node_point_geom(self, node: int) -> Point:
-        node_d = self.graph.nodes[node]
-        return Point(node_d['x'], node_d['y'])
+            update = getattr(edge, df_attr)
+            if (from_dict == False):
+                self.graph.es[getattr(edge, 'Index')][edge_attr] = update
+            else:
+                for key in update.keys():
+                    self.graph.es[getattr(edge, 'Index')][key] = update[key]
 
     def find_nearest_node(self, point: Point) -> int:
         """Finds the nearest node to a given point.
@@ -146,19 +128,28 @@ class GraphHandler:
         nearest_geom = nearest_points(point, points_union)[1]
         nearest = possible_matches.geometry.geom_equals(nearest_geom)
         nearest_point =  possible_matches.loc[nearest]
-        nearest_node = nearest_point.index.tolist()[0]
+        nearest_node_id = nearest_point.index.tolist()[0]
         self.log.duration(start_time, 'found nearest node', unit='ms')
-        return nearest_node
+        return nearest_node_id
 
-    def get_edge_by_uvkey(self, uvkey) -> Dict:
+    def get_node_by_id(self, node_id: int) -> dict:
         try:
-            edge_d = self.graph[uvkey[0]][uvkey[1]][uvkey[2]]
-            edge_d['uvkey'] = uvkey
-            return edge_d
+            return self.graph.vs[node_id].attributes()
         except Exception:
-            self.log.warning('could not find edge by uvkey: '+ str(uvkey))
-            return {}
+            self.log.warning('could not find node by id: '+ str(node_id))
+            return None
+
+    def get_edge_by_id(self, edge_id: int) -> dict:
+        try:
+            return self.graph.es[edge_id].attributes()
+        except Exception:
+            self.log.warning('could not find edge by id: '+ str(edge_id))
+            return None
     
+    def get_node_point_geom(self, node_id: int) -> Point:
+        node_d = self.get_node_by_id(node_id)
+        return Point(node_d['x_coord'], node_d['y_coord'])
+
     def find_nearest_edge(self, point: Point) -> Dict:
         """Finds the nearest edge to a given point.
 
@@ -184,8 +175,8 @@ class GraphHandler:
             return None
         nearest = possible_matches['distance'] == shortest_dist
         self.log.duration(start_time, 'found nearest edge', unit='ms')
-        uvkey = possible_matches.loc[nearest]['uvkey'].iloc[0]
-        return self.get_edge_by_uvkey(uvkey)
+        edge_id = possible_matches.loc[nearest].index[0]
+        return self.get_edge_by_id(edge_id)
 
     def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.

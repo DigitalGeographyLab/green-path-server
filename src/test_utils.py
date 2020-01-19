@@ -70,23 +70,33 @@ class TestIgraphUtils(unittest.TestCase):
         
 class TestGraphHandler(unittest.TestCase):
 
+    def test_get_node_by_id(self):
+        self.assertIsInstance(G.get_node_by_id(0), dict)
+
+    def test_edges_have_wgs_geoms(self):
+        edge = G.get_edge_by_id(0)
+        self.assertIn('geom_wgs', edge)
+
+    def test_edges_have_noise_costs(self):
+        edge = G.get_edge_by_id(0)
+        self.assertIn('nc_0.5', edge)
+        self.assertIn('nc_1', edge)
+
     def test_find_nearest_edge(self):
         point = Point(25498334.77938123, 6678297.973057264)
         edge = G.find_nearest_edge(point)
         self.assertIsInstance(edge, dict)
         self.assertEqual(edge['length'], 17.351)
 
-    def test_edges_have_noise_costs(self):
-        point = Point(25498334.77938123, 6678297.973057264)
-        edge = G.find_nearest_edge(point)
-        self.assertIn('nc_0.5', edge)
-        self.assertIn('nc_1', edge)
-
     def test_find_nearest_node(self):
         point = Point(25498334.77938123, 6678297.973057264)
         node_id = G.find_nearest_node(point)
         self.assertIsInstance(node_id, int)
         self.assertGreater(node_id, 0)
+
+    def test_get_node_geom(self):
+        point = G.get_node_point_geom(0)
+        self.assertIsInstance(point, Point)
 
 @unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):
