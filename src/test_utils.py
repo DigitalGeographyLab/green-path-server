@@ -30,13 +30,13 @@ class TestIgraphUtils(unittest.TestCase):
         G = ig_utils.convert_nx_2_igraph(nx_graph)
         self.assertEqual(G.ecount(), 11931)
         edge = G.es[0]
-        self.assertIsInstance(edge['edge_id'], int)
+        self.assertIsInstance(edge['name'], int)
         self.assertIsInstance(edge['uvkey'], tuple)
         self.assertIsInstance(edge['length'], float)
         self.assertIsInstance(edge['noises'], dict)
         self.assertIsInstance(edge['geometry'], LineString)
         vertex = G.vs[0]
-        self.assertIsInstance(vertex['vertex_id'], int)
+        self.assertIsInstance(vertex['name'], int)
         self.assertIsInstance(vertex['point'], Point)
 
     def test_export_load_graphml(self):
@@ -47,13 +47,13 @@ class TestIgraphUtils(unittest.TestCase):
         G = ig_utils.read_ig_graphml('ig_export_test.graphml')
         self.assertEqual(G.ecount(), 11931)
         edge = G.es[0]
-        self.assertIsInstance(edge['edge_id'], int)
+        self.assertIsInstance(edge['name'], int)
         self.assertIsInstance(edge['uvkey'], tuple)
         self.assertIsInstance(edge['length'], float)
         self.assertIsInstance(edge['noises'], dict)
         self.assertIsInstance(edge['geometry'], LineString)
         vertex = G.vs[0]
-        self.assertIsInstance(vertex['vertex_id'], int)
+        self.assertIsInstance(vertex['name'], int)
         self.assertIsInstance(vertex['point'], Point)
 
     def test_get_edge_gdf(self):
@@ -66,6 +66,7 @@ class TestIgraphUtils(unittest.TestCase):
         node_gdf = ig_utils.get_node_gdf(G)
         self.assertEqual(len(node_gdf), 8273)
 
+# @unittest.SkipTest
 class TestGraphHandler(unittest.TestCase):
 
     def test_get_node_by_id(self):
