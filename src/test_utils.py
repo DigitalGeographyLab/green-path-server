@@ -22,7 +22,7 @@ walk_geom = walk.loc[0, 'geometry']
 logger = Logger(b_printing=True, log_file='test_utils.log')
 G = GraphHandler(logger, subset=True, set_noise_costs=True)
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestIgraphUtils(unittest.TestCase):
 
     def test_convert_nx_graph_to_igraph(self):
@@ -96,6 +96,30 @@ class TestGraphHandler(unittest.TestCase):
     def test_get_node_geom(self):
         point = G.get_node_point_geom(0)
         self.assertIsInstance(point, Point)
+
+    def test_get_new_node_id(self):
+        new_node_id = G.get_new_node_id()
+        self.assertIsInstance(new_node_id, int)
+        # there should not be a node with this id yet
+        node = G.get_node_by_id(new_node_id)
+        self.assertEqual(node, None)
+
+    def test_add_new_nodes(self):
+        point = Point(25498334.77938123, 6678297.973057264)
+        expected_new_node_id = G.get_new_node_id()
+        new_node_id = G.add_new_node_to_graph(point)
+        self.assertEqual(new_node_id, expected_new_node_id)
+        added_node = G.get_node_by_id(new_node_id)
+        self.assertEqual(added_node['name'], new_node_id)
+        self.assertIsInstance(added_node['point'], Point)
+        self.assertEqual(added_node['point'], point)
+        # test add one more
+        expected_second_new_node_id = G.get_new_node_id()
+        self.assertEqual(expected_new_node_id, expected_second_new_node_id-1)
+        second_new_node_id = G.add_new_node_to_graph(point)
+        self.assertEqual(expected_second_new_node_id, second_new_node_id)
+        second_added_node = G.get_node_by_id(second_new_node_id)
+        self.assertEqual(second_added_node['name'], second_new_node_id)
 
 @unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):

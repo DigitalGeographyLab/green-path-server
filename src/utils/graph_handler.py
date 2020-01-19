@@ -206,22 +206,14 @@ class GraphHandler:
     def get_new_node_id(self) -> int:
         """Returns an unique node id that can be used in creating a new node to a graph.
         """
-        return max(self.graph.nodes)+1
-
-    def get_new_node_attrs(self, point: Point) -> dict:
-        """Returns the basic attributes for a new node based on a specified location (Point).
-        """
-        new_node_id = self.get_new_node_id()
-        wgs_point = geom_utils.project_geom(point, from_epsg=3879, to_epsg=4326)
-        geom_attrs = {**geom_utils.get_xy_from_geom(point), **geom_utils.get_lat_lon_from_geom(wgs_point)}
-        return { 'id': new_node_id, **geom_attrs }
+        return self.graph.vcount()
 
     def add_new_node_to_graph(self, point: Point) -> int:
         """Adds a new node to a graph at a specified location (Point) and returns the id of the new node.
         """
-        attrs = self.get_new_node_attrs(point)
-        self.graph.add_node(attrs['id'], ref='', x=attrs['x'], y=attrs['y'], lon=attrs['lon'], lat=attrs['lat'])
-        return attrs['id']
+        new_node_id = self.get_new_node_id()
+        self.graph.add_vertex(name=new_node_id, point=point)
+        return new_node_id
 
     def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
