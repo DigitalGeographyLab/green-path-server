@@ -147,8 +147,7 @@ class GraphHandler:
             return None
     
     def get_node_point_geom(self, node_id: int) -> Point:
-        node_d = self.get_node_by_id(node_id)
-        return Point(node_d['x_coord'], node_d['y_coord'])
+        return self.get_node_by_id(node_id)['point']
 
     def find_nearest_edge(self, point: Point) -> Dict:
         """Finds the nearest edge to a given point.

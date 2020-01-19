@@ -20,8 +20,7 @@ def convert_edge_attr_types(edge: ig.Edge) -> None:
 def convert_node_attr_types(N: ig.Vertex) -> None:
     attrs = N.attributes()
     N['vertex_id'] = int(attrs['vertex_id'])
-    N['x_coord'] = float(attrs['x_coord'])
-    N['y_coord'] = float(attrs['y_coord'])
+    N['point'] = wkt.loads(attrs['point'])
 
 def set_graph_attributes(G: ig.Graph) -> ig.Graph:
     for edge in G.es:
@@ -42,7 +41,9 @@ def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
     node_df = gpd.GeoDataFrame(list(data), index=nodes)
     node_df['id_ig'] = np.arange(len(node_df))
     node_df['id_nx'] = node_df.index
+    node_df['point_geom'] = node_df.apply(lambda row: Point(row['x'], row['y']), axis=1)
 
+    # create dictionaries for converting nx edge ids to ig edge ids
     ids_nx_ig = {}
     ids_ig_nx = {}
 
@@ -57,8 +58,7 @@ def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
 
     # set node/vertex attributes
     G.vs['vertex_id'] = list(node_df['id_ig'])
-    G.vs['x_coord'] = list(node_df['x'])
-    G.vs['y_coord'] = list(node_df['y'])
+    G.vs['point'] = list(node_df['point_geom'])
 
     # read edges from nx graph
     def get_ig_uvkey(uvkey):
@@ -82,8 +82,7 @@ def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
     Gc = G.copy()
     # stringify node attributes before exporting to graphml
     Gc.vs['vertex_id'] = [str(vertex_id) for vertex_id in Gc.vs['vertex_id']]
-    Gc.vs['x_coord'] = [str(x_coord) for x_coord in Gc.vs['x_coord']]
-    Gc.vs['y_coord'] = [str(y_coord) for y_coord in Gc.vs['y_coord']]
+    Gc.vs['point'] = [str(point) for point in Gc.vs['point']]
     # stringify edge attributes before exporting to graphml
     Gc.es['edge_id'] = [str(edge_id) for edge_id in Gc.es['edge_id']]
     Gc.es['uvkey'] = [str(uvkey) for uvkey in Gc.es['uvkey']]
@@ -112,7 +111,6 @@ def get_edge_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
     geometry = [ed['geometry'] for ed in edge_dicts]
 
     gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
-    # print(gdf.head())
     return gdf
 
 def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
@@ -124,9 +122,7 @@ def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
         node_dicts.append(node_attrs)
 
     ids = [nd['vertex_id'] for nd in node_dicts]
-    geometry = [Point(nd['x_coord'], nd['y_coord']) for nd in node_dicts]
+    geometry = [nd['point'] for nd in node_dicts]
 
     gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
-    # print(gdf.head())
-
     return gdf
