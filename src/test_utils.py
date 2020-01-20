@@ -22,7 +22,7 @@ walk_geom = walk.loc[0, 'geometry']
 logger = Logger(b_printing=True, log_file='test_utils.log')
 G = GraphHandler(logger, subset=True, set_noise_costs=True)
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestIgraphUtils(unittest.TestCase):
 
     def test_convert_nx_graph_to_igraph(self):
@@ -120,6 +120,72 @@ class TestGraphHandler(unittest.TestCase):
         self.assertEqual(expected_second_new_node_id, second_new_node_id)
         second_added_node = G.get_node_by_id(second_new_node_id)
         self.assertEqual(second_added_node['name'], second_new_node_id)
+    
+    def test_get_new_edge_id(self):
+        new_edge_id = G.get_new_edge_id()
+        self.assertIsInstance(new_edge_id, int)
+        # there should not be a node with this id yet
+        edge = G.get_edge_by_id(new_edge_id)
+        self.assertEqual(edge, None)
+
+    def test_add_new_edge(self):
+        eg_geom = G.get_edge_by_id(0)['geometry']
+        expected_new_edge_id = G.get_new_edge_id()
+        new_edge_id = G.add_new_edge_to_graph(0, 1, { 'geometry': eg_geom, 'length': 12.3 })
+        self.assertEqual(new_edge_id, expected_new_edge_id)
+        added_edge = G.get_edge_by_id(new_edge_id)
+        self.assertEqual(added_edge['name'], new_edge_id )
+        self.assertEqual(added_edge['length'], 12.3 )
+        self.assertEqual(added_edge['geometry'], eg_geom )
+
+    def test_find_edges_by_source_target(self):
+        new_edge_id = G.add_new_edge_to_graph(1, 2, { 'length': 12.2 })
+        edges = G.find_edges_between_node_pair(source=1, target=2)
+        self.assertIsInstance(edges, list)
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(edges[0]['length'], 12.2)
+        # try with flipped uvkey (origin/target nodes)
+        edges = G.find_edges_between_node_pair(source=2, target=1, directed=True)
+        self.assertEqual(len(edges), 0)
+        edges = G.find_edges_between_node_pair(source=2, target=1, directed=False)
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(edges[0]['length'], 12.2)
+        # add one more edge
+        new_edge_id = G.add_new_edge_to_graph(1, 2, { 'length': 12.2 })
+        edges = G.find_edges_between_node_pair(source=2, target=1, directed=False)
+        self.assertEqual(len(edges), 2)
+        self.assertEqual(edges[0]['length'], 12.2)
+
+    def test_can_delete_edges(self):
+        new_node_id = G.add_new_node_to_graph(Point(25498334, 6678297))
+        edge_1 = G.add_new_edge_to_graph(1, new_node_id, { 'length': 5 })
+        edge_2 = G.add_new_edge_to_graph(new_node_id, 2, { 'length': 7 })
+        link_edges = { 'node_from': 1, 'new_node': new_node_id, 'node_to':  2 }
+        # check that new edges were added
+        edges_1 = G.find_edges_between_node_pair(source=new_node_id, target=1)
+        edges_2 = G.find_edges_between_node_pair(source=new_node_id, target=2)
+        self.assertEqual(len(edges_1), 1)
+        self.assertEqual(len(edges_2), 1)
+        G.remove_new_node_and_link_edges({'node': new_node_id}, link_edges)
+        # check that new edges were deleted
+        edges_1 = G.find_edges_between_node_pair(source=new_node_id, target=1)
+        edges_2 = G.find_edges_between_node_pair(source=new_node_id, target=2)
+        self.assertEqual(len(edges_1), 0)
+        self.assertEqual(len(edges_2), 0)
+        # check that edge names still match edge indexes (mismatch would be problematic)
+        ecount = 0
+        for edge in G.graph.es:
+            ecount += 1
+            edge_attrs = edge.attributes()
+            self.assertEqual(edge_attrs['name'], edge.index)
+        self.assertEqual(ecount, G.graph.ecount())
+        # check that vertex names still match vertex indexes (mismatch would be problematic)
+        nodecount = 0
+        for node in G.graph.vs:
+            nodecount += 1
+            node_attrs = node.attributes()
+            self.assertEqual(node['name'], node.index)
+        self.assertEqual(nodecount, G.graph.vcount())
 
 @unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):

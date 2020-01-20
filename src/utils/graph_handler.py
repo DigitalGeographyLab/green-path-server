@@ -145,7 +145,17 @@ class GraphHandler:
         except Exception:
             self.log.warning('could not find edge by id: '+ str(edge_id))
             return None
-    
+
+    def find_edges_between_node_pair(self, source: int, target: int, directed: bool = False) -> List[dict]:
+        try:
+            if (directed == True):
+                return [e.attributes() for e in self.graph.es.select(_source=source, _target=target)]
+            else:
+                return [e.attributes() for e in self.graph.es.select(_within=[source, target])]
+        except Exception:
+            self.log.warning('tried to find edges from/to invalid vertex id: '+ str(source) +' or: '+ str(target))
+            return []
+
     def get_node_point_geom(self, node_id: int) -> Point:
         return self.get_node_by_id(node_id)['point']
 
@@ -214,6 +224,14 @@ class GraphHandler:
         new_node_id = self.get_new_node_id()
         self.graph.add_vertex(name=new_node_id, point=point)
         return new_node_id
+
+    def get_new_edge_id(self) -> int:
+        return self.graph.ecount()
+
+    def add_new_edge_to_graph(self, source: int, target: int, attrs: dict = {}) -> int:
+        new_edge_id = self.get_new_edge_id()
+        self.graph.add_edge(source, target, name=new_edge_id, **attrs)
+        return new_edge_id
 
     def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
@@ -292,14 +310,16 @@ class GraphHandler:
             # try removing edges from graph
             for rm_edge in rm_edges:
                 try:
-                    self.graph.remove_edge(*rm_edge)
+                    edge_id = self.graph.get_eid(*rm_edge)
+                    self.graph.delete_edges(edge_id)
                     removed_count += 1
                 except Exception:
                     continue
             try:
-                self.graph.remove_node(new_node['node'])
+                self.graph.delete_vertices(new_node['node'])
                 removed_node = True
             except Exception:
                 pass
+            self.log.debug('Deleted ' + str(removed_count) + ' edges. Deleted node: ' + str(removed_node))
             if (removed_count == 0): self.log.error('Could not remove linking edges')
             if (removed_node == False): self.log.error('Could not remove new node')
