@@ -186,7 +186,7 @@ class GraphHandler:
         edge_id = possible_matches.loc[nearest].index[0]
         return self.get_edge_by_id(edge_id)
 
-    def get_edges_from_edge_ids(self, orig_node: int, edge_ids: List[int], cost_attr: str) -> List[dict]:
+    def get_edges_from_edge_ids(self, orig_node: int, edge_ids: List[int]) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
         Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
         """
@@ -207,8 +207,7 @@ class GraphHandler:
             edge_d['coords_wgs'] = edge['geom_wgs'].coords if bool_flip_geom else edge['geom_wgs'].coords[::-1]
             path_edges.append(edge_d)
             # set previous node for next round
-            prev_node = edge['uvkey'][1 if bool_flip_geom else 0]
-            prev_point = self.get_node_point_geom(prev_node)
+            prev_point = Point(edge_d['coords'][-1])
         return path_edges
 
     def get_new_node_id(self) -> int:
@@ -263,9 +262,9 @@ class GraphHandler:
         link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
         # add linking edges with noise cost attributes to graph
-        self.add_new_edge_to_graph(node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs })
+        # self.add_new_edge_to_graph(node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs })
         self.add_new_edge_to_graph(new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs })
-        self.add_new_edge_to_graph(node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs })
+        # self.add_new_edge_to_graph(node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs })
         self.add_new_edge_to_graph(new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs })
         link1_d = { 'uvkey': (new_node, node_from), **link1_attrs }
         link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
@@ -285,7 +284,7 @@ class GraphHandler:
         """
         if (orig_node != dest_node):
             try:
-                s_path = self.graph.get_shortest_paths(orig_node, to=dest_node, weights=weight, output="epath")
+                s_path = self.graph.get_shortest_paths(orig_node, to=dest_node, weights=weight, mode=1, output="epath")
                 return s_path[0]
             except:
                 raise Exception('Could not find paths')

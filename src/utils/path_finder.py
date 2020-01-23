@@ -69,8 +69,7 @@ class PathFinder:
                 orig_node=self.orig_node['node'],
                 edge_ids=shortest_path,
                 name='short',
-                path_type='short',
-                cost_attr='length'))
+                path_type='short'))
             for sen in self.sens:
                 # use aqi costs if optimizing clean paths - else use noise costs
                 cost_attr = 'aqc_'+ str(sen) if (self.finder_type == 'clean') else 'nc_'+ str(sen)
@@ -81,7 +80,6 @@ class PathFinder:
                     edge_ids=least_cost_path,
                     name=path_name,
                     path_type=self.finder_type,
-                    cost_attr=cost_attr,
                     cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:

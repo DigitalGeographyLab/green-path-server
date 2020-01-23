@@ -51,7 +51,7 @@ class TestGraphAqiUpdater(unittest.TestCase):
         aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
         logger.debug('edge_dicts count: '+ str(G.graph.ecount()))
         # test that all edges got aqi attr and costs
-        for edge in G.graph.es():
+        for edge in G.graph.es:
             edge_attrs = edge.attributes()
             self.assertIn('aqi_exp', edge_attrs.keys())
             self.assertIn('aqc_1', edge_attrs.keys())
