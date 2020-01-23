@@ -123,12 +123,11 @@ class GraphAqiUpdater:
         self.log.info('starting aqi update from: '+ aqi_updates_csv)
         self.aqi_data_wip = aqi_updates_csv
         # read aqi update csv
-        field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters={ 'aqi_exp': ast.literal_eval }, index_col='index')
 
         # ensure that all edges will get aqi value
-        edge_key_count = self.G.edge_gdf['uvkey'].nunique()
-        update_key_count = edge_aqi_updates['uvkey'].nunique()
+        edge_key_count = self.G.edge_gdf.index.nunique()
+        update_key_count = edge_aqi_updates.index.nunique()
         if (edge_key_count != update_key_count):
             self.log.info('edge_gdf row count: '+ str(len(self.G.edge_gdf)))
             self.log.info('edge_aqi_updates row count: '+ str(len(edge_aqi_updates)))

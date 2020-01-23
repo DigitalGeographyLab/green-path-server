@@ -49,21 +49,13 @@ class TestGraphAqiUpdater(unittest.TestCase):
         aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
         aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
-        edge_dicts = graph_utils.get_all_edge_dicts(G.graph)
-        logger.debug('edge_dicts count: '+ str(len(edge_dicts)))
-        # test that all edges got aqi attr
-        all_edges_have_aqi = True
-        for edge in edge_dicts:
-            if ('aqi_exp' not in edge):
-                all_edges_have_aqi = False
-        self.assertEqual(all_edges_have_aqi, True, msg='One or more edges did not get aqi_exp')
-        # test that all edges got aqi cost attrs
-        all_edges_have_aqi_cost = True
-        for edge in edge_dicts:
-            if ('aqc_1' not in edge):
-                all_edges_have_aqi_cost = False
-        self.assertEqual(all_edges_have_aqi_cost, True, msg='One or more edges did not get aqi costs')
-        eg_edge = edge_dicts[0]
+        logger.debug('edge_dicts count: '+ str(G.graph.ecount()))
+        # test that all edges got aqi attr and costs
+        for edge in G.graph.es():
+            edge_attrs = edge.attributes()
+            self.assertIn('aqi_exp', edge_attrs.keys())
+            self.assertIn('aqc_1', edge_attrs.keys())
+        eg_edge = G.get_edge_by_id(0)
         eg_aqi = eg_edge['aqi_exp'][0]
         self.assertAlmostEqual(eg_aqi, 1.87, places=2)
         self.assertAlmostEqual(eg_edge['aqc_3'], 209.95, places=2, msg='Expected aqc_3 cost was not set')
