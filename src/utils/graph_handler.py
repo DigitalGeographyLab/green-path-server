@@ -6,7 +6,6 @@ import time
 import ast
 import pandas as pd
 import geopandas as gpd
-import networkx as nx
 import utils.files as file_utils
 import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
@@ -37,7 +36,7 @@ class GraphHandler:
         * Calculate and update AQI costs to graph.
     """
 
-    def __init__(self, logger: Logger, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, set_noise_costs: bool = False):
+    def __init__(self, logger: Logger, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, gdf_attrs: list = [], set_noise_costs: bool = False):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
@@ -51,7 +50,7 @@ class GraphHandler:
         if (subset == True): self.graph = ig_utils.read_ig_graphml('ig_export_test.graphml')
         else: self.graph = file_utils.load_graph_full_noise()
         self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read, subset: '+ str(subset))
-        self.edge_gdf = ig_utils.get_edge_gdf(self.graph)
+        self.edge_gdf = ig_utils.get_edge_gdf(self.graph, add_attrs=gdf_attrs)
         self.edges_sind = self.edge_gdf.sindex
         self.log.debug('graph edges collected')
         self.node_gdf = ig_utils.get_node_gdf(self.graph)

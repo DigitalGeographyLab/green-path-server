@@ -13,7 +13,7 @@ from utils.logger import Logger
 
 logger = Logger(b_printing=True, log_file='test_aqi_processor.log')
 aqi_processor = AqiProcessor(logger, aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)
-G = GraphHandler(logger, subset=True, add_wgs_center=True)
+G = GraphHandler(logger, subset=True, add_wgs_center=True, gdf_attrs=['length'])
 
 class TestAqiProcessing(unittest.TestCase):
 
@@ -79,7 +79,8 @@ class TestAqiProcessing(unittest.TestCase):
         self.assertAlmostEqual(aqi_max, 2.51, places=2)
         self.assertAlmostEqual(aqi_mean, 1.88, places=2)
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(aqi_processor.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        edge_aqi_updates = pd.read_csv(aqi_processor.aqi_dir + aqi_updates_csv, converters=field_type_converters, index_col='index')
+        print(edge_aqi_updates.head())
         edge_aqi_updates['aqi'] = [aqi_exp[0] for aqi_exp in edge_aqi_updates['aqi_exp']]
         self.assertAlmostEqual(edge_aqi_updates['aqi'].max(), 2.51, places=2)
         self.assertAlmostEqual(edge_aqi_updates['aqi'].mean(), 1.88, places=2)

@@ -91,8 +91,9 @@ def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
     Gc.es['geometry'] = [str(geometry) for geometry in Gc.es['geometry']]
     Gc.save('graphs/' + graph_out, format='graphml')
 
-def get_edge_dicts(G: ig.Graph, get_attrs: list = ['name', 'uvkey', 'geometry']) -> list:
+def get_edge_dicts(G: ig.Graph, attrs: list = ['name', 'uvkey', 'geometry'], add_attrs: list = []) -> list:
     edge_dicts = []
+    get_attrs = attrs + add_attrs
     for edge in G.es:
         edge_attrs = edge.attributes()
         edge_dict = {}
@@ -104,14 +105,11 @@ def get_edge_dicts(G: ig.Graph, get_attrs: list = ['name', 'uvkey', 'geometry'])
         edge_dicts.append(edge_dict)
     return edge_dicts
 
-def get_edge_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
-    edge_dicts = get_edge_dicts(G)
-
+def get_edge_gdf(G: ig.Graph, length: bool = False, add_attrs: list = []) -> gpd.GeoDataFrame:
+    edge_dicts = get_edge_dicts(G, add_attrs=add_attrs)
     ids = [ed['name'] for ed in edge_dicts]
-    geometry = [ed['geometry'] for ed in edge_dicts]
-
-    gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
-    return gdf
+    gdf = gpd.GeoDataFrame(edge_dicts, index=ids, crs=from_epsg(3879))
+    return gdf.drop(columns=['name'])
 
 def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
     node_dicts = []
