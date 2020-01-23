@@ -14,4 +14,3 @@ dependencies:
   - flask-cors
   - flask-testing
   - gunicorn
-  - requests
