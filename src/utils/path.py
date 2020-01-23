@@ -10,8 +10,9 @@ class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
-    def __init__(self, nodes: List[int], name: str, path_type: str, cost_attr: str, cost_coeff: float = 0.0):
-        self.nodes: List[int] = nodes
+    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type: str, cost_attr: str, cost_coeff: float = 0.0):
+        self.orig_node: int = orig_node
+        self.edge_ids: List[int] = edge_ids
         self.edges: List[dict] = []
         self.edge_groups: List[Tuple[int, List[dict]]] = []
         self.name: str = name
@@ -32,7 +33,7 @@ class Path:
     def set_path_edges(self, G: GraphHandler) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
         """
-        self.edges = G.get_edges_from_nodelist(self.nodes, self.cost_attr)
+        self.edges = G.get_edges_from_edge_ids(self.orig_node, self.edge_ids, self.cost_attr)
 
     def aggregate_path_attrs(self, geom: bool = True, length: bool = True, noises: bool = True, aqi: bool = False) -> None:
         """Aggregates path attributes form list of edges.

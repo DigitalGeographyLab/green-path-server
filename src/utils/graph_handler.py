@@ -187,30 +187,29 @@ class GraphHandler:
         edge_id = possible_matches.loc[nearest].index[0]
         return self.get_edge_by_id(edge_id)
 
-    def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
+    def get_edges_from_edge_ids(self, orig_node: int, edge_ids: List[int], cost_attr: str) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
         Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
         """
+        prev_point = self.get_node_point_geom(orig_node)
+
         path_edges = []
-        for idx in range(0, len(path)):
-            if (idx == len(path)-1):
-                break
+        for idx, edge_id in enumerate(edge_ids):
+            edge = self.get_edge_by_id(edge_id)
+            bool_flip_geom = geom_utils.bool_line_starts_at_point(prev_point, edge['geometry'])
             edge_d = {}
-            node_1 = path[idx]
-            node_1_point = self.get_node_point_geom(node_1)
-            node_2 = path[idx+1]
-            edges = self.graph[node_1][node_2]
-            edge = graph_utils.get_least_cost_edge(edges, cost_attr)
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
             edge_d['aqi_exp'] = edge['aqi_exp'] if ('aqi_exp' in edge) else None
             edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi_exp'][0]) if ('aqi_exp' in edge) else None
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
-            mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
+            mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if ('noises' in edge) else 0
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
-            bool_flip_geom = geom_utils.bool_line_starts_at_point(node_1_point, edge['geometry'])
             edge_d['coords'] = edge['geometry'].coords if bool_flip_geom else edge['geometry'].coords[::-1]
             edge_d['coords_wgs'] = edge['geom_wgs'].coords if bool_flip_geom else edge['geom_wgs'].coords[::-1]
             path_edges.append(edge_d)
+            # set previous node for next round
+            prev_node = edge['uvkey'][1 if bool_flip_geom else 0]
+            prev_point = self.get_node_point_geom(prev_node)
         return path_edges
 
     def get_new_node_id(self) -> int:
@@ -265,10 +264,10 @@ class GraphHandler:
         link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
         # add linking edges with noise cost attributes to graph
-        self.graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
-        self.graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])
-        self.graph.add_edges_from([ (node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs }) ])
-        self.graph.add_edges_from([ (new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs }) ])
+        self.add_new_edge_to_graph(node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs })
+        self.add_new_edge_to_graph(new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs })
+        self.add_new_edge_to_graph(node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs })
+        self.add_new_edge_to_graph(new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs })
         link1_d = { 'uvkey': (new_node, node_from), **link1_attrs }
         link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
         self.log.duration(start_time, 'added links for new node', unit='ms')
@@ -287,8 +286,8 @@ class GraphHandler:
         """
         if (orig_node != dest_node):
             try:
-                s_path = nx.shortest_path(self.graph, source=orig_node, target=dest_node, weight=weight)
-                return s_path
+                s_path = self.graph.get_shortest_paths(orig_node, to=dest_node, weights=weight, output="epath")
+                return s_path[0]
             except:
                 raise Exception('Could not find paths')
         else:
@@ -323,3 +322,5 @@ class GraphHandler:
             self.log.debug('Deleted ' + str(removed_count) + ' edges. Deleted node: ' + str(removed_node))
             if (removed_count == 0): self.log.error('Could not remove linking edges')
             if (removed_node == False): self.log.error('Could not remove new node')
+        else:
+            self.log.info('no edges or nodes to remove')

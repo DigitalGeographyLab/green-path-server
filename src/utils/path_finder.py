@@ -65,13 +65,24 @@ class PathFinder:
         try:
             start_time = time.time()
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
-            self.path_set.set_shortest_path(Path(nodes=shortest_path, name='short', path_type='short', cost_attr='length'))
+            self.path_set.set_shortest_path(Path(
+                orig_node=self.orig_node['node'],
+                edge_ids=shortest_path,
+                name='short',
+                path_type='short',
+                cost_attr='length'))
             for sen in self.sens:
                 # use aqi costs if optimizing clean paths - else use noise costs
                 cost_attr = 'aqc_'+ str(sen) if (self.finder_type == 'clean') else 'nc_'+ str(sen)
                 path_name = 'aq_'+ str(sen) if (self.finder_type == 'clean') else 'q_'+ str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
-                self.path_set.add_green_path(Path(nodes=least_cost_path, name=path_name, path_type=self.finder_type, cost_attr=cost_attr, cost_coeff=sen))
+                self.path_set.add_green_path(Path(
+                    orig_node=self.orig_node['node'],
+                    edge_ids=least_cost_path,
+                    name=path_name,
+                    path_type=self.finder_type,
+                    cost_attr=cost_attr,
+                    cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:
             self.log.error('exception in finding least cost paths:')
@@ -122,5 +133,5 @@ class PathFinder:
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
         """
         self.log.debug('deleting created nodes & edges from the graph')
-        self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
         self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)
+        self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
