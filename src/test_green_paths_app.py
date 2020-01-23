@@ -37,41 +37,6 @@ def get_quiet_path_stats(G, od_dict, logging=False):
 # read OD pairs for routing tests
 od_dict = tests.get_test_ODs()
 
-class TestAqiExposures(unittest.TestCase):
-
-    def test_simple_aqi_exposure(self):
-        eg_aq = 1.8
-        self.assertEqual(aq_exps.get_aqi_coeff(eg_aq), 0.2)
-
-    def test_aq_costs(self):
-        sens = [0.5, 1, 2]
-        aq_costs = aq_exps.get_aqi_costs((2.0, 10.0), sens, length=10)
-        self.assertDictEqual(aq_costs, { 'aqc_0.5': 11.25, 'aqc_1': 12.5, 'aqc_2': 15.0 })
-    
-    def test_aqi_attrs(self):
-        aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
-        aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
-        aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        self.assertAlmostEqual(aqi_attrs.aqi_m, 2.14, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc, 5.69, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_norm, 0.28, places=2)
-        aqi_class_pcts_sum = sum(aqi_attrs.aqi_pcts.values())
-        self.assertAlmostEqual(aqi_class_pcts_sum, 100)
-        self.assertEqual(len(aqi_attrs.aqi_pcts.keys()), 3)
-
-    def test_aqi_diff_attrs(self):
-        aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
-        aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
-        aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        s_path_aqi_exp_list = [ (2.5, 1), (2.25, 5), (3.5, 10), (4.5, 2) ]
-        s_path_aqi_attrs = PathAqiAttrs('clean', s_path_aqi_exp_list)
-        s_path_aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        aqi_attrs.set_aqi_diff_attrs(s_path_aqi_attrs, len_diff=2)
-        self.assertAlmostEqual(aqi_attrs.aqi_m_diff, -1.07, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_diff, -4.25, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_diff_rat, -42.8, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_diff_score, 2.1, places=2)
-
 class TestGraphAqiUpdater(unittest.TestCase):
 
     def test_aqi_updater(self):
