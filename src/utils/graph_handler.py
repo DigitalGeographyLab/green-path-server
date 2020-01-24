@@ -46,10 +46,11 @@ class GraphHandler:
             set_noise_costs: A boolean variable indicating whether noise costs should be calculated and updated to the graph.
         """
         self.log = logger
+        self.log.info('graph subset: '+ str(subset))
         start_time = time.time()
         if (subset == True): self.graph = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
         else: self.graph = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
-        self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read, subset: '+ str(subset))
+        self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read')
         self.edge_gdf = ig_utils.get_edge_gdf(self.graph, add_attrs=gdf_attrs)
         self.edges_sind = self.edge_gdf.sindex
         self.log.debug('graph edges collected')

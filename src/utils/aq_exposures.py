@@ -28,6 +28,8 @@ def get_aq_sensitivities(subset: bool = False) -> List[float]:
 def get_aqi_coeff(aqi: float) -> float:
     """Returns cost coefficient for calculating AQI based costs.
     """
+    if (aqi < 1):
+        raise ValueError('Received AQI value lower than minimum (1): '+ str(aqi))
     return (aqi - 1) / 4
 
 def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen: float = 1.0) -> float:
@@ -41,14 +43,18 @@ def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen:
     else:
         raise ValueError('Either aqi_coeff or aqi argument must be defined')
 
-def get_aqi_costs(aqi_exp: Tuple[float, float], sens: List[float], length: float = 0) -> Dict[str, float]:
+def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], length: float = 0, missing_aqi: bool = False) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
     
     Args:
         aqi_exp: A tuple containing an AQI value and distance (exposure) in meters (aqi: float, distance: float).
         length: A length value to use as a base cost.
     """
-    aqi_coeff = get_aqi_coeff(aqi_exp[0])
+    try:
+        aqi_coeff = get_aqi_coeff(aqi_exp[0]) if missing_aqi == False else 100 # assign high aq costs to edges without aqi data
+    except ValueError as e:
+        log.error(str(e))
+        aqi_coeff = 100
     aq_costs = { 'aqc_'+ str(sen) : round(length + get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen), 2) for sen in sens }
     return aq_costs
 
@@ -67,7 +73,7 @@ def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'Lin
         return {}
 
     link_aqi_exp = (edge_dict['aqi_exp'][0], round(link_geom.length, 2))
-    aqi_costs = get_aqi_costs(link_aqi_exp, sens, length=link_geom.length)
+    aqi_costs = get_aqi_costs(log, link_aqi_exp, sens, length=link_geom.length)
     return { 'aqi_exp': link_aqi_exp, **aqi_costs }
 
 def get_aqi_cost_from_exp(aqi_exp: Tuple[float, float], sen: float = 1.0) -> float:

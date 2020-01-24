@@ -13,6 +13,7 @@ import utils.tests as tests
 import utils.igraphs as ig_utils
 from utils.path_aqi_attrs import PathAqiAttrs
 from utils.graph_handler import GraphHandler
+from utils.graph_aqi_updater import GraphAqiUpdater
 from utils.logger import Logger
 
 # read data
@@ -52,13 +53,14 @@ class TestIgraphUtils(unittest.TestCase):
         ig_utils.save_ig_to_graphml(G, 'hel_ig_v1.graphml')
         G = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
         for edge in G.es:
-            self.assertEqual(list(edge.attributes().keys()), ['name', 'uvkey', 'length', 'noises', 'geometry'])
+            self.assertEqual(list(edge.attributes().keys()), ['name', 'uvkey', 'length', 'noises', 'geometry', 'has_aqi'])
             self.assertEqual(len(edge.attributes().keys()), 5)
             self.assertIsInstance(edge['name'], int)
             self.assertIsInstance(edge['uvkey'], tuple)
             self.assertIsInstance(edge['length'], float)
             self.assertIsInstance(edge['noises'], dict)
             self.assertIsInstance(edge['geometry'], LineString)
+            self.assertEqual(edge['has_aqi'], False)
             self.assertEqual(edge['uvkey'][0], edge.source)
             self.assertEqual(edge['uvkey'][1], edge.target)
         for vertex in G.vs:
@@ -75,12 +77,13 @@ class TestIgraphUtils(unittest.TestCase):
 
         self.assertEqual(G.ecount(), 11931)
         for edge in G.es:
-            self.assertEqual(list(edge.attributes().keys()), ['name', 'uvkey', 'length', 'noises', 'geometry'])
+            self.assertEqual(list(edge.attributes().keys()), ['name', 'uvkey', 'length', 'noises', 'geometry', 'has_aqi'])
             self.assertIsInstance(edge['name'], int)
             self.assertIsInstance(edge['uvkey'], tuple)
             self.assertIsInstance(edge['length'], float)
             self.assertIsInstance(edge['noises'], dict)
             self.assertIsInstance(edge['geometry'], LineString)
+            self.assertEqual(edge['has_aqi'], False)
             self.assertEqual(edge['uvkey'][0], edge.source)
             self.assertEqual(edge['uvkey'][1], edge.target)
         for vertex in G.vs:
@@ -289,10 +292,30 @@ class TestAqiExposures(unittest.TestCase):
         eg_aq = 1.8
         self.assertEqual(aq_exps.get_aqi_coeff(eg_aq), 0.2)
 
+    def test_invalid_aqi_exposure_raises(self):
+        eg_aq = 0.5
+        self.assertRaises(ValueError, aq_exps.get_aqi_coeff, eg_aq)
+
     def test_aq_costs(self):
         sens = [0.5, 1, 2]
-        aq_costs = aq_exps.get_aqi_costs((2.0, 10.0), sens, length=10)
+        aq_costs = aq_exps.get_aqi_costs(logger, (2.0, 10.0), sens, length=10)
         self.assertDictEqual(aq_costs, { 'aqc_0.5': 11.25, 'aqc_1': 12.5, 'aqc_2': 15.0 })
+
+    def test_invalid_aqi_aq_costs(self):
+        sens = [0.5, 1, 2]
+        aq_costs = aq_exps.get_aqi_costs(logger, (0.5, 10.0), sens, length=10)
+        self.assertDictEqual(aq_costs, { 'aqc_0.5': 510.0, 'aqc_1': 1010.0, 'aqc_2': 2010.0 })
+
+    def test_aq_update_attrs(self):
+        aqi_updater = GraphAqiUpdater(logger, G, start=True)
+        aqi_exp = (0.0, 10.0)
+        aq_costs = aqi_updater.get_aq_update_attrs(aqi_exp)
+        self.assertEqual(aq_costs['aqc_1'], 1010.0)
+        self.assertEqual(aq_costs['has_aqi'], False)
+        aqi_exp = (1.0, 10.0)
+        aq_costs = aqi_updater.get_aq_update_attrs(aqi_exp)
+        self.assertEqual(aq_costs['aqc_1'], 10.0)
+        self.assertEqual(aq_costs['has_aqi'], True)
     
     def test_aqi_attrs(self):
         aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]

@@ -15,6 +15,7 @@ def convert_edge_attr_types(edge: ig.Edge) -> None:
     edge['uvkey'] = ast.literal_eval(attrs['uvkey'])
     edge['length'] = float(attrs['length'])    
     edge['noises'] = ast.literal_eval(attrs['noises'])
+    edge['has_aqi'] = False
     edge['geometry'] = wkt.loads(attrs['geometry'])
 
 def convert_node_attr_types(N: ig.Vertex) -> None:
