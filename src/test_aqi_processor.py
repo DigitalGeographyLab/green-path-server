@@ -73,9 +73,11 @@ class TestAqiProcessing(unittest.TestCase):
         aqi_test_tif = 'aqi_2019-11-08T14.tif'
         aqi_updates_csv = aqi_processor.create_edge_aqi_csv(G, aqi_test_tif)
         # get & validate joined aqi values
+        aqi_min = G.edge_gdf['aqi'].min()
         aqi_max = G.edge_gdf['aqi'].max()
         aqi_mean = G.edge_gdf['aqi'].mean()
         logger.info('aqi mean: '+ str(round(aqi_mean, 3)))
+        self.assertGreater(aqi_min, 0.9)
         self.assertAlmostEqual(aqi_max, 2.51, places=2)
         self.assertAlmostEqual(aqi_mean, 1.88, places=2)
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }

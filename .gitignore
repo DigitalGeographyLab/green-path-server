@@ -111,3 +111,4 @@ src/credentials.csv
 src/debug/
 src/aqi_cache/
 src/graphs/ig_export_test.graphml
+src/data/graphs.gpkg

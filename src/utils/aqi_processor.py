@@ -223,6 +223,11 @@ class AqiProcessor:
         # fill nodata in aqi_band using nodata mask
         aqi_band_fillna = fill.fillnodata(aqi_band, mask=aqi_nodata_mask)
 
+        # validate AQI values after na fill
+        invalid_count = np.sum(aqi_band_fillna < 1.0)
+        if (invalid_count > 0):
+            self.log.warning('aqi band has '+ str(invalid_count) +' below 1 aqi values after na fill')
+
         # write raster with filled nodata
         aqi_raster_fillna = rasterio.open(
             aqi_filepath,
@@ -261,7 +266,7 @@ class AqiProcessor:
         G.edge_gdf['aqi'] = [round(x.item(), 2) for x in aqi_raster.sample(coords)]
 
         # validate sampled aqi values
-        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf) == False):
+        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf, debug_to_file=False) == False):
             self.log.error('aqi sampling failed')
 
         # save edge keys and corresponding aqi values as csv for later use

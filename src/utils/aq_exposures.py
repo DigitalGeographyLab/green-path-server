@@ -137,46 +137,76 @@ def get_mean_aqi(aqi_exp_list: List[Tuple[float, float]]) -> float:
     total_aqi = sum([aqi_exp[0] * aqi_exp[1] for aqi_exp in aqi_exp_list])
     return round(total_aqi/total_dist, 2)
 
-def validate_df_aqi(log: Logger, edge_gdf: 'pandas DataFrame') -> bool:
+def validate_df_aqi(log: Logger, edge_gdf: 'pandas DataFrame', debug_to_file: bool = False) -> bool:
     def validate_aqi_exp(aqi):
         if (not isinstance(aqi, float)):
-            return False
+            return 4
+        elif (aqi == 0.0):
+            # aqi is just missing
+            return 1
+        elif (aqi < 0):
+            return 3
         else:
-            return True
+            return 0
 
     edge_gdf_copy = edge_gdf.copy()
-    edge_gdf_copy['aqi_ok'] = [validate_aqi_exp(aqi) for aqi in edge_gdf_copy['aqi']]
+    edge_gdf_copy['aqi_validity'] = [validate_aqi_exp(aqi) for aqi in edge_gdf_copy['aqi']]
     row_count = len(edge_gdf_copy.index)
-    aqi_ok_count = len(edge_gdf_copy[edge_gdf_copy['aqi_ok'] == True].index)
+    aqi_ok_count = len(edge_gdf_copy[edge_gdf_copy['aqi_validity'] <= 1].index)
+    
+    if (debug_to_file == True):
+        edge_gdf_copy['geometry'] = list(edge_gdf_copy['center_wgs'])
+        edge_gdf_copy.crs = {'init' :'epsg:4326'}
+        edge_gdf_copy.drop(columns=['uvkey', 'center_wgs']).to_file('data/graphs.gpkg', layer='edge_centers_wgs', driver="GPKG")
     
     if (row_count == aqi_ok_count):
+        log.info('missing aqi count: '+ str(len(edge_gdf_copy[edge_gdf_copy['aqi_validity'] == 1].index)))
         return True
     else:
-        valid_ratio = round(100 * aqi_ok_count/row_count)
+        error_count = row_count - aqi_ok_count
+        valid_ratio = round(100 * aqi_ok_count/row_count, 2)
         log.warning('row count: '+ str(row_count) +' of which has valid aqi: '+
             str(aqi_ok_count)+ ' = '+ str(valid_ratio) + ' %')
+        log.warning('invalid aqi count: '+ str(error_count))
         return False
 
 def validate_df_aqi_exps(log: Logger, edge_gdf: 'pandas DataFrame') -> bool:
     def validate_aqi_exp(aqi_exp):
         if (not isinstance(aqi_exp, tuple)):
-            return False
+            # non tuple aqi exp
+            return 5
         elif (not isinstance(aqi_exp[0], float)):
-            return False
+            # non float aqi value in aqi exp
+            return 5
         elif (not isinstance(aqi_exp[1], float)):
-            return False
+            # non float length value in aqi exp
+            return 4
+        elif (aqi_exp[0] == 0.0):
+            # missing aqi value in aqi exp
+            return 1
+        elif (aqi_exp[0] < 0):
+            # negative aqi value in aqi exp
+            return 3
+        elif (aqi_exp[0] < 1):
+            # below 1 aqi value in aqi exp
+            return 3
+        elif (aqi_exp[1] < 0):
+            # negative length value in aqi exp
+            return 3
         else:
-            return True
+            return 0
 
     edge_gdf_copy = edge_gdf.copy()
-    edge_gdf_copy['exp_ok'] = [validate_aqi_exp(aqi_exp) for aqi_exp in edge_gdf_copy['aqi_exp']]
+    edge_gdf_copy['aqi_exp_validity'] = [validate_aqi_exp(aqi_exp) for aqi_exp in edge_gdf_copy['aqi_exp']]
     row_count = len(edge_gdf_copy.index)
-    aqi_exp_ok_count = len(edge_gdf_copy[edge_gdf_copy['exp_ok'] == True].index)
+    aqi_exp_ok_count = len(edge_gdf_copy[edge_gdf_copy['aqi_exp_validity'] <= 1].index)
     
     if (row_count == aqi_exp_ok_count):
         return True
     else:
-        valid_ratio = round(100 * aqi_exp_ok_count/row_count)
+        error_count = row_count - aqi_exp_ok_count
+        valid_ratio = round(100 * aqi_exp_ok_count/row_count, 2)
         log.warning('row count: '+ str(row_count) +' of which has valid aqi exp: '+
             str(aqi_exp_ok_count)+ ' = '+ str(valid_ratio) + ' %')
+        log.warning('error count: '+ str(error_count))
         return False
