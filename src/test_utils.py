@@ -45,11 +45,33 @@ class TestIgraphUtils(unittest.TestCase):
             self.assertIsInstance(vertex['name'], int)
             self.assertIsInstance(vertex['point'], Point)
 
+    @unittest.skip('too slow')
+    def test_convert_full_nx_graph_to_igraph(self):
+        nx_graph = file_utils.load_graph_full_noise()
+        G = ig_utils.convert_nx_2_igraph(nx_graph)
+        ig_utils.save_ig_to_graphml(G, 'hel_ig_v1.graphml')
+        G = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
+        for edge in G.es:
+            self.assertEqual(list(edge.attributes().keys()), ['name', 'uvkey', 'length', 'noises', 'geometry'])
+            self.assertEqual(len(edge.attributes().keys()), 5)
+            self.assertIsInstance(edge['name'], int)
+            self.assertIsInstance(edge['uvkey'], tuple)
+            self.assertIsInstance(edge['length'], float)
+            self.assertIsInstance(edge['noises'], dict)
+            self.assertIsInstance(edge['geometry'], LineString)
+            self.assertEqual(edge['uvkey'][0], edge.source)
+            self.assertEqual(edge['uvkey'][1], edge.target)
+        for vertex in G.vs:
+            self.assertEqual(list(vertex.attributes().keys()), ['name', 'point'])
+            self.assertEqual(len(vertex.attributes().keys()), 2)
+            self.assertIsInstance(vertex['name'], int)
+            self.assertIsInstance(vertex['point'], Point)
+
     def test_export_load_graphml(self):
         nx_graph = file_utils.load_graph_kumpula_noise()
         G = ig_utils.convert_nx_2_igraph(nx_graph)
-        ig_utils.save_ig_to_graphml(G, 'ig_export_test.graphml')
-        G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+        ig_utils.save_ig_to_graphml(G, 'kumpula_ig_v1_test.graphml')
+        G = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
 
         self.assertEqual(G.ecount(), 11931)
         for edge in G.es:
@@ -67,13 +89,13 @@ class TestIgraphUtils(unittest.TestCase):
             self.assertIsInstance(vertex['point'], Point)
 
     def test_get_edge_gdf(self):
-        G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+        G = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
         edge_gdf = ig_utils.get_edge_gdf(G, add_attrs=['length'])
         self.assertEqual(list(edge_gdf.columns), ['uvkey', 'geometry', 'length'])
         self.assertEqual(len(edge_gdf), G.ecount())
 
     def test_get_node_gdf(self):
-        G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+        G = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
         node_gdf = ig_utils.get_node_gdf(G)
         self.assertEqual(len(node_gdf), G.vcount())
 

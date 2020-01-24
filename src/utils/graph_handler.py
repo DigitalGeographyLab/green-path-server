@@ -47,8 +47,8 @@ class GraphHandler:
         """
         self.log = logger
         start_time = time.time()
-        if (subset == True): self.graph = ig_utils.read_ig_graphml('ig_export_test.graphml')
-        else: self.graph = file_utils.load_graph_full_noise()
+        if (subset == True): self.graph = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
+        else: self.graph = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
         self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read, subset: '+ str(subset))
         self.edge_gdf = ig_utils.get_edge_gdf(self.graph, add_attrs=gdf_attrs)
         self.edges_sind = self.edge_gdf.sindex
