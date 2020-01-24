@@ -55,6 +55,10 @@ class TestGraphAqiUpdater(unittest.TestCase):
             edge_attrs = edge.attributes()
             self.assertIn('aqi_exp', edge_attrs.keys())
             self.assertIn('aqc_1', edge_attrs.keys())
+            self.assertIsInstance(edge_attrs['aqc_3'], float)
+            # check that graph is valid
+            self.assertEqual(edge.source, edge_attrs['uvkey'][0])
+            self.assertEqual(edge.target, edge_attrs['uvkey'][1])
         eg_edge = G.get_edge_by_id(0)
         eg_aqi = eg_edge['aqi_exp'][0]
         self.assertAlmostEqual(eg_aqi, 1.87, places=2)

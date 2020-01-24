@@ -31,47 +31,51 @@ class TestIgraphUtils(unittest.TestCase):
         nx_graph = file_utils.load_graph_kumpula_noise()
         G = ig_utils.convert_nx_2_igraph(nx_graph)
         self.assertEqual(G.ecount(), 11931)
-        edge = G.es[0]
-        self.assertIsInstance(edge['name'], int)
-        self.assertIsInstance(edge['uvkey'], tuple)
-        self.assertIsInstance(edge['length'], float)
-        self.assertIsInstance(edge['noises'], dict)
-        self.assertIsInstance(edge['geometry'], LineString)
-        vertex = G.vs[0]
-        self.assertIsInstance(vertex['name'], int)
-        self.assertIsInstance(vertex['point'], Point)
-        # check that uvkey has correct source & target
         for edge in G.es:
-            edge_d = edge.attributes()
-            self.assertEqual(edge_d['uvkey'][0], edge.source)
-            self.assertEqual(edge_d['uvkey'][1], edge.target)
+            self.assertEqual(len(edge.attributes().keys()), 5)
+            self.assertIsInstance(edge['name'], int)
+            self.assertIsInstance(edge['uvkey'], tuple)
+            self.assertIsInstance(edge['length'], float)
+            self.assertIsInstance(edge['noises'], dict)
+            self.assertIsInstance(edge['geometry'], LineString)
+            self.assertEqual(edge['uvkey'][0], edge.source)
+            self.assertEqual(edge['uvkey'][1], edge.target)
+        for vertex in G.vs:
+            self.assertEqual(len(vertex.attributes().keys()), 2)
+            self.assertIsInstance(vertex['name'], int)
+            self.assertIsInstance(vertex['point'], Point)
 
     def test_export_load_graphml(self):
         nx_graph = file_utils.load_graph_kumpula_noise()
         G = ig_utils.convert_nx_2_igraph(nx_graph)
         ig_utils.save_ig_to_graphml(G, 'ig_export_test.graphml')
-
         G = ig_utils.read_ig_graphml('ig_export_test.graphml')
+
         self.assertEqual(G.ecount(), 11931)
-        edge = G.es[0]
-        self.assertIsInstance(edge['name'], int)
-        self.assertIsInstance(edge['uvkey'], tuple)
-        self.assertIsInstance(edge['length'], float)
-        self.assertIsInstance(edge['noises'], dict)
-        self.assertIsInstance(edge['geometry'], LineString)
-        vertex = G.vs[0]
-        self.assertIsInstance(vertex['name'], int)
-        self.assertIsInstance(vertex['point'], Point)
+        for edge in G.es:
+            self.assertEqual(list(edge.attributes().keys()), ['name', 'uvkey', 'length', 'noises', 'geometry'])
+            self.assertIsInstance(edge['name'], int)
+            self.assertIsInstance(edge['uvkey'], tuple)
+            self.assertIsInstance(edge['length'], float)
+            self.assertIsInstance(edge['noises'], dict)
+            self.assertIsInstance(edge['geometry'], LineString)
+            self.assertEqual(edge['uvkey'][0], edge.source)
+            self.assertEqual(edge['uvkey'][1], edge.target)
+        for vertex in G.vs:
+            self.assertEqual(list(vertex.attributes().keys()), ['name', 'point'])
+            self.assertIsInstance(vertex['name'], int)
+            self.assertIsInstance(vertex['point'], Point)
 
     def test_get_edge_gdf(self):
         G = ig_utils.read_ig_graphml('ig_export_test.graphml')
-        edge_gdf = ig_utils.get_edge_gdf(G)
-        self.assertEqual(len(edge_gdf), 11931)
+        edge_gdf = ig_utils.get_edge_gdf(G, add_attrs=['length'])
+        self.assertEqual(list(edge_gdf.columns), ['uvkey', 'geometry', 'length'])
+        self.assertEqual(len(edge_gdf), G.ecount())
 
     def test_get_node_gdf(self):
         G = ig_utils.read_ig_graphml('ig_export_test.graphml')
         node_gdf = ig_utils.get_node_gdf(G)
-        self.assertEqual(len(node_gdf), 8273)
+        self.assertEqual(len(node_gdf), G.vcount())
 
 # @unittest.SkipTest
 class TestGraphHandler(unittest.TestCase):

@@ -32,6 +32,7 @@ def set_graph_attributes(G: ig.Graph) -> ig.Graph:
 def read_ig_graphml(graph_file: str = 'ig_export_test.graphml') -> ig.Graph:
     G = ig.Graph()
     G = G.Read_GraphML('graphs/' + graph_file)
+    del(G.vs['id'])
     return set_graph_attributes(G)
 
 def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
