@@ -26,14 +26,14 @@ class PathSet:
 
     def get_green_path_count(self) -> int: return len(self.green_paths)
 
-    def set_path_edges(self, G) -> None:
+    def set_path_edges(self, G, orig_point: 'Point') -> None:
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
         """
         if (self.shortest_path is not None):
-            self.shortest_path.set_path_edges(G)
+            self.shortest_path.set_path_edges(G, orig_point)
         if (len(self.green_paths) > 0):
             for gp in self.green_paths:
-                gp.set_path_edges(G)
+                gp.set_path_edges(G, orig_point)
 
     def aggregate_path_attrs(self) -> None:
         """Aggregates edge level path attributes to paths.
@@ -44,16 +44,16 @@ class PathSet:
             for gp in self.green_paths:
                 gp.aggregate_path_attrs(geom=True, noises=True, aqi=True)
 
-    def filter_out_unique_len_paths(self) -> None:
+    def filter_out_unique_edge_sequence_paths(self) -> None:
         self.log.debug('green path count: '+ str(len(self.green_paths)))
         filtered = []
-        prev_len = self.shortest_path.length
+        prev_edges = self.shortest_path.edge_ids
         for path in self.green_paths:
-            if (path.length != prev_len):
+            if (path.edge_ids != prev_edges):
                 filtered.append(path)
-            prev_len = path.length
+            prev_edges = path.edge_ids
         self.green_paths = filtered
-        self.log.debug('green path count after filter by unique length: '+ str(len(self.green_paths)))
+        self.log.debug('green path count after filter by unique edge sequence: '+ str(len(self.green_paths)))
 
     def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).

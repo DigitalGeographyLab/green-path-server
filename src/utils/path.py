@@ -29,10 +29,10 @@ class Path:
 
     def set_path_type(self, path_type: str): self.path_type = path_type
 
-    def set_path_edges(self, G: GraphHandler) -> None:
+    def set_path_edges(self, G: GraphHandler, orig_point: Point) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
         """
-        self.edges = G.get_edges_from_edge_ids(self.orig_node, self.edge_ids)
+        self.edges = G.get_edges_from_edge_ids(self.edge_ids, orig_point)
 
     def aggregate_path_attrs(self, geom: bool = True, length: bool = True, noises: bool = True, aqi: bool = False) -> None:
         """Aggregates path attributes form list of edges.

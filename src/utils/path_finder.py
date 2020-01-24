@@ -98,13 +98,13 @@ class PathFinder:
         """
         start_time = time.time()
         try:
-            self.path_set.set_path_edges(self.G)
+            self.path_set.filter_out_unique_edge_sequence_paths()
+            self.path_set.set_path_edges(self.G, self.orig_point)
             self.path_set.aggregate_path_attrs()
-            self.path_set.filter_out_unique_len_paths()
             self.path_set.set_path_exp_attrs(self.G.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
             self.path_set.set_green_path_diff_attrs()
-            self.log.duration(start_time, 'aggregated paths', unit='ms')
+            self.log.duration(start_time, 'aggregated paths', unit='ms', log_level='info')
             
             start_time = time.time()
             path_FC = self.path_set.get_paths_as_feature_collection()

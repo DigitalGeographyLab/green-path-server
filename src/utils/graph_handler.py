@@ -186,12 +186,11 @@ class GraphHandler:
         edge_id = possible_matches.loc[nearest].index[0]
         return self.get_edge_by_id(edge_id)
 
-    def get_edges_from_edge_ids(self, orig_node: int, edge_ids: List[int]) -> List[dict]:
+    def get_edges_from_edge_ids(self, edge_ids: List[int], orig_point: Point) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
         Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
         """
-        prev_point = self.get_node_point_geom(orig_node)
-
+        prev_point = orig_point
         path_edges = []
         for idx, edge_id in enumerate(edge_ids):
             edge = self.get_edge_by_id(edge_id)
