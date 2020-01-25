@@ -10,6 +10,9 @@ import utils.graphs as nx_utils
 import utils.files as file_utils
 
 def convert_edge_attr_types(edge: ig.Edge) -> None:
+    """Converts edge attributes to correct types. Directly modifies (igraph) graph and thus does not return anything.
+    By default, adds has_aqi attribute with value False. 
+    """
     attrs = edge.attributes()
     edge['name'] = int(attrs['name'])
     edge['uvkey'] = ast.literal_eval(attrs['uvkey'])
@@ -19,11 +22,16 @@ def convert_edge_attr_types(edge: ig.Edge) -> None:
     edge['geometry'] = wkt.loads(attrs['geometry'])
 
 def convert_node_attr_types(N: ig.Vertex) -> None:
+    """Converts node (vertex) attributes to correct types. 
+    Directly modifies (igraph) graph and thus does not return anything.
+    """
     attrs = N.attributes()
     N['name'] = int(attrs['name'])
     N['point'] = wkt.loads(attrs['point'])
 
 def set_graph_attributes(G: ig.Graph) -> ig.Graph:
+    """Iterates through edges and nodes of a graph and sets correct attribute types.
+    """
     for edge in G.es:
         convert_edge_attr_types(edge)
     for node in G.vs:
@@ -31,12 +39,17 @@ def set_graph_attributes(G: ig.Graph) -> ig.Graph:
     return G
 
 def read_ig_graphml(graph_file: str = 'ig_export_test.graphml') -> ig.Graph:
+    """Reads an igraph graph from graphml file and returns a graph object where edge and node attributes are set to correct types.
+    """
     G = ig.Graph()
     G = G.Read_GraphML('graphs/' + graph_file)
     del(G.vs['id'])
     return set_graph_attributes(G)
 
 def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
+    """Converts an undirected NetworkX graph to igraph graph. 
+    Parallel edges between nodes are allowed.
+    """
     
     # read nodes from nx graph
     nodes, data = zip(*nx_g.nodes(data=True))
@@ -81,6 +94,8 @@ def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
     return G
 
 def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
+    """Exports an igraph graph to graphml file specified with the graph_out argument.
+    """
     Gc = G.copy()
     # stringify node attributes before exporting to graphml
     Gc.vs['name'] = [str(name) for name in Gc.vs['name']]
@@ -94,6 +109,9 @@ def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
     Gc.save('graphs/' + graph_out, format='graphml')
 
 def get_edge_dicts(G: ig.Graph, attrs: list = ['name', 'uvkey', 'geometry'], add_attrs: list = []) -> list:
+    """Returns list of all edges of a graph as dictionaries. Edge dictionaries will have at least the attributes specified in args
+    argument and additional attributes specified in add_attrs.
+    """
     edge_dicts = []
     get_attrs = attrs + add_attrs
     for edge in G.es:
@@ -108,12 +126,17 @@ def get_edge_dicts(G: ig.Graph, attrs: list = ['name', 'uvkey', 'geometry'], add
     return edge_dicts
 
 def get_edge_gdf(G: ig.Graph, length: bool = False, add_attrs: list = []) -> gpd.GeoDataFrame:
+    """Returns edges of a graph as pandas GeoDataFrame. Attributes 'name', 'uvkey', 'geometry' are always included in the gdf and
+    optionally also additional attributes specified in add_attrs.
+    """
     edge_dicts = get_edge_dicts(G, add_attrs=add_attrs)
     ids = [ed['name'] for ed in edge_dicts]
     gdf = gpd.GeoDataFrame(edge_dicts, index=ids, crs=from_epsg(3879))
     return gdf.drop(columns=['name'])
 
 def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
+    """Returns nodes of a graph as pandas GeoDataFrame. The returned gdf has only columns geometry and index (index column).
+    """
     node_dicts = []
     for node in G.vs:
         node_attrs = node.attributes()

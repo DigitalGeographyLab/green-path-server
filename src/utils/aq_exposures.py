@@ -45,6 +45,8 @@ def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen:
 
 def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], length: float = 0, missing_aqi: bool = False) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
+    If AQI value is missing of invalid, high AQI costs are returned in order to avoid using the edge in AQI based routing.
+    Additionally, returned dictionary contains attribute has_aqi, indicating whether AQI costs are valid (based on valid AQI).
     
     Args:
         aqi_exp: A tuple containing an AQI value and distance (exposure) in meters (aqi: float, distance: float).
@@ -144,6 +146,9 @@ def get_mean_aqi(aqi_exp_list: List[Tuple[float, float]]) -> float:
     return round(total_aqi/total_dist, 2)
 
 def validate_df_aqi(log: Logger, edge_gdf: 'pandas DataFrame', debug_to_file: bool = False) -> bool:
+    """Validates a dataframe containing AQI values. Checks the validity of the AQI values using several tests.
+    Returns True if all AQI values are valid, else returns False. Missing AQI values (AQI=0.0) are ignored (considered valid).
+    """
     def validate_aqi_exp(aqi):
         if (not isinstance(aqi, float)):
             return 4
@@ -177,6 +182,9 @@ def validate_df_aqi(log: Logger, edge_gdf: 'pandas DataFrame', debug_to_file: bo
         return False
 
 def validate_df_aqi_exps(log: Logger, edge_gdf: 'pandas DataFrame') -> bool:
+    """Validates a dataframe containing aqi_exp values. Checks the validity of aqi_exp values using several tests.
+    Returns True if all aqi_exps are valid, else returns False. Missing aqi_exp values (aqi=0.0) are ignored (considered valid).
+    """
     def validate_aqi_exp(aqi_exp):
         if (not isinstance(aqi_exp, tuple)):
             # non tuple aqi exp
