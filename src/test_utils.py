@@ -296,17 +296,22 @@ class TestAqiExposures(unittest.TestCase):
 
     def test_invalid_aqi_exposure_raises(self):
         eg_aq = 0.5
-        self.assertRaises(ValueError, aq_exps.get_aqi_coeff, eg_aq)
+        self.assertRaises(aq_exps.InvalidAqiException, aq_exps.get_aqi_coeff, eg_aq)
 
     def test_aq_costs(self):
         sens = [0.5, 1, 2]
         aq_costs = aq_exps.get_aqi_costs(logger, (2.0, 10.0), sens, length=10)
-        self.assertDictEqual(aq_costs, { 'aqc_0.5': 11.25, 'aqc_1': 12.5, 'aqc_2': 15.0 })
+        self.assertDictEqual(aq_costs, { 'aqc_0.5': 11.25, 'aqc_1': 12.5, 'aqc_2': 15.0, 'has_aqi': True })
+
+    def test_aqi_1_costs(self):
+        sens = [0.5, 1, 2]
+        aq_costs = aq_exps.get_aqi_costs(logger, (0.98, 10.0), sens, length=10)
+        self.assertDictEqual(aq_costs, { 'aqc_0.5': 10.0, 'aqc_1': 10.0, 'aqc_2': 10.0, 'has_aqi': True })
 
     def test_invalid_aqi_aq_costs(self):
         sens = [0.5, 1, 2]
         aq_costs = aq_exps.get_aqi_costs(logger, (0.5, 10.0), sens, length=10)
-        self.assertDictEqual(aq_costs, { 'aqc_0.5': 510.0, 'aqc_1': 1010.0, 'aqc_2': 2010.0 })
+        self.assertDictEqual(aq_costs, { 'aqc_0.5': 510.0, 'aqc_1': 1010.0, 'aqc_2': 2010.0, 'has_aqi': False })
 
     def test_aq_update_attrs(self):
         aqi_updater = GraphAqiUpdater(logger, G, start=True)

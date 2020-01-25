@@ -8,6 +8,9 @@ exposures to air pollution between paths.
 from typing import List, Set, Dict, Tuple
 from utils.logger import Logger
 
+class InvalidAqiException(Exception):
+    pass
+
 def get_aq_sensitivities(subset: bool = False) -> List[float]:
     """Returns a set of AQ sensitivity coefficients that can be used in calculating AQI based costs to edges and
     subsequently optimizing green paths that minimize the total exposure to air pollution.
@@ -28,9 +31,12 @@ def get_aq_sensitivities(subset: bool = False) -> List[float]:
 def get_aqi_coeff(aqi: float) -> float:
     """Returns cost coefficient for calculating AQI based costs.
     """
-    if (aqi < 1):
-        raise ValueError('Received AQI value lower than minimum (1): '+ str(aqi))
-    return (aqi - 1) / 4
+    if (aqi < 0.95):
+        raise InvalidAqiException('Received invalid AQI value: '+ str(aqi))
+    elif (aqi < 1.0):
+        return 0
+    else:
+        return (aqi - 1) / 4
 
 def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen: float = 1.0) -> float:
     """Returns AQI based cost based on exposure (distance) to certain AQI. Either aqi or aqi_coeff must be
@@ -39,7 +45,11 @@ def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen:
     if aqi_coeff is not None:
         return round(length * aqi_coeff * sen, 2)
     elif aqi is not None:
-        return round(length * get_aqi_coeff(aqi) * sen, 2)
+        try:
+            aqi_coeff = get_aqi_coeff(aqi)
+        except InvalidAqiException:
+            aqi_coeff = 100
+        return round(length * aqi_coeff * sen, 2)
     else:
         raise ValueError('Either aqi_coeff or aqi argument must be defined')
 
@@ -52,12 +62,15 @@ def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], 
         aqi_exp: A tuple containing an AQI value and distance (exposure) in meters (aqi: float, distance: float).
         length: A length value to use as a base cost.
     """
+    has_aqi = (not missing_aqi)
     try:
         aqi_coeff = get_aqi_coeff(aqi_exp[0]) if missing_aqi == False else 100 # assign high aq costs to edges without aqi data
-    except ValueError as e:
-        log.error(str(e))
+    except InvalidAqiException as e:
+        has_aqi = False
         aqi_coeff = 100
-    aq_costs = { 'aqc_'+ str(sen) : round(length + get_aqi_cost(aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen), 2) for sen in sens }
+        log.error(str(e))
+    aq_costs = { 'aqc_'+ str(sen) : round(length + get_aqi_cost(length=aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen), 2) for sen in sens }
+    aq_costs['has_aqi'] = has_aqi
     return aq_costs
 
 def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'LineString') -> dict:
@@ -65,14 +78,8 @@ def get_link_edge_aqi_cost_estimates(sens, log, edge_dict: dict, link_geom: 'Lin
     (from which the edge was split). 
     """
     if ('aqi_exp' not in edge_dict):
-        log.warning('aqi_exp not in edge dictionary, cannot add aqi costs to linking edge')
-        return {}
-    if (not isinstance(edge_dict['aqi_exp'], tuple)):
-        log.warning('type of aqi_exp is not tuple but: '+ str(type(edge_dict['aqi_exp'])))
-        return {}
-    if (not isinstance(edge_dict['aqi_exp'][0], float)):
-        log.warning('type of aqi in aqi_exp is not float but: '+ str(type(edge_dict['aqi_exp'][0])))
-        return {}
+        log.error('aqi_exp not in edge dictionary, cannot add aqi costs to linking edge')
+        return { 'has_aqi' : False }
 
     link_aqi_exp = (edge_dict['aqi_exp'][0], round(link_geom.length, 2))
     aqi_costs = get_aqi_costs(log, link_aqi_exp, sens, length=link_geom.length)
