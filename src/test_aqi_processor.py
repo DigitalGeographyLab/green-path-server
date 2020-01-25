@@ -10,10 +10,12 @@ from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.graphs as graph_utils
 from utils.logger import Logger
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 logger = Logger(b_printing=True, log_file='test_aqi_processor.log')
 aqi_processor = AqiProcessor(logger, aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)
-G = GraphHandler(logger, subset=True, add_wgs_center=True)
+G = GraphHandler(logger, subset=True, add_wgs_center=True, gdf_attrs=['length'])
 
 class TestAqiProcessing(unittest.TestCase):
 
@@ -73,13 +75,15 @@ class TestAqiProcessing(unittest.TestCase):
         aqi_test_tif = 'aqi_2019-11-08T14.tif'
         aqi_updates_csv = aqi_processor.create_edge_aqi_csv(G, aqi_test_tif)
         # get & validate joined aqi values
+        aqi_min = G.edge_gdf['aqi'].min()
         aqi_max = G.edge_gdf['aqi'].max()
         aqi_mean = G.edge_gdf['aqi'].mean()
         logger.info('aqi mean: '+ str(round(aqi_mean, 3)))
+        self.assertGreater(aqi_min, 0.9)
         self.assertAlmostEqual(aqi_max, 2.51, places=2)
         self.assertAlmostEqual(aqi_mean, 1.88, places=2)
         field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(aqi_processor.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        edge_aqi_updates = pd.read_csv(aqi_processor.aqi_dir + aqi_updates_csv, converters=field_type_converters, index_col='index')
         edge_aqi_updates['aqi'] = [aqi_exp[0] for aqi_exp in edge_aqi_updates['aqi_exp']]
         self.assertAlmostEqual(edge_aqi_updates['aqi'].max(), 2.51, places=2)
         self.assertAlmostEqual(edge_aqi_updates['aqi'].mean(), 1.88, places=2)

@@ -6,11 +6,10 @@ dependencies:
   - python=3.6
   - pylint
   - pytest
-  - jupyterlab
   - apscheduler
   - geopandas
+  - python-igraph
   - networkx
-  - requests
   - rasterio
   - rioxarray
   - xarray

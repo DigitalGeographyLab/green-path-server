@@ -13,6 +13,8 @@ from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.aq_exposures as aq_exps
 from utils.logger import Logger
 from utils.path_aqi_attrs import PathAqiAttrs
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # initialize graph
 logger = Logger(b_printing=True, log_file='test_green_paths_app.log')
@@ -37,41 +39,6 @@ def get_quiet_path_stats(G, od_dict, logging=False):
 # read OD pairs for routing tests
 od_dict = tests.get_test_ODs()
 
-class TestAqiExposures(unittest.TestCase):
-
-    def test_simple_aqi_exposure(self):
-        eg_aq = 1.8
-        self.assertEqual(aq_exps.get_aqi_coeff(eg_aq), 0.2)
-
-    def test_aq_costs(self):
-        sens = [0.5, 1, 2]
-        aq_costs = aq_exps.get_aqi_costs((2.0, 10.0), sens, length=10)
-        self.assertDictEqual(aq_costs, { 'aqc_0.5': 11.25, 'aqc_1': 12.5, 'aqc_2': 15.0 })
-    
-    def test_aqi_attrs(self):
-        aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
-        aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
-        aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        self.assertAlmostEqual(aqi_attrs.aqi_m, 2.14, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc, 5.69, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_norm, 0.28, places=2)
-        aqi_class_pcts_sum = sum(aqi_attrs.aqi_pcts.values())
-        self.assertAlmostEqual(aqi_class_pcts_sum, 100)
-        self.assertEqual(len(aqi_attrs.aqi_pcts.keys()), 3)
-
-    def test_aqi_diff_attrs(self):
-        aqi_exp_list = [ (1.5, 3), (1.25, 5), (2.5, 10), (3.5, 2) ]
-        aqi_attrs = PathAqiAttrs('clean', aqi_exp_list)
-        aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        s_path_aqi_exp_list = [ (2.5, 1), (2.25, 5), (3.5, 10), (4.5, 2) ]
-        s_path_aqi_attrs = PathAqiAttrs('clean', s_path_aqi_exp_list)
-        s_path_aqi_attrs.set_aqi_stats(3 + 5 + 10 + 2)
-        aqi_attrs.set_aqi_diff_attrs(s_path_aqi_attrs, len_diff=2)
-        self.assertAlmostEqual(aqi_attrs.aqi_m_diff, -1.07, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_diff, -4.25, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_diff_rat, -42.8, places=2)
-        self.assertAlmostEqual(aqi_attrs.aqc_diff_score, 2.1, places=2)
-
 class TestGraphAqiUpdater(unittest.TestCase):
 
     def test_aqi_updater(self):
@@ -84,21 +51,18 @@ class TestGraphAqiUpdater(unittest.TestCase):
         aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
         aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
         aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
-        edge_dicts = graph_utils.get_all_edge_dicts(G.graph)
-        logger.debug('edge_dicts count: '+ str(len(edge_dicts)))
-        # test that all edges got aqi attr
-        all_edges_have_aqi = True
-        for edge in edge_dicts:
-            if ('aqi_exp' not in edge):
-                all_edges_have_aqi = False
-        self.assertEqual(all_edges_have_aqi, True, msg='One or more edges did not get aqi_exp')
-        # test that all edges got aqi cost attrs
-        all_edges_have_aqi_cost = True
-        for edge in edge_dicts:
-            if ('aqc_1' not in edge):
-                all_edges_have_aqi_cost = False
-        self.assertEqual(all_edges_have_aqi_cost, True, msg='One or more edges did not get aqi costs')
-        eg_edge = edge_dicts[0]
+        logger.debug('edge_dicts count: '+ str(G.graph.ecount()))
+        # test that all edges got aqi attr and costs
+        for edge in G.graph.es:
+            edge_attrs = edge.attributes()
+            self.assertIn('aqi_exp', edge_attrs.keys())
+            self.assertIn('aqc_1', edge_attrs.keys())
+            self.assertIsInstance(edge_attrs['aqc_3'], float)
+            self.assertEqual(edge_attrs['has_aqi'], True)
+            # check that graph is valid
+            self.assertEqual(edge.source, edge_attrs['uvkey'][0])
+            self.assertEqual(edge.target, edge_attrs['uvkey'][1])
+        eg_edge = G.get_edge_by_id(0)
         eg_aqi = eg_edge['aqi_exp'][0]
         self.assertAlmostEqual(eg_aqi, 1.87, places=2)
         self.assertAlmostEqual(eg_edge['aqc_3'], 209.95, places=2, msg='Expected aqc_3 cost was not set')

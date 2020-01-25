@@ -4,9 +4,11 @@ from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 from datetime import datetime
 from utils.logger import Logger
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 log = Logger(b_printing=True, log_file='aqi_processor_app.log')
-G = GraphHandler(log, subset=False, add_wgs_center=True)
+G = GraphHandler(log, subset=False, add_wgs_center=True, gdf_attrs=['length'])
 AQI = AqiProcessor(log, set_aws_secrets=True)
 
 def process_aqi_updates_to_csv():

@@ -223,6 +223,11 @@ class AqiProcessor:
         # fill nodata in aqi_band using nodata mask
         aqi_band_fillna = fill.fillnodata(aqi_band, mask=aqi_nodata_mask)
 
+        # validate AQI values after na fill
+        invalid_count = np.sum(aqi_band_fillna < 1.0)
+        if (invalid_count > 0):
+            self.log.warning('aqi band has '+ str(invalid_count) +' below 1 aqi values after na fill')
+
         # write raster with filled nodata
         aqi_raster_fillna = rasterio.open(
             aqi_filepath,
@@ -261,11 +266,11 @@ class AqiProcessor:
         G.edge_gdf['aqi'] = [round(x.item(), 2) for x in aqi_raster.sample(coords)]
 
         # validate sampled aqi values
-        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf) == False):
+        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf, debug_to_file=False) == False):
             self.log.error('aqi sampling failed')
 
         # save edge keys and corresponding aqi values as csv for later use
-        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi', 'length']].copy())
+        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['aqi', 'length']].copy())
         # also save aqi_exp as tuple of (length, aqi)
         edge_aqi_updates_df['aqi_exp'] = edge_aqi_updates_df.apply(lambda row: ( row['aqi'], round(row['length'], 2) ), axis=1)
         
@@ -274,7 +279,7 @@ class AqiProcessor:
             self.log.error('conversion to aqi_exp failed')
         
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
-        edge_aqi_updates_df[['uvkey', 'aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
+        edge_aqi_updates_df[['aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=True, index_label='index')
         self.latest_edge_aqi_csv = edge_aqi_csv_name
         self.reset_wip_edge_aqi_csv_name()
         return edge_aqi_csv_name

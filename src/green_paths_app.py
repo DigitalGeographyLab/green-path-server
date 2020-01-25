@@ -9,6 +9,8 @@ from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 from utils.logger import Logger
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # version: 1.2.0
 
