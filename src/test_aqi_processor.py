@@ -10,6 +10,8 @@ from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.graphs as graph_utils
 from utils.logger import Logger
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 logger = Logger(b_printing=True, log_file='test_aqi_processor.log')
 aqi_processor = AqiProcessor(logger, aqi_dir='data/tests/aqi_cache/', set_aws_secrets=False)

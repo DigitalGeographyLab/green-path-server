@@ -13,6 +13,8 @@ from utils.graph_aqi_updater import GraphAqiUpdater
 import utils.aq_exposures as aq_exps
 from utils.logger import Logger
 from utils.path_aqi_attrs import PathAqiAttrs
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # initialize graph
 logger = Logger(b_printing=True, log_file='test_green_paths_app.log')
