@@ -22,6 +22,8 @@ class Path:
         self.length: float = None
         self.len_diff: float = 0
         self.len_diff_rat: float = None
+        self.missing_aqi: bool = False
+        self.missing_noises: bool = False
         self.noise_attrs: PathNoiseAttrs = None
         self.aqi_attrs: PathAqiAttrs = None
     
@@ -40,13 +42,14 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
         self.geometry = LineString(path_coords) if (geom == True) else self.geometry
         self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
-        if (noises == True):
+        self.missing_noises = True if False in [edge['has_noises'] for edge in self.edges] else False
+        self.missing_aqi = True if False in [edge['has_aqi'] for edge in self.edges] else False
+        if (noises == True and not self.missing_noises):
             noises_list = [edge['noises'] for edge in self.edges]
             self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)
-        if (aqi == True):
+        if (aqi == True and not self.missing_aqi):
             aqi_exp_list = [edge['aqi_exp'] for edge in self.edges if edge['aqi_exp'] is not None]
-            if (len(aqi_exp_list) > 0):
-                self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
+            self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
 
     def set_noise_attrs(self, db_costs: dict) -> None:
         if (self.noise_attrs is not None):
@@ -102,7 +105,9 @@ class Path:
             'length' : self.length,
             'len_diff' : self.len_diff,
             'len_diff_rat' : self.len_diff_rat,
-            'cost_coeff' : self.cost_coeff
+            'cost_coeff' : self.cost_coeff,
+            'missing_aqi' : self.missing_aqi,
+            'missing_noises' : self.missing_noises,
         }
         noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs is not None else {}
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs is not None else {}
