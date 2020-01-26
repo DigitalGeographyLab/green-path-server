@@ -116,9 +116,8 @@ class GraphAqiUpdater:
         return new_aqi_available
 
     def get_aq_update_attrs(self, aqi_exp: Tuple[float, float]):
-        has_aqi = aqi_exp[0] != 0.0 # aqi = 0.0 means nodata
-        aq_costs = aq_exps.get_aqi_costs(self.log, aqi_exp, self.sens, length=aqi_exp[1], missing_aqi=(not has_aqi))
-        return { 'aqi_exp': aqi_exp, 'has_aqi': has_aqi, **aq_costs }
+        aq_costs = aq_exps.get_aqi_costs(self.log, aqi_exp, self.sens, length=aqi_exp[1])
+        return { 'aqi_exp': aqi_exp, **aq_costs }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):
         self.log.info('starting aqi update from: '+ aqi_updates_csv)

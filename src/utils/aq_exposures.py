@@ -29,7 +29,8 @@ def get_aq_sensitivities(subset: bool = False) -> List[float]:
         return [ 0.2, 0.5, 1, 3, 6, 10, 20, 35 ]
 
 def get_aqi_coeff(aqi: float) -> float:
-    """Returns cost coefficient for calculating AQI based costs.
+    """Returns cost coefficient for calculating AQI based costs. Raises InvalidAqiException if AQI is either missing
+    (aqi = 0.0) or invalid (aqi < 0.95). 
     """
     if (aqi < 0.95):
         raise InvalidAqiException('Received invalid AQI value: '+ str(aqi))
@@ -38,22 +39,16 @@ def get_aqi_coeff(aqi: float) -> float:
     else:
         return (aqi - 1) / 4
 
-def get_aqi_cost(length: float, aqi_coeff: float = None, aqi: float = None, sen: float = 1.0) -> float:
-    """Returns AQI based cost based on exposure (distance) to certain AQI. Either aqi or aqi_coeff must be
-    given as parameter. If sensitivity value is specified, the cost is multiplied by it.
+def calc_aqi_cost(length: float, aqi_coeff: float, sen: float = 1.0, with_base_cost: bool = True) -> float:
+    """Returns AQI based cost based on exposure (distance) to certain AQI. Base cost (length) is added to the cost by
+    default (with_base_cost = True). If sensitivity value is specified, the AQI based part of the cost is multiplied by it.
     """
-    if aqi_coeff is not None:
-        return round(length * aqi_coeff * sen, 2)
-    elif aqi is not None:
-        try:
-            aqi_coeff = get_aqi_coeff(aqi)
-        except InvalidAqiException:
-            aqi_coeff = 100
-        return round(length * aqi_coeff * sen, 2)
+    if (with_base_cost == True):
+        return round(length + length * aqi_coeff * sen, 2)
     else:
-        raise ValueError('Either aqi_coeff or aqi argument must be defined')
+        return round(length * aqi_coeff * sen, 2)
 
-def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], length: float = 0, missing_aqi: bool = False) -> Dict[str, float]:
+def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], length: float = 0) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
     If AQI value is missing of invalid, high AQI costs are returned in order to avoid using the edge in AQI based routing.
     Additionally, returned dictionary contains attribute has_aqi, indicating whether AQI costs are valid (based on valid AQI).
@@ -62,14 +57,15 @@ def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], 
         aqi_exp: A tuple containing an AQI value and distance (exposure) in meters (aqi: float, distance: float).
         length: A length value to use as a base cost.
     """
-    has_aqi = (not missing_aqi)
+    has_aqi = True
     try:
-        aqi_coeff = get_aqi_coeff(aqi_exp[0]) if missing_aqi == False else 100 # assign high aq costs to edges without aqi data
+        aqi_coeff = get_aqi_coeff(aqi_exp[0])
     except InvalidAqiException as e:
+         # assign high aq costs to edges without aqi data
         has_aqi = False
         aqi_coeff = 100
         log.error(str(e))
-    aq_costs = { 'aqc_'+ str(sen) : round(length + get_aqi_cost(length=aqi_exp[1], aqi_coeff=aqi_coeff, sen=sen), 2) for sen in sens }
+    aq_costs = { 'aqc_'+ str(sen) : calc_aqi_cost(length, aqi_coeff, sen=sen) for sen in sens }
     aq_costs['has_aqi'] = has_aqi
     return aq_costs
 
