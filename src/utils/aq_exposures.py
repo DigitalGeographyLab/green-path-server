@@ -64,7 +64,6 @@ def get_aqi_costs(log: Logger, aqi_exp: Tuple[float, float], sens: List[float], 
          # assign high aq costs to edges without aqi data
         has_aqi = False
         aqi_coeff = 100
-        log.error(str(e))
     aq_costs = { 'aqc_'+ str(sen) : calc_aqi_cost(length, aqi_coeff, sen=sen) for sen in sens }
     aq_costs['has_aqi'] = has_aqi
     return aq_costs
@@ -217,13 +216,15 @@ def validate_df_aqi_exps(log: Logger, edge_gdf: 'pandas DataFrame') -> bool:
     edge_gdf_copy['aqi_exp_validity'] = [validate_aqi_exp(aqi_exp) for aqi_exp in edge_gdf_copy['aqi_exp']]
     row_count = len(edge_gdf_copy.index)
     aqi_exp_ok_count = len(edge_gdf_copy[edge_gdf_copy['aqi_exp_validity'] <= 1].index)
-    
+    aqi_missing_count = len(edge_gdf_copy[edge_gdf_copy['aqi_exp_validity'] == 1].index)
+    log.info('missing AQI count: '+ str(aqi_missing_count))
+
     if (row_count == aqi_exp_ok_count):
         return True
     else:
         error_count = row_count - aqi_exp_ok_count
         valid_ratio = round(100 * aqi_exp_ok_count/row_count, 2)
-        log.warning('row count: '+ str(row_count) +' of which has valid aqi exp: '+
+        log.warning('row count: '+ str(row_count) +' of which has valid AQI exp: '+
             str(aqi_exp_ok_count)+ ' = '+ str(valid_ratio) + ' %')
         log.warning('error count: '+ str(error_count))
         return False
