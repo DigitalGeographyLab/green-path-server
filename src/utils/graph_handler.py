@@ -264,9 +264,7 @@ class GraphHandler:
         link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
         # add linking edges with noise cost attributes to graph
-        # self.add_new_edge_to_graph(node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs })
         self.add_new_edge_to_graph(new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs })
-        # self.add_new_edge_to_graph(node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs })
         self.add_new_edge_to_graph(new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs })
         link1_d = { 'uvkey': (new_node, node_from), **link1_attrs }
         link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
@@ -293,34 +291,50 @@ class GraphHandler:
         else:
             raise Exception('Origin and destination are the same location')
 
-    def remove_new_node_and_link_edges(self, new_node: dict = None, link_edges: dict = None):
-        """Removes linking edges from a graph. Needed after routing in order to keep the graph unchanged.
+    def delete_added_linking_edges(
+        self, 
+        orig_edges: dict = None,
+        orig_node: dict = None, 
+        dest_edges: dict = None,
+        dest_node: dict = None, 
+        ) -> None:
+        """Deletes linking edges from a graph. Needed after routing in order to keep the graph unchanged.
         """
-        if (link_edges is not None):
-            removed_count = 0
-            removed_node = False
-            # collect edges to remove as list of tuples
-            rm_edges = [
-                (link_edges['node_from'], link_edges['new_node']),
-                (link_edges['new_node'], link_edges['node_from']),
-                (link_edges['new_node'], link_edges['node_to']),
-                (link_edges['node_to'], link_edges['new_node'])
-                ]
-            # try removing edges from graph
-            for rm_edge in rm_edges:
-                try:
-                    edge_id = self.graph.get_eid(*rm_edge)
-                    self.graph.delete_edges(edge_id)
-                    removed_count += 1
-                except Exception:
-                    continue
+        delete_edge_ids = []
+        delete_node_ids = []
+
+        if (orig_edges is not None):
+            delete_node_ids.append(orig_node['node'])
             try:
-                self.graph.delete_vertices(new_node['node'])
-                removed_node = True
+                # get ids of the linking edges of the origin
+                from_node = orig_edges['link1']['uvkey'][0]
+                to_node = orig_edges['link1']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
+                from_node = orig_edges['link2']['uvkey'][0]
+                to_node = orig_edges['link2']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
             except Exception:
                 pass
-            self.log.debug('Deleted ' + str(removed_count) + ' edges. Deleted node: ' + str(removed_node))
-            if (removed_count == 0): self.log.error('Could not remove linking edges')
-            if (removed_node == False): self.log.error('Could not remove new node')
-        else:
-            self.log.info('no edges or nodes to remove')
+        if (dest_edges is not None):
+            delete_node_ids.append(dest_node['node'])
+            try:
+                # get ids of the linking edges of the destination
+                from_node = dest_edges['link1']['uvkey'][0]
+                to_node = dest_edges['link1']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
+                from_node = dest_edges['link2']['uvkey'][0]
+                to_node = dest_edges['link2']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
+            except Exception:
+                pass
+
+        try:
+            self.graph.delete_edges(delete_edge_ids)
+            self.log.debug('deleted ' + str(len(delete_edge_ids)) + ' edges')
+        except Exception:
+            self.log.error('could not delete added edges from the graph')
+        try:
+            self.graph.delete_vertices(delete_node_ids)
+            self.log.debug('deleted ' + str(len(delete_node_ids)) + ' nodes')
+        except Exception:
+            self.log.error('could not delete added nodes from the graph')

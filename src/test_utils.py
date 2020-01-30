@@ -195,35 +195,34 @@ class TestGraphHandler(unittest.TestCase):
         self.assertEqual(edges[0]['length'], 12.2)
 
     def test_can_delete_edges(self):
+        expected_node_count = G.graph.vcount()
+        expected_edge_count = G.graph.ecount()
         new_node_id = G.add_new_node_to_graph(Point(25498334, 6678297))
-        edge_1 = G.add_new_edge_to_graph(1, new_node_id, { 'length': 5 })
+        edge_1 = G.add_new_edge_to_graph(new_node_id, 1, { 'length': 5 })
         edge_2 = G.add_new_edge_to_graph(new_node_id, 2, { 'length': 7 })
-        link_edges = { 'node_from': 1, 'new_node': new_node_id, 'node_to':  2 }
+        link_edges = { 'link1': { 'uvkey': (new_node_id, 1) } }
         # check that new edges were added
         edges_1 = G.find_edges_between_node_pair(source=new_node_id, target=1)
         edges_2 = G.find_edges_between_node_pair(source=new_node_id, target=2)
         self.assertEqual(len(edges_1), 1)
         self.assertEqual(len(edges_2), 1)
-        G.remove_new_node_and_link_edges({'node': new_node_id}, link_edges)
+        G.delete_added_linking_edges(orig_edges=link_edges, orig_node={'node': new_node_id})
         # check that new edges were deleted
         edges_1 = G.find_edges_between_node_pair(source=new_node_id, target=1)
         edges_2 = G.find_edges_between_node_pair(source=new_node_id, target=2)
         self.assertEqual(len(edges_1), 0)
         self.assertEqual(len(edges_2), 0)
         # check that edge names still match edge indexes (mismatch would be problematic)
-        ecount = 0
         for edge in G.graph.es:
-            ecount += 1
             edge_attrs = edge.attributes()
             self.assertEqual(edge_attrs['name'], edge.index)
-        self.assertEqual(ecount, G.graph.ecount())
         # check that vertex names still match vertex indexes (mismatch would be problematic)
-        nodecount = 0
         for node in G.graph.vs:
-            nodecount += 1
             node_attrs = node.attributes()
             self.assertEqual(node['name'], node.index)
-        self.assertEqual(nodecount, G.graph.vcount())
+        # double check that edge & node counts were unchanged
+        self.assertEqual(G.graph.vcount(), expected_node_count)
+        self.assertEqual(G.graph.ecount(), expected_edge_count)
 
 @unittest.SkipTest
 class TestNoiseUtils(unittest.TestCase):

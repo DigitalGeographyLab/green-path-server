@@ -132,5 +132,8 @@ class PathFinder:
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
         """
         self.log.debug('deleting created nodes & edges from the graph')
-        self.G.remove_new_node_and_link_edges(new_node=self.dest_node, link_edges=self.dest_link_edges)
-        self.G.remove_new_node_and_link_edges(new_node=self.orig_node, link_edges=self.orig_link_edges)
+        self.G.delete_added_linking_edges(
+            orig_edges=self.orig_link_edges,
+            orig_node=self.orig_node, 
+            dest_edges=self.dest_link_edges,
+            dest_node=self.dest_node)

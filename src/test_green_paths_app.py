@@ -19,6 +19,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # initialize graph
 logger = Logger(b_printing=True, log_file='test_green_paths_app.log')
 G = GraphHandler(logger, subset=True, set_noise_costs=True)
+expected_ecount = G.graph.ecount()
+expected_vcount = G.graph.vcount()
+aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
+aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
+aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
 
 def get_quiet_path_stats(G, od_dict, logging=False):
     FC = tests.get_short_quiet_paths(logger, G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
@@ -48,10 +53,6 @@ class TestGraphAqiUpdater(unittest.TestCase):
         self.assertEqual(len(expected_aqi_csv), 21)
 
     def test_graph_aqi_update(self):
-        aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
-        aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
-        aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
-        logger.debug('edge_dicts count: '+ str(G.graph.ecount()))
         # test that all edges got aqi attr and costs
         for edge in G.graph.es:
             edge_attrs = edge.attributes()
@@ -73,6 +74,8 @@ class TestGreenPaths(unittest.TestCase):
         set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 813.0, 'qp_len_sum': 843.3, 'noise_total_len': 402.5 }
         test_stats = get_quiet_path_stats(G, od_dict[1])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
+        self.assertEqual(G.graph.ecount(), expected_ecount)
+        self.assertEqual(G.graph.vcount(), expected_vcount)
 
     def test_quiet_path_5(self):
         set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 1648.8, 'qp_len_sum': 7540.9, 'noise_total_len': 6159.0 }
@@ -96,6 +99,8 @@ class TestGreenPaths(unittest.TestCase):
         test_stats = get_quiet_path_stats(G, od_dict[5])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
+        self.assertEqual(G.graph.ecount(), expected_ecount)
+        self.assertEqual(G.graph.vcount(), expected_vcount)
 
     def test_quiet_path_6(self):
         set_stats = { 'sp_count': 1, 'qp_count': 3, 'sp_len': 1024.9, 'qp_len_sum': 3699.8, 'noise_total_len': 4395.5 }
@@ -119,21 +124,29 @@ class TestGreenPaths(unittest.TestCase):
         test_stats = get_quiet_path_stats(G, od_dict[6])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
         self.assertDictEqual(test_stats['qp_stats'], qp_stats)
+        self.assertEqual(G.graph.ecount(), expected_ecount)
+        self.assertEqual(G.graph.vcount(), expected_vcount)
 
     def test_quiet_path_7(self):
         set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 1054.2, 'qp_len_sum': 1338.5, 'noise_total_len': 2179.1 }
         test_stats = get_quiet_path_stats(G, od_dict[7])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
+        self.assertEqual(G.graph.ecount(), expected_ecount)
+        self.assertEqual(G.graph.vcount(), expected_vcount)
 
     def test_quiet_path_8(self):
         set_stats = { 'sp_count': 1, 'qp_count': 1, 'sp_len': 812.8, 'qp_len_sum': 2100.8, 'noise_total_len': 1505.8 }
         test_stats = get_quiet_path_stats(G, od_dict[8])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
+        self.assertEqual(G.graph.ecount(), expected_ecount)
+        self.assertEqual(G.graph.vcount(), expected_vcount)
 
     def test_quiet_path_9(self):
         set_stats = { 'sp_count': 1, 'qp_count': 4, 'sp_len': 670.6, 'qp_len_sum': 3009.4, 'noise_total_len': 1776.9 }
         test_stats = get_quiet_path_stats(G, od_dict[9])
         self.assertDictEqual(test_stats['set_stats'], set_stats)
+        self.assertEqual(G.graph.ecount(), expected_ecount)
+        self.assertEqual(G.graph.vcount(), expected_vcount)
 
 if __name__ == '__main__':
     unittest.main()
