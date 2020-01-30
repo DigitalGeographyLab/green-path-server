@@ -101,6 +101,7 @@ class PathFinder:
             self.path_set.filter_out_unique_edge_sequence_paths()
             self.path_set.set_path_edges(self.G, self.orig_point)
             self.path_set.aggregate_path_attrs()
+            self.path_set.filter_out_green_paths_missing_exp_data()
             self.path_set.set_path_exp_attrs(self.G.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
             self.path_set.set_green_path_diff_attrs()

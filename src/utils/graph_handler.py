@@ -198,8 +198,10 @@ class GraphHandler:
             bool_flip_geom = geom_utils.bool_line_starts_at_point(prev_point, edge['geometry'])
             edge_d = {}
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
+            edge_d['has_aqi'] = edge['has_aqi'] if ('has_aqi' in edge) else False
             edge_d['aqi_exp'] = edge['aqi_exp'] if ('aqi_exp' in edge) else None
             edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi_exp'][0]) if ('aqi_exp' in edge) else None
+            edge_d['has_noises'] = edge['has_noises'] if ('has_noises' in edge) else True # TODO add to edge attributes
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
             mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if ('noises' in edge) else 0
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
