@@ -26,7 +26,7 @@ aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
 aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
 
 def get_quiet_path_stats(G, od_dict, logging=False):
-    FC = tests.get_short_quiet_paths(logger, G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
+    FC = tests.get_short_green_paths(logger, 'quiet', G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
     path_props = [feat['properties'] for feat in FC]
     paths_df = pd.DataFrame(path_props)
     sp = paths_df[paths_df['type'] == 'short']
@@ -40,6 +40,20 @@ def get_quiet_path_stats(G, od_dict, logging=False):
     set_stats = { 'sp_count': sp_count, 'qp_count': qp_count, 'sp_len': sp_len, 'qp_len_sum': qp_len_sum, 'noise_total_len': noise_total_len }
     qp_stats = tests.get_qp_feat_props_from_FC(FC)
     return { 'set_stats': set_stats, 'qp_stats': qp_stats }
+
+def get_clean_path_stats(G, od_dict, logging=False):
+    FC = tests.get_short_green_paths(logger, 'clean', G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
+    path_props = [feat['properties'] for feat in FC]
+    paths_df = pd.DataFrame(path_props)
+    sp = paths_df[paths_df['type'] == 'short']
+    cp = paths_df[paths_df['type'] == 'clean']
+    sp_count = len(sp)
+    cp_count = len(cp)
+    sp_len = round(sp['length'].sum(), 1)
+    cp_len_sum = round(cp['length'].sum(), 1)
+    set_stats = { 'sp_count': sp_count, 'cp_count': cp_count, 'sp_len': sp_len, 'cp_len_sum': cp_len_sum }
+    cp_stats = tests.get_cp_feat_props_from_FC(FC)
+    return { 'set_stats': set_stats, 'cp_stats': cp_stats }
 
 # read OD pairs for routing tests
 od_dict = tests.get_test_ODs()
@@ -147,6 +161,29 @@ class TestGreenPaths(unittest.TestCase):
         self.assertDictEqual(test_stats['set_stats'], set_stats)
         self.assertEqual(G.graph.ecount(), expected_ecount)
         self.assertEqual(G.graph.vcount(), expected_vcount)
+
+    def test_clean_path_1(self):
+        cp_stats = {
+            'id': 'aq_20', 
+            'length': 1677.75, 
+            'len_diff': 29.0,
+            'len_diff_rat': 1.8,
+            'cost_coeff': 20,
+            'aqi_m': 1.88,
+            'aqc': 369.09,
+            'aqc_norm': 0.22,
+            'aqi_cl_exps': {1: 1570.13, 2: 107.63},
+            'aqi_pcts': {1: 93.59, 2: 6.42},
+            'aqi_m_diff': -0.02,
+            'aqc_diff': -2.1,
+            'aqc_diff_rat': -0.6,
+            'geom_length': 1677.8,
+            'aqc_diff_score': 0.1
+        }
+        set_stats = { 'sp_count': 1, 'cp_count': 1, 'sp_len': 1648.8, 'cp_len_sum': 1677.8 }
+        test_stats = get_clean_path_stats(G, od_dict[5])
+        self.assertDictEqual(test_stats['set_stats'], set_stats)
+        self.assertDictEqual(test_stats['cp_stats'], cp_stats)
 
 if __name__ == '__main__':
     unittest.main()

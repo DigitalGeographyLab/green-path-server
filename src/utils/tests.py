@@ -52,11 +52,13 @@ def get_qp_feat_props_from_FC(FC):
 
     qp_props = qp_feat['properties']
     qp_prop_dict = {
+        # basic attrs
         'id': qp_props['id'], 
         'length': qp_props['length'], 
         'len_diff': qp_props['len_diff'],
         'len_diff_rat': qp_props['len_diff_rat'],
         'cost_coeff': qp_props['cost_coeff'],
+        # noise attrs
         'mdB': qp_props['mdB'],
         'nei': qp_props['nei'],
         'nei_norm': qp_props['nei_norm'],
@@ -66,19 +68,53 @@ def get_qp_feat_props_from_FC(FC):
         'path_score': qp_props['path_score'],
         'noise_pcts_sum': noise_exps.get_total_noises_len(qp_props['noise_pcts']),
         'noise_diff_sum': noise_exps.get_total_noises_len(qp_props['noises_diff']),
+        # geometrical length
         'geom_length': round(geom_utils.project_geom(shape(qp_feat['geometry'])).length,1)
         }
 
     return qp_prop_dict
 
-def get_short_quiet_paths(logger: Logger, G, from_latLon, to_latLon, logging=False) -> dict:
+def get_cp_feat_props_from_FC(FC):
+    cp_feat = None
+    for feature in FC:
+        if (feature['properties']['type'] == 'clean'):
+            cp_feat = feature
+            break
+    if (cp_feat is None):
+        return {}
+
+    cp_props = cp_feat['properties']
+    cp_prop_dict = {
+        # basic attrs
+        'id': cp_props['id'], 
+        'length': cp_props['length'], 
+        'len_diff': cp_props['len_diff'],
+        'len_diff_rat': cp_props['len_diff_rat'],
+        'cost_coeff': cp_props['cost_coeff'],
+        # aq attrs
+        'aqi_m': cp_props['aqi_m'],
+        'aqc': cp_props['aqc'],
+        'aqc_norm': cp_props['aqc_norm'],
+        'aqi_cl_exps': cp_props['aqi_cl_exps'],
+        'aqi_pcts': cp_props['aqi_pcts'],
+        'aqi_m_diff': cp_props['aqi_m_diff'],
+        'aqc_diff': cp_props['aqc_diff'],
+        'aqc_diff_rat': cp_props['aqc_diff_rat'],
+        'aqc_diff_score': cp_props['aqc_diff_score'],
+        # geometrical length
+        'geom_length': round(geom_utils.project_geom(shape(cp_feat['geometry'])).length,1)
+        }
+
+    return cp_prop_dict
+
+def get_short_green_paths(logger: Logger, paths_type, G, from_latLon, to_latLon, logging=False) -> dict:
     """Calculates and aggregates short and quiet paths similarly as in the quiet paths application.
 
     Returns:
         A FeatureCollection (GeoJSON schema) containing a short & quiet paths.
     """
 
-    path_finder = PathFinder(logger, 'quiet', G, from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'])
+    path_finder = PathFinder(logger, paths_type, G, from_latLon['lat'], from_latLon['lon'], to_latLon['lat'], to_latLon['lon'])
 
     try:
         path_finder.find_origin_dest_nodes()
