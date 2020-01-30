@@ -50,6 +50,8 @@ class GraphHandler:
         start_time = time.time()
         if (subset == True): self.graph = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
         else: self.graph = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
+        self.ecount = self.graph.ecount()
+        self.vcount = self.graph.vcount()
         self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read')
         self.edge_gdf = ig_utils.get_edge_gdf(self.graph, add_attrs=gdf_attrs)
         self.edges_sind = self.edge_gdf.sindex
@@ -338,3 +340,9 @@ class GraphHandler:
             self.log.debug('deleted ' + str(len(delete_node_ids)) + ' nodes')
         except Exception:
             self.log.error('could not delete added nodes from the graph')
+
+        # make sure that graph has the correct number of edges and nodes
+        if (self.graph.ecount() != self.ecount):
+            self.log.error('graph has incorrect number of edges: '+ str(self.graph.ecount()) + ' is not '+ str(self.ecount))
+        if (self.graph.vcount() != self.vcount):
+            self.log.error('graph has incorrect number of nodes: '+ str(self.graph.vcount()) + ' is not '+ str(self.vcount))
