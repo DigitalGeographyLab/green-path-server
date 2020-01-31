@@ -12,7 +12,7 @@ from utils.logger import Logger
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-# version: 1.2.0
+# version: 1.3
 
 app = Flask(__name__)
 CORS(app)
