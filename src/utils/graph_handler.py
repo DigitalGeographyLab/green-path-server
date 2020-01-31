@@ -6,11 +6,11 @@ import time
 import ast
 import pandas as pd
 import geopandas as gpd
-import networkx as nx
 import utils.files as file_utils
 import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
 import utils.graphs as graph_utils
+import utils.igraphs as ig_utils
 import utils.geometry as geom_utils
 import utils.utils as utils
 from utils.logger import Logger
@@ -36,7 +36,7 @@ class GraphHandler:
         * Calculate and update AQI costs to graph.
     """
 
-    def __init__(self, logger: Logger, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, set_noise_costs: bool = False):
+    def __init__(self, logger: Logger, subset: bool = False, add_wgs_geom: bool = True, add_wgs_center: bool = False, gdf_attrs: list = [], set_noise_costs: bool = False):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
@@ -46,31 +46,26 @@ class GraphHandler:
             set_noise_costs: A boolean variable indicating whether noise costs should be calculated and updated to the graph.
         """
         self.log = logger
+        self.log.info('graph subset: '+ str(subset))
         start_time = time.time()
-        if (subset == True): self.graph = file_utils.load_graph_kumpula_noise()
-        else: self.graph = file_utils.load_graph_full_noise()
-        self.log.info('graph of '+ str(self.graph.size()) + ' edges read, subset: '+ str(subset))
-        self.edge_gdf = graph_utils.get_edge_gdf(self.graph, attrs=['geometry', 'length', 'noises'])
+        if (subset == True): self.graph = ig_utils.read_ig_graphml('kumpula_ig_v1_test.graphml')
+        else: self.graph = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
+        self.ecount = self.graph.ecount()
+        self.vcount = self.graph.vcount()
+        self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read')
+        self.edge_gdf = ig_utils.get_edge_gdf(self.graph, add_attrs=gdf_attrs)
         self.edges_sind = self.edge_gdf.sindex
         self.log.debug('graph edges collected')
-        self.node_gdf = self.get_node_gdf()
+        self.node_gdf = ig_utils.get_node_gdf(self.graph)
         self.nodes_sind = self.node_gdf.sindex
         self.log.debug('graph nodes collected')
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
         self.log.info('projected edges to wgs')
-        if (set_noise_costs == True): self.set_noise_costs_to_edges()
+        self.db_costs: dict = None
+        if (set_noise_costs == True): 
+            self.db_costs = noise_exps.get_db_costs(version=3)
+            self.set_noise_costs_to_edges()
         self.log.duration(start_time, 'graph initialized', log_level='info')
-
-    def get_node_gdf(self) -> gpd.GeoDataFrame:
-        """Collects and sets the nodes of a graph as a GeoDataFrame. 
-        Names of the nodes are set as the row ids in the GeoDataFrame.
-        """
-        nodes, data = zip(*self.graph.nodes(data=True))
-        gdf_nodes = gpd.GeoDataFrame(list(data), index=nodes)
-        gdf_nodes['geometry'] = gdf_nodes.apply(lambda row: Point(row['x'], row['y']), axis=1)
-        gdf_nodes.crs = self.graph.graph['crs']
-        gdf_nodes.gdf_name = '{}_nodes'.format(self.graph.graph['name'])
-        return gdf_nodes[['geometry']]
     
     def set_edge_wgs_geoms(self, add_wgs_geom: bool, add_wgs_center: bool):
         edge_updates = self.edge_gdf.copy()
@@ -83,24 +78,15 @@ class GraphHandler:
 
     def set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
-
-        Args:
-            db_cost: A dictionary containing the dB-specific noise cost coefficients.
-            sens: A list of sensitivity values.
-            edge_gdf: A GeoDataFrame containing at least columns 'uvkey' (tuple) and 'noises' (dict).
         """
         sens = noise_exps.get_noise_sensitivities()
-        db_costs = noise_exps.get_db_costs()
-        edge_updates = self.edge_gdf.copy()
-        for sen in sens:
-            cost_attr = 'nc_'+str(sen)
-            edge_updates['noise_cost'] = [noise_exps.get_noise_cost(noises=noises, db_costs=db_costs, sen=sen) for noises in edge_updates['noises']]
-            edge_updates['n_cost'] = edge_updates.apply(lambda row: round(row['length'] + row['noise_cost'], 2), axis=1)
-            self.update_edge_attr_to_graph(edge_gdf=edge_updates, df_attr='n_cost', edge_attr=cost_attr)
-        
-        # drop columns that were needed only for noise updates (edge attributes can be accessed from the graph from now on)
-        self.edge_gdf = self.edge_gdf.drop(columns=['noises', 'length'])
-        self.edges_sind = self.edge_gdf.sindex
+
+        for edge in self.graph.es:
+            edge_attrs = edge.attributes()
+            for sen in sens:
+                cost_attr = 'nc_'+str(sen)
+                noise_cost = noise_exps.get_noise_cost(noises=edge_attrs['noises'], db_costs=self.db_costs, sen=sen)
+                self.graph.es[edge.index][cost_attr] = round(edge_attrs['length'] + noise_cost, 2)
 
     def update_edge_attr_to_graph(self, edge_gdf = None, from_dict: bool = False, df_attr: str = None, edge_attr: str = None):
         """Updates the given edge attribute from a DataFrame to a graph. 
@@ -114,12 +100,12 @@ class GraphHandler:
         if (edge_gdf is None):
             edge_gdf = self.edge_gdf
         for edge in edge_gdf.itertuples():
-            update_attr = getattr(edge, df_attr)
-            nx.set_edge_attributes(self.graph, { getattr(edge, 'uvkey'): { edge_attr: update_attr } if from_dict == False else update_attr })
-
-    def get_node_point_geom(self, node: int) -> Point:
-        node_d = self.graph.nodes[node]
-        return Point(node_d['x'], node_d['y'])
+            update = getattr(edge, df_attr)
+            if (from_dict == False):
+                self.graph.es[getattr(edge, 'Index')][edge_attr] = update
+            else:
+                for key in update.keys():
+                    self.graph.es[getattr(edge, 'Index')][key] = update[key]
 
     def find_nearest_node(self, point: Point) -> int:
         """Finds the nearest node to a given point.
@@ -144,19 +130,37 @@ class GraphHandler:
         nearest_geom = nearest_points(point, points_union)[1]
         nearest = possible_matches.geometry.geom_equals(nearest_geom)
         nearest_point =  possible_matches.loc[nearest]
-        nearest_node = nearest_point.index.tolist()[0]
+        nearest_node_id = nearest_point.index.tolist()[0]
         self.log.duration(start_time, 'found nearest node', unit='ms')
-        return nearest_node
+        return nearest_node_id
 
-    def get_edge_by_uvkey(self, uvkey) -> Dict:
+    def get_node_by_id(self, node_id: int) -> dict:
         try:
-            edge_d = self.graph[uvkey[0]][uvkey[1]][uvkey[2]]
-            edge_d['uvkey'] = uvkey
-            return edge_d
+            return self.graph.vs[node_id].attributes()
         except Exception:
-            self.log.warning('could not find edge by uvkey: '+ str(uvkey))
-            return {}
-    
+            self.log.warning('could not find node by id: '+ str(node_id))
+            return None
+
+    def get_edge_by_id(self, edge_id: int) -> dict:
+        try:
+            return self.graph.es[edge_id].attributes()
+        except Exception:
+            self.log.warning('could not find edge by id: '+ str(edge_id))
+            return None
+
+    def find_edges_between_node_pair(self, source: int, target: int, directed: bool = False) -> List[dict]:
+        try:
+            if (directed == True):
+                return [e.attributes() for e in self.graph.es.select(_source=source, _target=target)]
+            else:
+                return [e.attributes() for e in self.graph.es.select(_within=[source, target])]
+        except Exception:
+            self.log.warning('tried to find edges from/to invalid vertex id: '+ str(source) +' or: '+ str(target))
+            return []
+
+    def get_node_point_geom(self, node_id: int) -> Point:
+        return self.get_node_by_id(node_id)['point']
+
     def find_nearest_edge(self, point: Point) -> Dict:
         """Finds the nearest edge to a given point.
 
@@ -182,54 +186,53 @@ class GraphHandler:
             return None
         nearest = possible_matches['distance'] == shortest_dist
         self.log.duration(start_time, 'found nearest edge', unit='ms')
-        uvkey = possible_matches.loc[nearest]['uvkey'].iloc[0]
-        return self.get_edge_by_uvkey(uvkey)
+        edge_id = possible_matches.loc[nearest].index[0]
+        return self.get_edge_by_id(edge_id)
 
-    def get_edges_from_nodelist(self, path: List[int], cost_attr: str) -> List[dict]:
+    def get_edges_from_edge_ids(self, edge_ids: List[int], orig_point: Point) -> List[dict]:
         """Loads edges from graph by ordered list of nodes representing a path.
         Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
         """
+        prev_point = orig_point
         path_edges = []
-        for idx in range(0, len(path)):
-            if (idx == len(path)-1):
-                break
+        for idx, edge_id in enumerate(edge_ids):
+            edge = self.get_edge_by_id(edge_id)
+            bool_flip_geom = geom_utils.bool_line_starts_at_point(prev_point, edge['geometry'])
             edge_d = {}
-            node_1 = path[idx]
-            node_1_point = self.get_node_point_geom(node_1)
-            node_2 = path[idx+1]
-            edges = self.graph[node_1][node_2]
-            edge = graph_utils.get_least_cost_edge(edges, cost_attr)
             edge_d['length'] = edge['length'] if ('length' in edge) else 0.0
+            edge_d['has_aqi'] = edge['has_aqi'] if ('has_aqi' in edge) else False
             edge_d['aqi_exp'] = edge['aqi_exp'] if ('aqi_exp' in edge) else None
             edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi_exp'][0]) if ('aqi_exp' in edge) else None
+            edge_d['has_noises'] = edge['has_noises'] if ('has_noises' in edge) else True # TODO add to edge attributes
             edge_d['noises'] = edge['noises'] if ('noises' in edge) else {}
-            mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length'])
+            mdB = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if ('noises' in edge) else 0
             edge_d['dBrange'] = noise_exps.get_noise_range(mdB)
-            bool_flip_geom = geom_utils.bool_line_starts_at_point(node_1_point, edge['geometry'])
             edge_d['coords'] = edge['geometry'].coords if bool_flip_geom else edge['geometry'].coords[::-1]
             edge_d['coords_wgs'] = edge['geom_wgs'].coords if bool_flip_geom else edge['geom_wgs'].coords[::-1]
             path_edges.append(edge_d)
+            # set previous node for next round
+            prev_point = Point(edge_d['coords'][-1])
         return path_edges
 
     def get_new_node_id(self) -> int:
         """Returns an unique node id that can be used in creating a new node to a graph.
         """
-        return max(self.graph.nodes)+1
-
-    def get_new_node_attrs(self, point: Point) -> dict:
-        """Returns the basic attributes for a new node based on a specified location (Point).
-        """
-        new_node_id = self.get_new_node_id()
-        wgs_point = geom_utils.project_geom(point, from_epsg=3879, to_epsg=4326)
-        geom_attrs = {**geom_utils.get_xy_from_geom(point), **geom_utils.get_lat_lon_from_geom(wgs_point)}
-        return { 'id': new_node_id, **geom_attrs }
+        return self.graph.vcount()
 
     def add_new_node_to_graph(self, point: Point) -> int:
         """Adds a new node to a graph at a specified location (Point) and returns the id of the new node.
         """
-        attrs = self.get_new_node_attrs(point)
-        self.graph.add_node(attrs['id'], ref='', x=attrs['x'], y=attrs['y'], lon=attrs['lon'], lat=attrs['lat'])
-        return attrs['id']
+        new_node_id = self.get_new_node_id()
+        self.graph.add_vertex(name=new_node_id, point=point)
+        return new_node_id
+
+    def get_new_edge_id(self) -> int:
+        return self.graph.ecount()
+
+    def add_new_edge_to_graph(self, source: int, target: int, attrs: dict = {}) -> int:
+        new_edge_id = self.get_new_edge_id()
+        self.graph.add_edge(source, target, name=new_edge_id, **attrs)
+        return new_edge_id
 
     def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
@@ -263,10 +266,8 @@ class GraphHandler:
         link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
         # add linking edges with noise cost attributes to graph
-        self.graph.add_edges_from([ (node_from, new_node, { 'uvkey': (node_from, new_node), **link1_attrs }) ])
-        self.graph.add_edges_from([ (new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs }) ])
-        self.graph.add_edges_from([ (node_to, new_node, { 'uvkey': (node_to, new_node), **link2_attrs }) ])
-        self.graph.add_edges_from([ (new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs }) ])
+        self.add_new_edge_to_graph(new_node, node_from, { 'uvkey': (new_node, node_from), **link1_attrs })
+        self.add_new_edge_to_graph(new_node, node_to, { 'uvkey': (new_node, node_to), **link2_attrs })
         link1_d = { 'uvkey': (new_node, node_from), **link1_attrs }
         link2_d = { 'uvkey': (node_to, new_node), **link2_attrs }
         self.log.duration(start_time, 'added links for new node', unit='ms')
@@ -285,37 +286,63 @@ class GraphHandler:
         """
         if (orig_node != dest_node):
             try:
-                s_path = nx.shortest_path(self.graph, source=orig_node, target=dest_node, weight=weight)
-                return s_path
+                s_path = self.graph.get_shortest_paths(orig_node, to=dest_node, weights=weight, mode=1, output="epath")
+                return s_path[0]
             except:
                 raise Exception('Could not find paths')
         else:
             raise Exception('Origin and destination are the same location')
 
-    def remove_new_node_and_link_edges(self, new_node: dict = None, link_edges: dict = None):
-        """Removes linking edges from a graph. Needed after routing in order to keep the graph unchanged.
+    def delete_added_linking_edges(
+        self, 
+        orig_edges: dict = None,
+        orig_node: dict = None, 
+        dest_edges: dict = None,
+        dest_node: dict = None, 
+        ) -> None:
+        """Deletes linking edges from a graph. Needed after routing in order to keep the graph unchanged.
         """
-        if (link_edges is not None):
-            removed_count = 0
-            removed_node = False
-            # collect edges to remove as list of tuples
-            rm_edges = [
-                (link_edges['node_from'], link_edges['new_node']),
-                (link_edges['new_node'], link_edges['node_from']),
-                (link_edges['new_node'], link_edges['node_to']),
-                (link_edges['node_to'], link_edges['new_node'])
-                ]
-            # try removing edges from graph
-            for rm_edge in rm_edges:
-                try:
-                    self.graph.remove_edge(*rm_edge)
-                    removed_count += 1
-                except Exception:
-                    continue
+        delete_edge_ids = []
+        delete_node_ids = []
+
+        if (orig_edges is not None):
+            delete_node_ids.append(orig_node['node'])
             try:
-                self.graph.remove_node(new_node['node'])
-                removed_node = True
+                # get ids of the linking edges of the origin
+                from_node = orig_edges['link1']['uvkey'][0]
+                to_node = orig_edges['link1']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
+                from_node = orig_edges['link2']['uvkey'][0]
+                to_node = orig_edges['link2']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
             except Exception:
                 pass
-            if (removed_count == 0): self.log.error('Could not remove linking edges')
-            if (removed_node == False): self.log.error('Could not remove new node')
+        if (dest_edges is not None):
+            delete_node_ids.append(dest_node['node'])
+            try:
+                # get ids of the linking edges of the destination
+                from_node = dest_edges['link1']['uvkey'][0]
+                to_node = dest_edges['link1']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
+                from_node = dest_edges['link2']['uvkey'][0]
+                to_node = dest_edges['link2']['uvkey'][1]
+                delete_edge_ids.append(self.graph.get_eid(from_node, to_node))
+            except Exception:
+                pass
+
+        try:
+            self.graph.delete_edges(delete_edge_ids)
+            self.log.debug('deleted ' + str(len(delete_edge_ids)) + ' edges')
+        except Exception:
+            self.log.error('could not delete added edges from the graph')
+        try:
+            self.graph.delete_vertices(delete_node_ids)
+            self.log.debug('deleted ' + str(len(delete_node_ids)) + ' nodes')
+        except Exception:
+            self.log.error('could not delete added nodes from the graph')
+
+        # make sure that graph has the correct number of edges and nodes
+        if (self.graph.ecount() != self.ecount):
+            self.log.error('graph has incorrect number of edges: '+ str(self.graph.ecount()) + ' is not '+ str(self.ecount))
+        if (self.graph.vcount() != self.vcount):
+            self.log.error('graph has incorrect number of nodes: '+ str(self.graph.vcount()) + ' is not '+ str(self.vcount))

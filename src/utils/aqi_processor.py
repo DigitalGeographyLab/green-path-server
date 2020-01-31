@@ -20,22 +20,39 @@ class AqiProcessor:
     """AqiProcessor can download, extract and convert air quality index (AQI) data from FMI's Enfuser model. 
     
     Specifically, it can download the data as a zip archive file, extract a netCDF file containing the air quality 
-    index layer and convert it into a GeoTIFF raster. Also, it can delete created temporary and old aqi files.
+    index layer and convert it into a GeoTIFF raster. Also, it can delete created temporary and old AQI files.
+
+    Notes:
+        The required python environment for using the class can be installed with: conda env create -f env_aqi_processing.yml.
+        Add file credentials.csv containing the required AWS secrets to src/ (request them from FMI).
+        
+        A typical use of this class for fetching and processing Enfuser AQI data on a timely basis is demonstrated in 
+        file ../aqi_processor_app.py. Essentially, AQI processing workflow is composed of the following steps:
+            1)	Create a key for fetching Enfuser data based on current UTC time (e.g. “allPollutants_2019-11-08T11.zip”).
+            2)  Fetch a zip archive that contains Enfuser netCDF data from Amazon S3 bucket using the key, 
+                aws_access_key_id and aws_secret_access_key. 
+            3)  Extract Enfuser netCDF data (e.g. allPollutants_2019-09-11T15.nc) from the downloaded zip archive.
+            4)  Extract AQI layer from the allPollutants*.nc file and export it as GeoTiff (WGS84).
+            5)  Open the exported raster and fill nodata values with interpolated values. 
+                Value 1 is considered nodata in the data. This is an optional step.
+            6)  If AQI is used for route optimization, join AQI values to the edges of a graph (street network) 
+                by spatial sampling at the centroids of the edges. 
+        The methods in this class are defined in the assumed order of use (based on the above workflow).
+        Instructions on how to use the methods are included in their docstrings.  
 
     Attributes:
+        log: An instance of Logger class for writing log messages.
         wip_edge_aqi_csv: The name of an edge_aqi_csv file that is currently being produced (wip = work in progress).
         latest_edge_aqi_csv: The name of the latest edge_aqi_csv file that was produced.
-        latest_aqi_tif: The name of the latest aqi tif file that was processed.
-        aqi_dir: A filepath pointing to a directory where AQI files will be downloaded to and processed.
+        latest_aqi_tif: The name of the latest AQI tif file that was processed.
+        aqi_dir: A filepath pointing to a directory where all AQI files will be downloaded to and processed.
         s3_bucketname: The name of an AWS s3 bucket from where the enfuser data will be fetched from.
         s3_region: The name of an AWS s3 bucket from where the enfuser data will be fetched from.
         AWS_ACCESS_KEY_ID: The name of a "secret" aws access key id to enfuser s3 bucket.
         AWS_SECRET_ACCESS_KEY: The name of a "secret" aws access key to enfuser s3 bucket.
         temp_files_to_rm (list): A list where names of created temporary files will be collected during processing.
+        status: The status of the aqi processor - has latest AQI data been processed or not.
 
-    Notes:
-        The required python environment for using the class can be installed with: conda env create -f env_aqi_processing.yml.
-        Add file credentials.csv containing the required aws secrets to src/.
     """
 
     def __init__(self, logger: Logger, aqi_dir: str = 'aqi_cache/', set_aws_secrets: bool = False):
@@ -53,18 +70,21 @@ class AqiProcessor:
         if (set_aws_secrets == True): self.set_aws_secrets()
 
     def set_aws_secrets(self) -> None:
+        """Initializes credentials required for accessing Enfuser data in FMI's S3 bucket in AWS.
+        Request credentials (AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY) from FMI and add them to file credentials.csv.
+        """
         creds = pd.read_csv('credentials.csv', sep=',', encoding='utf-8')
         self.AWS_ACCESS_KEY_ID = creds['Access key ID'][0]
         self.AWS_SECRET_ACCESS_KEY = creds['Secret access key'][0]
 
     def get_current_edge_aqi_csv_name(self) -> str:
-        """Returns the name of the current edge aqi updates csv file. Note: it might not exist.
+        """Returns the name of the current expected edge aqi updates csv file. Note: it might not exist.
         """
         curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
         return 'aqi_'+ curdt +'.csv'
 
     def set_wip_edge_aqi_csv_name(self) -> None:
-        """Sets the excpected latest edge_aqi_csv filename to attribute wip_edge_aqi_csv.
+        """Sets the excpected latest edge_aqi_csv filename to attribute wip_edge_aqi_csv (wip = work in progress).
         """
         self.wip_edge_aqi_csv = self.get_current_edge_aqi_csv_name()
 
@@ -94,7 +114,7 @@ class AqiProcessor:
         return b_available
 
     def get_current_enfuser_key_filename(self) -> Tuple[str, str]:
-        """Returns a key pointing to the expected current enfuser zip file in aws s3 bucket. 
+        """Returns a key pointing to the expected current enfuser zip file in AWS S3 bucket. 
         Also returns a name for the zip file for exporting the file. The names of the key and the zip file contain
         the current UTC time (e.g. 2019-11-08T11).
         """
@@ -118,7 +138,7 @@ class AqiProcessor:
         # download the netcdf file to a specified location
         file_out = self.aqi_dir + '/' + aqi_zip_name
         s3.download_file(self.s3_bucketname, enfuser_data_key, file_out)
-        self.temp_files_to_rm.append(aqi_zip_name)
+        # self.temp_files_to_rm.append(aqi_zip_name)
         return aqi_zip_name
 
     def extract_zipped_aqi(self, aqi_zip_name: str) -> str:
@@ -127,7 +147,7 @@ class AqiProcessor:
         Args:
             aqi_zip_name: The name of the zip file to be extracted from (in aqi_cache directory).
         Returns:
-            The name of the extracted aqi nc file.
+            The name of the extracted AQI nc file.
         """
         # read zip file in
         archive = zipfile.ZipFile(self.aqi_dir + aqi_zip_name, 'r')
@@ -172,7 +192,10 @@ class AqiProcessor:
         return aqi_tif_name
 
     def fillna_in_raster(self, aqi_tif_name: str, na_val: float = 1.0) -> None:
-        """Fills nodata values in a raster by interpolating values from surrounding cells. 
+        """Fills nodata values in a raster by interpolating values from surrounding cells.
+        Value 1.0 is considered as nodata. If no nodata is found with that value, a small offset will be applied,
+        as sometimes the nodata value is slightly higher than 1.0 (assumably due to inaccuracy in netcdf to 
+        geotiff conversion).
         
         Args:
             aqi_tif_name: The name of a raster file to be processed (in aqi_cache directory).
@@ -199,6 +222,11 @@ class AqiProcessor:
         aqi_nodata_mask = np.where(aqi_band <= na_offset, 0, aqi_band)
         # fill nodata in aqi_band using nodata mask
         aqi_band_fillna = fill.fillnodata(aqi_band, mask=aqi_nodata_mask)
+
+        # validate AQI values after na fill
+        invalid_count = np.sum(aqi_band_fillna < 1.0)
+        if (invalid_count > 0):
+            self.log.warning('aqi band has '+ str(invalid_count) +' below 1 aqi values after na fill')
 
         # write raster with filled nodata
         aqi_raster_fillna = rasterio.open(
@@ -238,11 +266,11 @@ class AqiProcessor:
         G.edge_gdf['aqi'] = [round(x.item(), 2) for x in aqi_raster.sample(coords)]
 
         # validate sampled aqi values
-        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf) == False):
+        if (aq_exps.validate_df_aqi(self.log, G.edge_gdf, debug_to_file=False) == False):
             self.log.error('aqi sampling failed')
 
         # save edge keys and corresponding aqi values as csv for later use
-        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['uvkey', 'aqi', 'length']].copy())
+        edge_aqi_updates_df = pd.DataFrame(G.edge_gdf[['aqi', 'length']].copy())
         # also save aqi_exp as tuple of (length, aqi)
         edge_aqi_updates_df['aqi_exp'] = edge_aqi_updates_df.apply(lambda row: ( row['aqi'], round(row['length'], 2) ), axis=1)
         
@@ -251,7 +279,7 @@ class AqiProcessor:
             self.log.error('conversion to aqi_exp failed')
         
         edge_aqi_csv_name = aqi_tif_name[:-4] + '.csv'
-        edge_aqi_updates_df[['uvkey', 'aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=False)
+        edge_aqi_updates_df[['aqi_exp']].to_csv(self.aqi_dir + edge_aqi_csv_name, index=True, index_label='index')
         self.latest_edge_aqi_csv = edge_aqi_csv_name
         self.reset_wip_edge_aqi_csv_name()
         return edge_aqi_csv_name

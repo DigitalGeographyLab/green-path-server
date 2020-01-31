@@ -23,7 +23,8 @@ class PathNoiseAttrs:
         if (self.noises is not None):
             self.mdB = noise_exps.get_mean_noise_level(self.noises, length)
             self.nei = round(noise_exps.get_noise_cost(noises=self.noises, db_costs=db_costs), 1)
-            self.nei_norm = round(self.nei / (0.6 * length), 4)
+            max_db_cost = max(db_costs.values())
+            self.nei_norm = round(self.nei / (max_db_cost * length), 4)
             self.noise_range_exps = noise_exps.get_noise_range_exps(self.noises, length)
             self.noise_pcts = noise_exps.get_noise_range_pcts(self.noise_range_exps, length)
 

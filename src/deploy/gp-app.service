@@ -6,8 +6,8 @@ After=network.target
 User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/gp-server
-Environment="PATH=/home/ubuntu/miniconda3/envs/gp-server/bin"
-ExecStart=/home/ubuntu/miniconda3/envs/gp-server/bin/gunicorn --workers 8 --timeout 1800 --log-level=info --bind unix:green-paths.sock -m 007 green_paths_wsgi:app
+Environment="PATH=/home/ubuntu/miniconda3/envs/gp-server-3/bin"
+ExecStart=/home/ubuntu/miniconda3/envs/gp-server-3/bin/gunicorn --workers 8 --timeout 200 --log-level=info --bind unix:green-paths.sock -m 007 green_paths_wsgi:app
 
 [Install]
 WantedBy=multi-user.target

@@ -61,7 +61,9 @@ class GraphAqiUpdater:
                 self.aqi_update_status = 'could not complete AQI update from: '+ new_aqi_data_csv
                 self.log.error(self.aqi_update_status)
                 traceback.print_exc()
+                self.log.warning('waiting 60 s after exception before next AQI update attempt')
                 time.sleep(60)
+                self.aqi_data_wip = ''
 
     def get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
@@ -101,12 +103,12 @@ class GraphAqiUpdater:
         if (aqi_data_expected == self.aqi_data_latest):
             aqi_update_status = 'latest AQI was updated to graph'
         elif (aqi_data_expected == self.aqi_data_wip):
-            aqi_update_status = 'aqi update already in progress'
+            aqi_update_status = 'AQI update already in progress'
         elif (aqi_data_expected in listdir(self.aqi_dir)):
-            aqi_update_status = 'aqi update will be done from: '+ aqi_data_expected
+            aqi_update_status = 'AQI update will be done from: '+ aqi_data_expected
             new_aqi_available = aqi_data_expected
         else:
-            aqi_update_status = 'expected aqi data is not available ('+ aqi_data_expected +')'
+            aqi_update_status = 'expected AQI data is not available ('+ aqi_data_expected +')'
         
         if (aqi_update_status != self.aqi_update_status):
             self.log.info(aqi_update_status)
@@ -114,23 +116,23 @@ class GraphAqiUpdater:
         return new_aqi_available
 
     def get_aq_update_attrs(self, aqi_exp: Tuple[float, float]):
-        aq_costs = aq_exps.get_aqi_costs(aqi_exp, self.sens, length=aqi_exp[1])
+        aq_costs = aq_exps.get_aqi_costs(self.log, aqi_exp, self.sens, length=aqi_exp[1])
         return { 'aqi_exp': aqi_exp, **aq_costs }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):
-        self.log.info('starting aqi update from: '+ aqi_updates_csv)
+        self.log.info('starting AQI update from: '+ aqi_updates_csv)
         self.aqi_data_wip = aqi_updates_csv
         # read aqi update csv
-        field_type_converters = { 'uvkey': ast.literal_eval, 'aqi_exp': ast.literal_eval }
-        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters=field_type_converters)
+        edge_aqi_updates = pd.read_csv(self.aqi_dir + aqi_updates_csv, converters={ 'aqi_exp': ast.literal_eval }, index_col='index')
 
         # ensure that all edges will get aqi value
-        edge_key_count = self.G.edge_gdf['uvkey'].nunique()
-        update_key_count = edge_aqi_updates['uvkey'].nunique()
+        edge_key_count = self.G.edge_gdf.index.nunique()
+        update_key_count = edge_aqi_updates.index.nunique()
         if (edge_key_count != update_key_count):
             self.log.info('edge_gdf row count: '+ str(len(self.G.edge_gdf)))
             self.log.info('edge_aqi_updates row count: '+ str(len(edge_aqi_updates)))
             self.log.error('non matching edge key vs update key counts: '+ str(edge_key_count) +' '+ str(update_key_count))
+            raise ValueError('Read incomplete aqi update data')
         
         # validate aqi_exps to update
         if (aq_exps.validate_df_aqi_exps(self.log, edge_aqi_updates) == False):
@@ -138,6 +140,9 @@ class GraphAqiUpdater:
 
         # update aqi_exps to graph
         edge_aqi_updates['aq_updates'] = [self.get_aq_update_attrs(aqi_exp) for aqi_exp in edge_aqi_updates['aqi_exp']]
+        edge_aqi_updates['has_aqi'] = [aq_updates['has_aqi'] for aq_updates in edge_aqi_updates['aq_updates']]
+        self.log.info('missing or invalid AQI count: '+ str(len(edge_aqi_updates[edge_aqi_updates['has_aqi'] == False].index)))
+
         self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')
         self.log.info('aqi update succeeded')
         self.aqi_data_updatetime = datetime.utcnow()

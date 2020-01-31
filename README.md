@@ -40,7 +40,7 @@ $ conda env create -f env_gp_server.yml
 $ conda activate gp-server
 
 # run with gunicorn
-$ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info green_paths_app:app
+$ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 160 green_paths_app:app
 
 # or with python (flask)
 $ python green_paths_app.py
@@ -52,7 +52,7 @@ $ cd hope-green-path-server/src
 $ conda activate gp-server
 
 $ python test_green_paths_app.py -b
-$ python -m pytest test_utils.py
+$ python test_utils.py -b
 
 $ conda activate aqi-processing
 $ python test_aqi_processor.py -b

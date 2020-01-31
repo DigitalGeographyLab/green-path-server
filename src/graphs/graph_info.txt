@@ -1,8 +1,5 @@
 
-e.g. kumpula_u_g_n2_f_s.graphml
-u/d = unidrected / directed
-g = missing edge geometries added
-n = noise exposures added (as edge attributes)
-n2 = fixed noise exposures updated (as edge attributes)
-f = unwalkable edges filtered out from the graph (service tunnels etc)
-s = subset of the edge attributes
+e.g. kumpula_ig_v1.graphml
+
+ig = graph was exported from igraph
+v1 = graph was read from graphml file from 2019

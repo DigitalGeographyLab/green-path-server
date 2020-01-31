@@ -10,18 +10,20 @@ class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
-    def __init__(self, nodes: List[int], name: str, path_type: str, cost_attr: str, cost_coeff: float = 0.0):
-        self.nodes: List[int] = nodes
+    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type: str, cost_coeff: float = 0.0):
+        self.orig_node: int = orig_node
+        self.edge_ids: List[int] = edge_ids
         self.edges: List[dict] = []
         self.edge_groups: List[Tuple[int, List[dict]]] = []
         self.name: str = name
         self.path_type: str = path_type
-        self.cost_attr: str = cost_attr
         self.cost_coeff: float = cost_coeff
         self.geometry = None
         self.length: float = None
         self.len_diff: float = 0
         self.len_diff_rat: float = None
+        self.missing_aqi: bool = False
+        self.missing_noises: bool = False
         self.noise_attrs: PathNoiseAttrs = None
         self.aqi_attrs: PathAqiAttrs = None
     
@@ -29,10 +31,10 @@ class Path:
 
     def set_path_type(self, path_type: str): self.path_type = path_type
 
-    def set_path_edges(self, G: GraphHandler) -> None:
+    def set_path_edges(self, G: GraphHandler, orig_point: Point) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
         """
-        self.edges = G.get_edges_from_nodelist(self.nodes, self.cost_attr)
+        self.edges = G.get_edges_from_edge_ids(self.edge_ids, orig_point)
 
     def aggregate_path_attrs(self, geom: bool = True, length: bool = True, noises: bool = True, aqi: bool = False) -> None:
         """Aggregates path attributes form list of edges.
@@ -40,13 +42,14 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
         self.geometry = LineString(path_coords) if (geom == True) else self.geometry
         self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
-        if (noises == True):
+        self.missing_noises = True if False in [edge['has_noises'] for edge in self.edges] else False
+        self.missing_aqi = True if False in [edge['has_aqi'] for edge in self.edges] else False
+        if (noises == True and not self.missing_noises):
             noises_list = [edge['noises'] for edge in self.edges]
             self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)
-        if (aqi == True):
+        if (aqi == True and not self.missing_aqi):
             aqi_exp_list = [edge['aqi_exp'] for edge in self.edges if edge['aqi_exp'] is not None]
-            if (len(aqi_exp_list) > 0):
-                self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
+            self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
 
     def set_noise_attrs(self, db_costs: dict) -> None:
         if (self.noise_attrs is not None):
@@ -102,7 +105,9 @@ class Path:
             'length' : self.length,
             'len_diff' : self.len_diff,
             'len_diff_rat' : self.len_diff_rat,
-            'cost_coeff' : self.cost_coeff
+            'cost_coeff' : self.cost_coeff,
+            'missing_aqi' : self.missing_aqi,
+            'missing_noises' : self.missing_noises,
         }
         noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs is not None else {}
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs is not None else {}
