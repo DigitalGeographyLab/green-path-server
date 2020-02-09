@@ -138,7 +138,7 @@ class AqiProcessor:
         # download the netcdf file to a specified location
         file_out = self.aqi_dir + '/' + aqi_zip_name
         s3.download_file(self.s3_bucketname, enfuser_data_key, file_out)
-        # self.temp_files_to_rm.append(aqi_zip_name)
+        self.temp_files_to_rm.append(aqi_zip_name)
         return aqi_zip_name
 
     def extract_zipped_aqi(self, aqi_zip_name: str) -> str:
