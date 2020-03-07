@@ -18,14 +18,14 @@ def calc_db_cost_v2(db) -> float:
     if (db <= 40): 
         return 0
     db_cost = (db-40) / (75-40)
-    return round(db_cost, 2)
+    return round(db_cost, 3)
 
 def calc_db_cost_v3(db) -> float:
     """Returns a noise cost for given dB: every 10 dB increase doubles the cost (dB >= 45 & dB <= 75).
     """
     if (db <= 40): return 0
-    db_cost = 0.125 * pow(2, (db-45)/10)
-    return round(db_cost, 3)
+    db_cost = pow(10, (0.3 * db)/10)
+    return round(db_cost / 100, 3)
 
 def get_db_costs(version: int = 3) -> Dict[int, float]:
     """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base (noise) cost for edges. 
@@ -46,7 +46,7 @@ def get_db_costs(version: int = 3) -> Dict[int, float]:
     else:
         raise ValueError('Parameter: version must be either 1, 2 or 3')
 
-def get_noise_sensitivities(subset: bool = False) -> List[float]:
+def get_noise_sensitivities() -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
 
@@ -58,10 +58,7 @@ def get_noise_sensitivities(subset: bool = False) -> List[float]:
     Returns:
         A list of noise sensitivity coefficients.
     """
-    if (subset == True):
-        return [ 0.2, 0.5, 1, 3, 6, 10, 20 ]
-    else:
-        return [ 0.2, 0.5, 1, 3, 6, 10, 20, 35 ]
+    return [ 0.1, 0.2, 0.3, 0.5, 1, 2, 3, 5, 7, 10 ]
 
 def add_noises_to_split_lines(noise_polygons: gpd.GeoDataFrame, split_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Performs a spatial join of noise values (from noise polygons) to LineString objects based on
@@ -148,13 +145,8 @@ def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
         A dictionary containing exposures (m) to different noise level ranges.
         (e.g. { 40: 15.2, 50: 62.4, 55: 10.5 })
     """
-    # interpolate 40 dB distance
-    noise_dists = dict(noises)
-    db_40_len = round(total_length - get_total_noises_len(noise_dists), 2)
-    if db_40_len > 0:
-        noise_dists[40] = db_40_len
-    
     # aggregate noise exposures to pre-defined dB-ranges
+    noise_dists = dict(noises)
     dB_range_lens = {}
     for dB in noise_dists.keys():
         dB_range = get_noise_range(dB)
@@ -260,10 +252,6 @@ def get_mean_noise_level(noises: dict, length: float) -> float:
     # estimate mean dB of 5 dB range to be min dB + 2.5 dB
     for db in noises.keys():
         sum_db += (int(db)+2.5) * noises[db]
-    # extrapolate noise level range 40-45dB (42.5dB) for all noises less than lowest noise range in the noise data 45-50dB
-    sum_noise_len = get_total_noises_len(noises)
-    db425len = length - sum_noise_len
-    sum_db += 42.5 * db425len
     mean_db = sum_db/length
     return round(mean_db, 1)
 
@@ -299,6 +287,10 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
         noise_cost = get_noise_cost(noises=cost_attrs['noises'], db_costs=db_costs, sen=sen)
         cost_attrs['nc_'+str(sen)] = round(noise_cost + link_geom.length, 2)
     return cost_attrs
+
+def estimate_db_40_exp(noises: dict, length: float) -> float:
+    total_db_length = get_total_noises_len(noises)
+    return round(length - total_db_length, 2)
 
 def compare_lens_noises_lens(edge_gdf) -> gpd.GeoDataFrame:
     """Adds new columns to a GeoDataFrame of edges so that the aggregated contaminated distances can be validated against edge lengths. 

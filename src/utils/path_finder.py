@@ -28,8 +28,7 @@ class PathFinder:
         self.log.debug('to: '+ str(dest_latLon))
         self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
-        b_sens_subset = self.orig_point.distance(self.dest_point) > 2000
-        self.sens = noise_exps.get_noise_sensitivities(subset=b_sens_subset)
+        self.sens = noise_exps.get_noise_sensitivities()
         self.path_set = PathSet(self.log, set_type=self.finder_type)
         self.orig_node = None
         self.dest_node = None

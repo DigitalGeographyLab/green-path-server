@@ -62,7 +62,7 @@ class GraphHandler:
         self.set_edge_wgs_geoms(add_wgs_geom=add_wgs_geom, add_wgs_center=add_wgs_center)
         self.log.info('projected edges to wgs')
         self.db_costs: dict = None
-        if (set_noise_costs == True): 
+        if (set_noise_costs == True):
             self.db_costs = noise_exps.get_db_costs(version=3)
             self.set_noise_costs_to_edges()
         self.log.duration(start_time, 'graph initialized', log_level='info')
@@ -80,8 +80,15 @@ class GraphHandler:
         """Updates all noise cost attributes to a graph.
         """
         sens = noise_exps.get_noise_sensitivities()
-
         for edge in self.graph.es:
+            # first add estimated exposure to 40 dB to edge attrs
+            edge_attrs = edge.attributes()
+            noises = dict(edge_attrs['noises'])
+            db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs['noises'], edge_attrs['length'])
+            if (db_40_exp > 0.0):
+                noises[40] = noise_exps.estimate_db_40_exp(edge_attrs['noises'], edge_attrs['length'])
+                self.graph.es[edge.index]['noises'] = noises
+            # then calculate and update noise costs to edges
             edge_attrs = edge.attributes()
             for sen in sens:
                 cost_attr = 'nc_'+str(sen)
