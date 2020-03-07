@@ -66,7 +66,7 @@ def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dic
     log.duration(start_time, 'got geoms for adding node & links', unit='ms')
     return { 'node': new_node, 'offset': round(nearest_edge_point.distance(point), 1), 'add_links': True, **links_to }
 
-def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_point: Point, dest_point: Point, sens: List[float], db_costs: Dict[int,float]):
+def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_point: Point, dest_point: Point, aq_sens: List[float], noise_sens: List[float], db_costs: Dict[int,float]):
     """Finds the nearest nodes to origin and destination as well as the newly created edges that connect 
     the origin and destination nodes to the graph.
 
@@ -93,7 +93,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
         # add linking edges to graph if new node was created on the nearest edge
         if (orig_node is not None and orig_node['add_links'] == True):
             orig_link_edges = G.create_linking_edges_for_new_node(
-                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], sens, db_costs)
+                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], aq_sens, noise_sens, db_costs)
     except Exception:
         raise Exception('Could not find origin')
     try:
@@ -101,7 +101,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
         # add linking edges to graph if new node was created on the nearest edge
         if (dest_node is not None and dest_node['add_links'] == True):
             dest_link_edges = G.create_linking_edges_for_new_node(
-                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], sens, db_costs)
+                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], aq_sens, noise_sens, db_costs)
     except Exception:
         raise Exception('Could not find destination')
 

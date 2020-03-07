@@ -3,6 +3,7 @@ import traceback
 import time
 import json
 import utils.noise_exposures as noise_exps 
+import utils.aq_exposures as aq_exps 
 import utils.geometry as geom_utils
 import utils.utils as utils
 import utils.routing as routing_utils
@@ -28,7 +29,8 @@ class PathFinder:
         self.log.debug('to: '+ str(dest_latLon))
         self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
-        self.sens = noise_exps.get_noise_sensitivities()
+        self.noise_sens = noise_exps.get_noise_sensitivities()
+        self.aq_sens = aq_exps.get_aq_sensitivities()
         self.path_set = PathSet(self.log, set_type=self.finder_type)
         self.orig_node = None
         self.dest_node = None
@@ -44,7 +46,7 @@ class PathFinder:
         start_time = time.time()
         try:
             orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
-                self.log, self.G, self.orig_point, self.dest_point, self.sens, self.G.db_costs)
+                self.log, self.G, self.orig_point, self.dest_point, self.aq_sens, self.noise_sens, self.G.db_costs)
             self.orig_node = orig_node
             self.dest_node = dest_node
             self.orig_link_edges = orig_link_edges
@@ -61,6 +63,7 @@ class PathFinder:
         Raises:
             Only meaningful exception strings that can be shown in UI.
         """
+        sens = self.aq_sens if (self.finder_type == 'clean') else self.noise_sens
         try:
             start_time = time.time()
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
@@ -69,7 +72,7 @@ class PathFinder:
                 edge_ids=shortest_path,
                 name='short',
                 path_type='short'))
-            for sen in self.sens:
+            for sen in sens:
                 # use aqi costs if optimizing clean paths - else use noise costs
                 cost_attr = 'aqc_'+ str(sen) if (self.finder_type == 'clean') else 'nc_'+ str(sen)
                 path_name = 'aq_'+ str(sen) if (self.finder_type == 'clean') else 'q_'+ str(sen)

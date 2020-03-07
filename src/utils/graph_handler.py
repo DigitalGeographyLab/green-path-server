@@ -241,7 +241,7 @@ class GraphHandler:
         self.graph.add_edge(source, target, name=new_edge_id, **attrs)
         return new_edge_id
 
-    def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, sens: list, db_costs: dict) -> dict:
+    def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, aq_sens: list, noise_sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
         for the new edges based on attributes of the original edge on which the new node was added. 
 
@@ -264,11 +264,11 @@ class GraphHandler:
         link1_geom_attrs = { 'geometry': link1, 'length': round(link1.length, 2), 'geom_wgs': geom_utils.project_geom(link1, from_epsg=3879, to_epsg=4326) }
         link2_geom_attrs = { 'geometry': link2, 'length': round(link2.length, 2), 'geom_wgs': geom_utils.project_geom(link2, from_epsg=3879, to_epsg=4326) }
         # calculate & add noise cost attributes for new linking edges
-        link1_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link1)
-        link2_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=edge, link_geom=link2)
+        link1_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(noise_sens, db_costs, edge_dict=edge, link_geom=link1)
+        link2_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(noise_sens, db_costs, edge_dict=edge, link_geom=link2)
         # calculate & add aq cost attributes for new linking edges 
-        link1_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(sens, self.log, edge_dict=edge, link_geom=link1)
-        link2_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(sens, self.log, edge_dict=edge, link_geom=link2)
+        link1_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(aq_sens, self.log, edge_dict=edge, link_geom=link1)
+        link2_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(aq_sens, self.log, edge_dict=edge, link_geom=link2)
         # combine link attributes to prepare adding them as new edges
         link1_attrs = { **link1_geom_attrs, **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_geom_attrs, **link2_noise_cost_attrs, **link2_aqi_cost_attrs }

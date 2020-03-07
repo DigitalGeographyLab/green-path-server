@@ -11,7 +11,7 @@ from utils.logger import Logger
 class InvalidAqiException(Exception):
     pass
 
-def get_aq_sensitivities(subset: bool = False) -> List[float]:
+def get_aq_sensitivities() -> List[float]:
     """Returns a set of AQ sensitivity coefficients that can be used in calculating AQI based costs to edges and
     subsequently optimizing green paths that minimize the total exposure to air pollution.
 
@@ -23,10 +23,7 @@ def get_aq_sensitivities(subset: bool = False) -> List[float]:
     Returns:
         A list of AQ sensitivity coefficients.
     """
-    if (subset == True):
-        return [ 0.2, 0.5, 1, 3, 6, 10, 20 ]
-    else:
-        return [ 0.2, 0.5, 1, 3, 6, 10, 20, 35 ]
+    return [ 0.2, 0.5, 1, 3, 5, 10, 20, 30, 40 ]
 
 def get_aqi_coeff(aqi: float) -> float:
     """Returns cost coefficient for calculating AQI based costs. Raises InvalidAqiException if AQI is either missing
