@@ -4,7 +4,7 @@ This page contains useful information of the green paths routing API:
 - Schema
 - Exceptions 
 
-As the routing API is already being used by github.com/DigitalGeographyLab/hope-green-path-ui, it's probably a good idea to take a look at its source codes when familiarizing with the API. 
+As the routing API is already being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it's probably a good idea to take a look at it when familiarizing with the API. 
 
 ## Endpoints
 - www.greenpaths.fi/
