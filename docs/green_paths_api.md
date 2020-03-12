@@ -2,9 +2,9 @@
 This page contains useful information of the green paths routing API:
 - Endpoints
 - Schema
-- Exceptions 
+- Exceptions
 
-As the routing API is already being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it's probably a good idea to take a look at it when familiarizing with the API. 
+When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is already being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it's probably a good idea to take a look at it when familiarizing with the API. 
 
 ## Endpoints
 - www.greenpaths.fi/
@@ -23,9 +23,10 @@ As the routing API is already being used by [github.com/DigitalGeographyLab/hope
 ```
 
 ## Edge_FC
+- Contains both short and green (quiet/clean) paths
+- Geometry of the paths is split to separate lines by noise level or air quality
 - For visualizing pollutants on the paths by colours on the map
 - To be shown on top of the Path_FC layer
-- Geometry of the paths is split to separate lines by noise level or air quality
 
 | Property | Type | Nullable | Description  |
 | ------------- | ---- | --- | ----------- |
@@ -35,7 +36,8 @@ As the routing API is already being used by [github.com/DigitalGeographyLab/hope
 | p_len_diff | number | no | Difference in length between the shortest path and the path to which the edge belongs to (m). |
 
 ## Path_FC
-- Each path as a feature
+- Contains both short and green (quiet/clean) paths
+- Each path as a GeoJSON feature
 - One line geometry per path
 - Several properties on noise exposure, AQI exposure and length
 - Properties on differences in length and exposures compared to the shortest path
@@ -69,7 +71,7 @@ As the routing API is already being used by [github.com/DigitalGeographyLab/hope
 | noise_pcts | object | no | Exposures (%) to different noise levels. Keys represent noise levels and values shares. |
 | noise_range_exps | object | no | Exposures (m) to different 10 dB noise level ranges. Keys represent noise levels and values distances (m). |
 | noises | object | no | Exposures to different noise levels. Keys represent noise levels and values distances (m). |
-| noises_diff | object | yes | Differences in exposures to different noise levels. as dictionary compared to the shortest path. |
+| noises_diff | object | yes | Differences in exposures to different noise levels. Keys represent noise levels and values differences distances (m). |
 | path_score | number | yes | Ratio between difference in noise exposure index and length compared to the shortest path - i.e. reduction in noise exposure index per each additional meter walked. |
 
 ## Exceptions
