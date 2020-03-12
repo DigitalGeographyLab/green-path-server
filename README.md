@@ -7,6 +7,8 @@ Currently implemented features include calculation of walkable unpolluted and qu
 
 This project is used as a backend for the web map application of the Green Path route planner: [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).
 
+See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentation of the green paths API and schema of the paths. 
+
 ## Materials
 * [FMI Enfuser model](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service)
 * [HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
@@ -14,8 +16,8 @@ This project is used as a backend for the web map application of the Green Path 
 * [Traffic noise zones in Helsinki 2017](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017)
 
 ## Tech
-* Python (3.7)
-* iGraph
+* Python 3.6
+* igraph
 * NetworkX
 * GeoPandas
 * Shapely
@@ -40,10 +42,10 @@ $ conda env create -f env_gp_server.yml
 ```
 $ conda activate gp-server
 
-# run with gunicorn
+# run with gunicorn (recommended)
 $ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 160 green_paths_app:app
 
-# or with python (flask)
+# or with python as a simple flask application
 $ python green_paths_app.py
 ```
 
