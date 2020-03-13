@@ -11,8 +11,8 @@ See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentatio
 
 ## Materials
 * [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
-* [HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
-* [FMI Enfuser model](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service)
+* [UIA HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
+* [FMI-Enfuser model](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service)
 * [SYKE - Traffic noise modelling data from Helsinki urban region](https://www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E)
 * [Traffic noise zones in Helsinki 2017](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017)
 * [OpenStreetMap](https://www.openstreetmap.org/about/) 
