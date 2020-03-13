@@ -1,13 +1,14 @@
 # hope-green-path-server
 
 ## General
+This project is used as a backend for the web map application of the Green Paths route planner: [green-paths.web.app](https://green-paths.web.app/) / [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).
+
 Green Paths is an open source route planner being developed by Digital Geography Lab, University of Helsinki, for the project [HOPE](https://ilmanlaatu.eu/briefly-in-english/) – Healthy Outdoor Premises for Everyone funded by [Urban Innovative Action](https://www.uia-initiative.eu/en). Its goal is to inform people on clean air and quite routes for walking and cycling in Helsinki region. It utilizes Air Quality Index (AQI) data from the [FMI-ENFUSER](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service) modelling system (by the Finnish Meteorological Institute) and modelled [traffic noise data](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017) from the city of Helsinki. AQI is based on real-time hourly data as a composite measure of NO2, PM2.5, PM10 and O3. 
 
-Currently implemented features include calculation of walkable unpolluted and quiet paths with respect to real-time air quality and typical daytime traffic noise levels ([Live Green Paths routing](https://green-paths.web.app/)). The path optimization method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
+Currently implemented features include calculation of walkable unpolluted and quiet paths with respect to real-time air quality and typical traffic noise levels. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
 
-This project is used as a backend for the web map application of the Green Paths route planner: [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).
-
-See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentation of the green paths API and schema of the paths. 
+## Green paths routing API
+See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentation of the green paths routing API and the schema of the paths. 
 
 ## Materials
 * [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
