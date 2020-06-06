@@ -22,7 +22,7 @@ logger = Logger(app_logger=app.logger)
 
 # initialize graph
 G = GraphHandler(logger, subset=True)
-aqi_updater = GraphAqiUpdater(logger, G, start=True)
+aqi_updater = GraphAqiUpdater(logger, G)
 
 @app.route('/')
 def hello_world():

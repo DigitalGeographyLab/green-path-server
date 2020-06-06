@@ -41,7 +41,7 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
         self.geometry = LineString(path_coords) if (geom == True) else self.geometry
         self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
-        self.missing_noises = False # TODO 
+        self.missing_noises = False # TODO
         self.missing_aqi = True # TODO
         if (noises == True and not self.missing_noises):
             noises_list = [edge['noises'] for edge in self.edges]

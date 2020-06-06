@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict
+from typing import Dict, Tuple
 from shapely import wkt
 from shapely.geometry import LineString
 import ast
@@ -43,6 +43,7 @@ class Edge(Enum):
    noises: Dict[int, float] = 'n' # nodata = None, no noises = {}
    noise_source: NoiseSource = 'ns' # nodata = None, no noises = ''
    noise_sources: Dict[NoiseSource, int] = 'nss' # nodata = None, no noises = {}
+   aqi_exp: Tuple[float, float] = 'aqie' # air quality index exposure as tuple(aqi, length)
 
 def to_str(value):
     return str(value) if value != 'None' else None
@@ -57,7 +58,7 @@ def to_bool(value):
 def to_dict(value):
    return ast.literal_eval(value) if value != 'None' else None
 def to_tuple(value):
-   return ast.literal_eval(value)
+   return ast.literal_eval(value) if value != 'None' else None
 
 edge_attr_converters = {
     Edge.id_ig: to_int,
@@ -80,6 +81,7 @@ edge_attr_converters = {
     Edge.noises: to_dict,
     Edge.noise_source: to_str,
     Edge.noise_sources: to_dict,
+    Edge.aqi_exp: to_tuple
 }
 
 node_attr_converters = {

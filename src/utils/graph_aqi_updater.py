@@ -15,16 +15,16 @@ class GraphAqiUpdater:
     """GraphAqiUpdater triggers an AQI to graph update if new AQI data is available in /aqi_cache.
 
     Attributes:
-        graph_handler: A GraphHandler object that can update aqi values to a graph.
+        graph_handler: A GraphHandler object via which aqi values can be updated to a graph.
         aqi_dir (str): A path to an aqi_cache -directory (e.g. 'aqi_cache/').
         aqi_data_wip: The name of an aqi data csv file that is currently being updated to a graph.
         aqi_data_latest: The name of the aqi data csv file that was last updated to a graph.
         aqi_data_updatetime: datetime.utcnow() of the latest aqi update.
-        scheduler: A BackgroundScheduler object that will periodically check for new aqi data and
+        scheduler: A BackgroundScheduler instance that will periodically check for new aqi data and
             update it to a graph if available.
     """
 
-    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_cache/', start: bool = False):
+    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_cache/'):
         self.log = logger
         self.G = G
         self.sens = aq_exps.get_aq_sensitivities()
@@ -36,7 +36,7 @@ class GraphAqiUpdater:
         self.scheduler = BackgroundScheduler()
         self.check_interval = 5 + random.randint(1, 15)
         self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=self.check_interval, max_instances=2)
-        if (start == True): self.start()
+        self.start()
 
     def start(self):
         self.log.info('starting graph aqi updater with check interval (s): '+ str(self.check_interval))
