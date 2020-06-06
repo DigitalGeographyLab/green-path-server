@@ -34,7 +34,7 @@ class GraphAqiUpdater:
         self.aqi_data_latest = ''
         self.aqi_data_updatetime = None
         self.scheduler = BackgroundScheduler()
-        self.check_interval = 5 + random.randint(1, 10)
+        self.check_interval = 5 + random.randint(1, 15)
         self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=self.check_interval, max_instances=2)
         if (start == True): self.start()
 
@@ -143,7 +143,7 @@ class GraphAqiUpdater:
         edge_aqi_updates['has_aqi'] = [aq_updates['has_aqi'] for aq_updates in edge_aqi_updates['aq_updates']]
         self.log.info('missing or invalid AQI count: '+ str(len(edge_aqi_updates[edge_aqi_updates['has_aqi'] == False].index)))
 
-        self.G.update_edge_attr_to_graph(edge_gdf=edge_aqi_updates, from_dict=True, df_attr='aq_updates')
+        self.G.update_edge_attr_to_graph(edge_aqi_updates, df_attr='aq_updates')
         self.log.info('aqi update succeeded')
         self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv

@@ -24,7 +24,17 @@ walk_geom = walk.loc[0, 'geometry']
 
 # initialize graph
 logger = Logger(b_printing=True, log_file='test_utils.log')
-G = GraphHandler(logger, subset=True, set_noise_costs=True)
+G = GraphHandler(logger, subset=True)
+
+def find_edges_between_node_pair(self, graph, source: int, target: int, directed: bool = False) -> List[dict]:
+    try:
+        if (directed == True):
+            return [e.attributes() for e in self.graph.es.select(_source=source, _target=target)]
+        else:
+            return [e.attributes() for e in self.graph.es.select(_within=[source, target])]
+    except Exception:
+        self.log.warning('tried to find edges from/to invalid vertex id: '+ str(source) +' or: '+ str(target))
+        return []
 
 # @unittest.SkipTest
 class TestIgraphUtils(unittest.TestCase):

@@ -6,143 +6,100 @@ from pyproj import CRS
 from utils.schema import Node, Edge, edge_attr_converters, node_attr_converters
 from utils.logger import Logger
 
-def convert_edge_attr_types(edge: ig.Edge) -> None:
-    """Converts edge attributes to correct types. Directly modifies (igraph) graph and thus does not return anything.
-    By default, adds has_aqi attribute with value False. 
-    """
-    attrs = edge.attributes()
-    edge['name'] = int(attrs['name'])
-    edge['uvkey'] = ast.literal_eval(attrs['uvkey'])
-    edge['length'] = float(attrs['length'])    
-    edge['noises'] = ast.literal_eval(attrs['noises'])
-    edge['has_aqi'] = False
-    edge['geometry'] = wkt.loads(attrs['geometry'])
-
-def convert_node_attr_types(N: ig.Vertex) -> None:
-    """Converts node (vertex) attributes to correct types. 
-    Directly modifies (igraph) graph and thus does not return anything.
-    """
-    attrs = N.attributes()
-    N['name'] = int(attrs['name'])
-    N['point'] = wkt.loads(attrs['point'])
-
-def set_graph_attributes(G: ig.Graph) -> ig.Graph:
-    """Iterates through edges and nodes of a graph and sets correct attribute types.
-    """
-    for edge in G.es:
-        convert_edge_attr_types(edge)
-    for node in G.vs:
-        convert_node_attr_types(node)
-    return G
-
-def read_ig_graphml(graph_file: str = 'ig_export_test.graphml') -> ig.Graph:
-    """Reads an igraph graph from graphml file and returns a graph object where edge and node attributes are set to correct types.
-    """
-    G = ig.Graph()
-    G = G.Read_GraphML('graphs/' + graph_file)
-    del(G.vs['id'])
-    return set_graph_attributes(G)
-
-def convert_nx_2_igraph(nx_g: nx.Graph) -> ig.Graph:
-    """Converts an undirected NetworkX graph to igraph graph. 
-    Parallel edges between nodes are allowed.
-    """
-    
-    # read nodes from nx graph
-    nodes, data = zip(*nx_g.nodes(data=True))
-    node_df = gpd.GeoDataFrame(list(data), index=nodes)
-    node_df['id_ig'] = np.arange(len(node_df))
-    node_df['id_nx'] = node_df.index
-    node_df['point_geom'] = node_df.apply(lambda row: Point(row['x'], row['y']), axis=1)
-
-    # create dictionaries for converting nx edge ids to ig edge ids
-    ids_nx_ig = {}
-    ids_ig_nx = {}
-
-    for node in node_df.itertuples():
-        ids_nx_ig[getattr(node, 'id_nx')] = getattr(node, 'id_ig')
-        ids_ig_nx[getattr(node, 'id_ig')] = getattr(node, 'id_nx')
-
-    G = ig.Graph()
-
-    # add empty vertices (nodes)
-    G.add_vertices(len(node_df))
-
-    # set node/vertex attributes
-    G.vs['name'] = list(node_df['id_ig'])
-    G.vs['point'] = list(node_df['point_geom'])
-
-    # read edges from nx graph
-    def get_ig_uvkey(uvkey):
-        return (ids_nx_ig[uvkey[0]], ids_nx_ig[uvkey[1]], uvkey[2])
-    edge_gdf = nx_utils.get_edge_gdf(nx_g, by_nodes=False)
-    edge_gdf['uvkey_ig'] = [get_ig_uvkey(uvkey) for uvkey in edge_gdf['uvkey']]
-    edge_gdf['uv_ig'] = [(uvkey_ig[0], uvkey_ig[1]) for uvkey_ig in edge_gdf['uvkey_ig']]
-    edge_gdf['id_ig'] = np.arange(len(edge_gdf))
-
-    # add edges to ig graph
-    G.add_edges(list(edge_gdf['uv_ig']))
-    G.es['name'] = list(edge_gdf['id_ig'])
-    G.es['uvkey'] = list(edge_gdf['uvkey_ig'])
-    G.es['length'] = list(edge_gdf['length'])
-    G.es['noises'] = list(edge_gdf['noises'])
-    G.es['geometry'] = list(edge_gdf['geometry'])
-
-    return G
-
-def save_ig_to_graphml(G: ig.Graph, graph_out: str = 'ig_export_test.graphml'):
-    """Exports an igraph graph to graphml file specified with the graph_out argument.
-    """
-    Gc = G.copy()
-    # stringify node attributes before exporting to graphml
-    Gc.vs['name'] = [str(name) for name in Gc.vs['name']]
-    Gc.vs['point'] = [str(point) for point in Gc.vs['point']]
-    # stringify edge attributes before exporting to graphml
-    Gc.es['name'] = [str(name) for name in Gc.es['name']]
-    Gc.es['uvkey'] = [str(uvkey) for uvkey in Gc.es['uvkey']]
-    Gc.es['length'] = [str(length) for length in Gc.es['length']]
-    Gc.es['noises'] = [str(noises) for noises in Gc.es['noises']]
-    Gc.es['geometry'] = [str(geometry) for geometry in Gc.es['geometry']]
-    Gc.save('graphs/' + graph_out, format='graphml')
-
-def get_edge_dicts(G: ig.Graph, attrs: list = ['name', 'uvkey', 'geometry'], add_attrs: list = []) -> list:
-    """Returns list of all edges of a graph as dictionaries. Edge dictionaries will have at least the attributes specified in args
-    argument and additional attributes specified in add_attrs.
+def get_edge_dicts(G: ig.Graph, attrs: List[Enum] = [Edge.geometry]) -> list:
+    """Returns list of all edges of a graph as dictionaries with the specified attributes. 
     """
     edge_dicts = []
-    get_attrs = attrs + add_attrs
     for edge in G.es:
         edge_attrs = edge.attributes()
         edge_dict = {}
-        for attr in get_attrs:
-            if (attr in edge_attrs):
-                edge_dict[attr] = edge_attrs[attr]
-                if (edge_dict['name'] != edge.index):
-                    print('edge_id and index do not match!')
+        for attr in attrs:
+            if (attr.value in edge_attrs):
+                edge_dict[attr.name] = edge_attrs[attr.value]
         edge_dicts.append(edge_dict)
     return edge_dicts
 
-def get_edge_gdf(G: ig.Graph, length: bool = False, add_attrs: list = []) -> gpd.GeoDataFrame:
-    """Returns edges of a graph as pandas GeoDataFrame. Attributes 'name', 'uvkey', 'geometry' are always included in the gdf and
-    optionally also additional attributes specified in add_attrs.
+def get_edge_gdf(G: ig.Graph, id_attr: Enum = None, attrs: List[Enum] = [], ig_attrs: List[str] = [], geom_attr: Enum = Edge.geometry, epsg: int = 3879) -> gpd.GeoDataFrame:
+    """Returns edges of a graph as pandas GeoDataFrame. 
     """
-    edge_dicts = get_edge_dicts(G, add_attrs=add_attrs)
-    ids = [ed['name'] for ed in edge_dicts]
-    gdf = gpd.GeoDataFrame(edge_dicts, index=ids, crs=from_epsg(3879))
-    return gdf.drop(columns=['name'])
+    edge_dicts = []
+    ids = []
+    for edge in G.es:
+        edge_dict = {}
+        edge_attrs = edge.attributes()
+        ids.append(edge_attrs[id_attr.value] if id_attr is not None else edge.index)
+        edge_dict[geom_attr.name] = edge_attrs[geom_attr.value]
+        for attr in attrs:
+            if (attr.value in edge_attrs):
+                edge_dict[attr.name] = edge_attrs[attr.value]
+        for attr in ig_attrs:
+            if (hasattr(edge, attr)):
+                edge_dict[attr] = getattr(edge, attr)
+        edge_dicts.append(edge_dict)
 
-def get_node_gdf(G: ig.Graph) -> gpd.GeoDataFrame:
-    """Returns nodes of a graph as pandas GeoDataFrame. The returned gdf has only columns geometry and index (index column).
+    return gpd.GeoDataFrame(edge_dicts, index=ids, crs=CRS.from_epsg(epsg))
+
+def get_node_gdf(G: ig.Graph, id_attr: Enum = None, attrs: List[Enum] = [], ig_attrs: List[str] = [], geom_attr: Enum = Node.geometry, epsg: int = 3879) -> gpd.GeoDataFrame:
+    """Returns nodes of a graph as pandas GeoDataFrame. 
     """
     node_dicts = []
+    ids = []
     for node in G.vs:
+        node_dict = {}
         node_attrs = node.attributes()
-        if (node_attrs['name'] != node.index):
-            print('vertex_id and index do not match!')
-        node_dicts.append(node_attrs)
+        ids.append(node_attrs[id_attr.value] if id_attr is not None else node.index)
+        node_dict[geom_attr.name] = node_attrs[geom_attr.value]
+        for attr in attrs:
+            if(attr.value in node_attrs):
+                node_dict[attr.name] = node_attrs[attr.value]
+        for attr in ig_attrs:
+            if (hasattr(node, attr)):
+                node_dict[attr] = getattr(node, attr)
+        node_dicts.append(node_dict)
 
-    ids = [nd['name'] for nd in node_dicts]
-    geometry = [nd['point'] for nd in node_dicts]
+    return gpd.GeoDataFrame(node_dicts, index=ids, crs=CRS.from_epsg(epsg))
 
-    gdf = gpd.GeoDataFrame(geometry=geometry, index=ids, crs=from_epsg(3879))
-    return gdf
+def read_graphml(graph_file: str, log: Logger = None) -> ig.Graph:
+    G = ig.Graph()
+    G = G.Read_GraphML(graph_file)
+    del(G.vs['id'])
+    for attr in G.vs[0].attributes():
+        try:
+            converter = node_attr_converters[Node(attr)]
+            G.vs[attr] = [converter(value) for value in list(G.vs[attr])]
+        except Exception:
+            if (log is not None): log.warning(f'failed to read node attribute {attr}')
+    for attr in G.es[0].attributes():
+        try:
+            converter = edge_attr_converters[Edge(attr)]
+            G.es[attr] = [converter(value) for value in list(G.es[attr])]
+        except Exception:
+            if (log is not None): log.warning(f'failed to read edge attribute {attr}')
+    return G
+
+def export_to_graphml(G: ig.Graph, graph_file: str, n_attrs=[], e_attrs=[]):
+    Gc = G.copy()
+    if (n_attrs == []):
+        for attr in Node:
+            if (attr.value in Gc.vs[0].attributes()):
+                Gc.vs[attr.value] = [str(value) for value in list(Gc.vs[attr.value])]
+    else:
+        for attr in n_attrs:
+            Gc.vs[attr.value] = [str(value) for value in list(Gc.vs[attr.value])]
+        # delete unspecified attributes
+        for node_attr in G.vs.attribute_names():
+            if (node_attr not in [attr.value for attr in n_attrs]):
+                del(Gc.vs[node_attr])
+    if (e_attrs == []):
+        for attr in Edge:
+            if (attr.value in Gc.es[0].attributes()):
+                Gc.es[attr.value] = [str(value) for value in list(Gc.es[attr.value])]
+    else:
+        for attr in e_attrs:
+            Gc.es[attr.value] = [str(value) for value in list(Gc.es[attr.value])]
+        # delete unspecified attributes
+        for edge_attr in G.es.attribute_names():
+            if (edge_attr not in [attr.value for attr in e_attrs]):
+                del(Gc.es[edge_attr])
+
+    Gc.save(graph_file, format='graphml')

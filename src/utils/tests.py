@@ -18,6 +18,9 @@ from utils.path_set import PathSet
 from utils.path_finder import PathFinder
 from utils.logger import Logger
 
+def get_lat_lon_from_geom(geom: Point) -> Dict[str, float]:
+    return { 'lat': round(geom.y, 6), 'lon': round(geom.x,6) }
+
 def get_update_test_walk_line() -> gpd.GeoDataFrame:
     """Returns a GeoDataFrame containing line geometry to use in tests.
     """
@@ -33,8 +36,8 @@ def get_test_ODs() -> List[dict]:
     ods = gpd.read_file('data/tests/test_OD_lines.geojson')
     ods['orig_point'] = [geom.interpolate(0, normalized=True) for geom in ods['geometry']]
     ods['dest_point'] = [geom.interpolate(1, normalized=True) for geom in ods['geometry']]
-    ods['orig_latLon'] = [geom_utils.get_lat_lon_from_geom(geom) for geom in ods['orig_point']]
-    ods['dest_latLon'] = [geom_utils.get_lat_lon_from_geom(geom) for geom in ods['dest_point']]
+    ods['orig_latLon'] = [get_lat_lon_from_geom(geom) for geom in ods['orig_point']]
+    ods['dest_latLon'] = [get_lat_lon_from_geom(geom) for geom in ods['dest_point']]
     od_dicts = ods.to_dict(orient='records')
     od_dict = {}
     for od in od_dicts:

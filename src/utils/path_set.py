@@ -23,14 +23,14 @@ class PathSet:
 
     def get_green_path_count(self) -> int: return len(self.green_paths)
 
-    def set_path_edges(self, G, orig_point: 'Point') -> None:
+    def set_path_edges(self, G) -> None:
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
         """
         if (self.shortest_path is not None):
-            self.shortest_path.set_path_edges(G, orig_point)
+            self.shortest_path.set_path_edges(G)
         if (len(self.green_paths) > 0):
             for gp in self.green_paths:
-                gp.set_path_edges(G, orig_point)
+                gp.set_path_edges(G)
 
     def aggregate_path_attrs(self) -> None:
         """Aggregates edge level path attributes to paths.
@@ -96,7 +96,7 @@ class PathSet:
 
     def get_paths_as_feature_collection(self) -> List[dict]:
         feats = [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
-        return geom_utils.as_geojson_feature_collection(feats)
+        return self.__as_geojson_feature_collection(feats)
 
     def get_edges_as_feature_collection(self) -> dict:
         if (self.set_type == 'clean'):
@@ -110,4 +110,10 @@ class PathSet:
         feat_lists = [path.get_edge_groups_as_features() for path in [self.shortest_path] + self.green_paths]
 
         feats = [feat for feat_list in feat_lists for feat in feat_list]
-        return geom_utils.as_geojson_feature_collection(feats)
+        return self.__as_geojson_feature_collection(feats)
+
+    def __as_geojson_feature_collection(self, features: List[dict]) -> dict:
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }

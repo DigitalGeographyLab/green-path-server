@@ -30,10 +30,10 @@ class Path:
 
     def set_path_type(self, path_type: str): self.path_type = path_type
 
-    def set_path_edges(self, G: GraphHandler, orig_point: Point) -> None:
+    def set_path_edges(self, G: GraphHandler) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
         """
-        self.edges = G.get_edges_from_edge_ids(self.edge_ids, orig_point)
+        self.edges = G.get_edges_from_edge_ids(self.edge_ids)
 
     def aggregate_path_attrs(self, geom: bool = True, length: bool = True, noises: bool = True, aqi: bool = False) -> None:
         """Aggregates path attributes form list of edges.
@@ -41,8 +41,8 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
         self.geometry = LineString(path_coords) if (geom == True) else self.geometry
         self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
-        self.missing_noises = True if False in [edge['has_noises'] for edge in self.edges] else False
-        self.missing_aqi = True if False in [edge['has_aqi'] for edge in self.edges] else False
+        self.missing_noises = False # TODO 
+        self.missing_aqi = True # TODO
         if (noises == True and not self.missing_noises):
             noises_list = [edge['noises'] for edge in self.edges]
             self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)
@@ -85,9 +85,9 @@ class Path:
     def get_edge_groups_as_features(self) -> List[dict]:
         features = []
         for group in self.edge_groups:
-            group_coords = [coord for edge in group[1] for coord in edge['coords_wgs']]
+            group_coords = [coords for edge in group[1] for coords in edge['coords_wgs']]
             group_coords = geom_utils.round_coordinates(group_coords, digits=6)       
-            feature = geom_utils.as_geojson_feature(group_coords)
+            feature = self.__get_geojson_feature_dict(group_coords)
             feature['properties'] = { 'value': group[0], 'path': self.name, 'p_len_diff': self.len_diff, 'p_length': self.length }
             features.append(feature)
         return features
@@ -96,7 +96,7 @@ class Path:
         wgs_coords = [coord for edge in self.edges for coord in edge['coords_wgs']]
         wgs_coords = geom_utils.round_coordinates(wgs_coords, digits=6)
 
-        feature_d = geom_utils.as_geojson_feature(wgs_coords)
+        feature_d = self.__get_geojson_feature_dict(wgs_coords)
 
         props = {
             'type' : self.path_type,
@@ -112,3 +112,17 @@ class Path:
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs is not None else {}
         feature_d['properties'] = { **props, **noise_props, **aqi_props }
         return feature_d
+
+    def __get_geojson_feature_dict(self, coords: List[tuple]) -> dict:
+        """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
+        feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
+        """
+        feature = { 
+            'type': 'Feature', 
+            'properties': {}, 
+            'geometry': {
+                'coordinates': coords,
+                'type': 'LineString'
+                }
+            }
+        return feature

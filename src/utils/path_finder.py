@@ -65,7 +65,7 @@ class PathFinder:
         sens = self.aq_sens if (self.finder_type == 'clean') else self.noise_sens
         try:
             start_time = time.time()
-            shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight='length')
+            shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=E.length.value)
             self.path_set.set_shortest_path(Path(
                 orig_node=self.orig_node['node'],
                 edge_ids=shortest_path,
@@ -100,7 +100,7 @@ class PathFinder:
         start_time = time.time()
         try:
             self.path_set.filter_out_unique_edge_sequence_paths()
-            self.path_set.set_path_edges(self.G, self.orig_point)
+            self.path_set.set_path_edges(self.G)
             self.path_set.aggregate_path_attrs()
             self.path_set.filter_out_green_paths_missing_exp_data()
             self.path_set.set_path_exp_attrs(self.G.db_costs)

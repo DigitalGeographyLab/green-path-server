@@ -21,7 +21,7 @@ if __name__ != '__main__':
 logger = Logger(app_logger=app.logger)
 
 # initialize graph
-G = GraphHandler(logger, subset=False, set_noise_costs=True)
+G = GraphHandler(logger, subset=True)
 aqi_updater = GraphAqiUpdater(logger, G, start=True)
 
 @app.route('/')

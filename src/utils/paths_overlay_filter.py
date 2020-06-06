@@ -55,7 +55,6 @@ def get_unique_paths_by_geom_overlay(log: Logger, all_paths: List[Path], buffer_
     """
     if (len(all_paths) == 1):
         return None
-    start_time = time.time()
     paths_already_overlapped = []
     filtered_paths_names = []
     for path in all_paths:
@@ -68,5 +67,4 @@ def get_unique_paths_by_geom_overlay(log: Logger, all_paths: List[Path], buffer_
             paths_already_overlapped += [path.name for path in overlapping_paths]
 
     log.debug('filtered '+ str(len(filtered_paths_names)) +' unique paths from '+ str(len(all_paths)) +' unique paths by overlay')
-    log.duration(start_time, 'path overlay filtering done', unit='ms')
     return filtered_paths_names
