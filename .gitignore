@@ -104,8 +104,9 @@ venv.bak/
 .mypy_cache/
 
 # other files
-.DS_Store
+.vscode/settings.json
 src/.vscode/settings.json
+.DS_Store
 src/utils/credentials.csv
 src/credentials.csv
 src/debug/
