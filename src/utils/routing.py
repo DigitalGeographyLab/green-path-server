@@ -8,14 +8,10 @@ Todo:
 
 from typing import List, Set, Dict, Tuple
 import time
-import networkx as nx
-from shapely.geometry import Point
-from shapely.ops import nearest_points
-import utils.graphs as graph_utils
-import utils.geometry as geom_utils
-import utils.utils as utils
+from shapely.geometry import Point, LineString
 from utils.graph_handler import GraphHandler
 from utils.logger import Logger
+from utils.schema import Edge as E, Node as N
 
 def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dict = None) -> Dict:
     """Finds (or creates) the nearest node to a given point. 

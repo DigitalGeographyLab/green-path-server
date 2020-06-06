@@ -1,13 +1,10 @@
-import ast
-from shapely import wkt
-from shapely.geometry import Point, LineString
-from fiona.crs import from_epsg
-import numpy as np
+from enum import Enum
+from typing import List, Set, Dict, Tuple
 import geopandas as gpd
 import igraph as ig
-import networkx as nx
-import utils.graphs as nx_utils
-import utils.files as file_utils
+from pyproj import CRS
+from utils.schema import Node, Edge, edge_attr_converters, node_attr_converters
+from utils.logger import Logger
 
 def convert_edge_attr_types(edge: ig.Edge) -> None:
     """Converts edge attributes to correct types. Directly modifies (igraph) graph and thus does not return anything.

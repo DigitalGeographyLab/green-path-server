@@ -1,18 +1,12 @@
 from typing import List, Set, Dict, Tuple
-from datetime import datetime
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 import time
-import ast
-import pandas as pd
-import geopandas as gpd
-import utils.files as file_utils
+from utils.schema import Edge as E, Node as N
 import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
-import utils.graphs as graph_utils
 import utils.igraphs as ig_utils
 import utils.geometry as geom_utils
-import utils.utils as utils
 from utils.logger import Logger
 
 class GraphHandler:

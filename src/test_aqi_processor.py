@@ -8,7 +8,6 @@ import pandas as pd
 from utils.aqi_processor import AqiProcessor
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
-import utils.graphs as graph_utils
 from utils.logger import Logger
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)

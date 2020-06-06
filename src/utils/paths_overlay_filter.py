@@ -1,11 +1,8 @@
 """
-This module provides function for filtering out paths with nearly identical geometries. 
-
+This module provides functionality for filtering out paths with nearly identical geometries. 
 """
 
 from typing import List, Set, Dict, Tuple
-import time
-import utils.utils as utils
 from utils.path import Path
 from utils.logger import Logger
 

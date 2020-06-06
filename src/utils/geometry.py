@@ -5,14 +5,10 @@ Supported features include e.g. reprojection, finding nearest point on a line an
 """
 
 from typing import List, Set, Dict, Tuple
-import pandas as pd
-import geopandas as gpd
 import pyproj
-from shapely.wkt import loads, dumps
-from shapely.geometry import mapping, Point, LineString, MultiPolygon, MultiLineString, MultiPoint
+from pyproj import CRS
+from shapely.geometry import Point, LineString
 from shapely.ops import split, snap, transform
-from functools import partial
-from fiona.crs import from_epsg
 
 def get_lat_lon_from_coords(coords: List[int]) -> Dict[str, float]:
     return { 'lat': coords[1], 'lon': coords[0] }

@@ -5,7 +5,6 @@ import time
 from shapely.geometry import Point, LineString
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
-import utils.graphs as graph_utils
 import utils.files as file_utils
 import utils.routing as rt
 import utils.aq_exposures as aq_exps

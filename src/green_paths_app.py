@@ -1,16 +1,11 @@
 import logging
-import time
-from datetime import datetime
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import utils.utils as utils
-from utils.path_finder import PathFinder
 from utils.graph_handler import GraphHandler
 from utils.graph_aqi_updater import GraphAqiUpdater
+from utils.path_finder import PathFinder
 from utils.logger import Logger
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # version: 1.3
 

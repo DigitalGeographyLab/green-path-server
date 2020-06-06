@@ -5,13 +5,12 @@ import json
 import utils.noise_exposures as noise_exps 
 import utils.aq_exposures as aq_exps 
 import utils.geometry as geom_utils
-import utils.utils as utils
 import utils.routing as routing_utils
-import utils.graphs as graph_utils
 from utils.path import Path
 from utils.path_set import PathSet
 from utils.graph_handler import GraphHandler
 from utils.logger import Logger
+from utils.schema import Edge as E
 
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 

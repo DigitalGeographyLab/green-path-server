@@ -4,15 +4,15 @@ This module provides functions needed in the tests.
 """
 
 from typing import List, Set, Dict, Tuple, Optional
+from shapely.geometry import Point 
 # from flask import jsonify
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import shape, GeometryCollection
-from fiona.crs import from_epsg
+from pyproj import CRS
 import utils.routing as routing_utils
 import utils.geometry as geom_utils
 import utils.noise_exposures as noise_exps
-import utils.utils as utils
 from utils.path import Path
 from utils.path_set import PathSet
 from utils.path_finder import PathFinder

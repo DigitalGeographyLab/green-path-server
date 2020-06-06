@@ -1,9 +1,6 @@
 from typing import List, Set, Dict, Tuple
-import time
 import utils.paths_overlay_filter as path_overlay_filter
-import utils.utils as utils
 from utils.path import Path
-import utils.geometry as geom_utils
 from utils.logger import Logger
 
 class PathSet:

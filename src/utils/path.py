@@ -1,6 +1,5 @@
 from shapely.geometry import Point, LineString
 from typing import List, Set, Dict, Tuple, Optional
-import utils.graphs as graph_utils
 import utils.geometry as geom_utils
 from utils.path_noises import PathNoiseAttrs
 from utils.path_aqi_attrs import PathAqiAttrs
