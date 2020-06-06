@@ -60,20 +60,23 @@ class GraphHandler:
         """
         sens = noise_exps.get_noise_sensitivities()
         for edge in self.graph.es:
-            # first add estimated exposure to 40 dB to edge attrs
+            # first add estimated exposure to noise level of 40 dB to edge attrs
             edge_attrs = edge.attributes()
             noises = edge_attrs[E.noises.value]
             if (noises != None):
                 db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs[E.noises.value], edge_attrs[E.length.value])
                 if (db_40_exp > 0.0):
                     noises[40] = db_40_exp
-                    self.graph.es[edge.index][E.noises.value] = noises
+                self.graph.es[edge.index][E.noises.value] = noises
+            
             # then calculate and update noise costs to edges
-            edge_attrs = edge.attributes()
-            for sen in sens:
-                cost_attr = 'nc_'+str(sen)
-                noises = edge_attrs[E.noises.value]
-                if (noises == None):
+            for sen, cost_attr in [(sen, 'nc_'+ str(sen)) for sen in sens]: # iterate dict of noise sensitivities and respective cost attribute names
+                if (noises == None and isinstance(edge_attrs[E.geometry.value], LineString)):
+                    # these are edges outside the extent of the noise data (having valid geometry)
+                    # -> set high noise costs to avoid them in finding quiet paths
+                    noise_cost = edge_attrs[E.length.value] * 20
+                elif (not isinstance(edge_attrs[E.geometry.value], LineString)):
+                    # set noise cost 0 to all edges without geometry
                     noise_cost = 0.0
                 else:
                     noise_cost = noise_exps.get_noise_cost(noises=edge_attrs[E.noises.value], db_costs=self.db_costs, sen=sen)
