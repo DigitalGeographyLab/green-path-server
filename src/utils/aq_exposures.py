@@ -6,7 +6,7 @@ exposures to air pollution between paths.
 """
 
 from typing import List, Set, Dict, Tuple
-from utils.logger import Logger
+from app.logger import Logger
 
 class InvalidAqiException(Exception):
     pass

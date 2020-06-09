@@ -1,5 +1,0 @@
-
-e.g. kumpula_ig_v1.graphml
-
-ig = graph was exported from igraph
-v1 = graph was read from graphml file from 2019

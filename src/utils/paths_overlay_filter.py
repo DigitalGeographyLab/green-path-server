@@ -3,8 +3,8 @@ This module provides functionality for filtering out paths with nearly identical
 """
 
 from typing import List, Set, Dict, Tuple
-from utils.path import Path
-from utils.logger import Logger
+from app.path import Path
+from app.logger import Logger
 
 def get_path_overlay_candidates_by_len(param_path: Path, all_paths: List[Path], len_diff: int = 25) -> List[Path]:
     """Returns paths with length difference not greater or less than specified in [len_diff] (m)

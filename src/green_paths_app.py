@@ -2,10 +2,10 @@ import logging
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-from utils.graph_handler import GraphHandler
-from utils.graph_aqi_updater import GraphAqiUpdater
-from utils.path_finder import PathFinder
-from utils.logger import Logger
+from app.graph_handler import GraphHandler
+from app.graph_aqi_updater import GraphAqiUpdater
+from app.path_finder import PathFinder
+from app.logger import Logger
 
 # version: 1.3
 

@@ -104,12 +104,9 @@ venv.bak/
 .mypy_cache/
 
 # other files
-.vscode/settings.json
-src/.vscode/settings.json
-.DS_Store
-src/utils/credentials.csv
-src/credentials.csv
+.vscode/
+src/.vscode/
 src/debug/
-src/aqi_cache/
-src/graphs/ig_export_test.graphml
-src/data/graphs.gpkg
+src/sample_data/
+.DS_Store
+src/graphs/kumpula_noises_final.graphml

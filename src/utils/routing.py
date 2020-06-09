@@ -9,9 +9,9 @@ Todo:
 from typing import List, Set, Dict, Tuple
 import time
 from shapely.geometry import Point, LineString
-from utils.graph_handler import GraphHandler
-from utils.logger import Logger
-from utils.schema import Edge as E, Node as N
+from app.graph_handler import GraphHandler
+from app.logger import Logger
+from utils.igraphs import Edge as E, Node as N
 
 def __get_closest_point_on_line(line: LineString, point: Point) -> Point:
     """Finds the closest point on a line to given point and returns it as Point.

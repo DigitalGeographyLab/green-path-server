@@ -1,0 +1,15 @@
+name: gp-env
+
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - pylint
+  - pytest
+  - apscheduler
+  - geopandas
+  - python-igraph
+  - flask
+  - flask-cors
+  - flask-testing
+  - gunicorn
