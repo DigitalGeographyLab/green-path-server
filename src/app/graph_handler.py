@@ -44,7 +44,7 @@ class GraphHandler:
         self.ecount = self.graph.ecount()
         self.vcount = self.graph.vcount()
         self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read')
-        self.edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[])
+        self.edge_gdf = ig_utils.get_edge_gdf(self.graph)
         self.edges_sind = self.edge_gdf.sindex
         self.log.debug('graph edges collected')
         self.node_gdf = ig_utils.get_node_gdf(self.graph)
@@ -82,13 +82,13 @@ class GraphHandler:
                     noise_cost = noise_exps.get_noise_cost(noises=edge_attrs[E.noises.value], db_costs=self.db_costs, sen=sen)
                 self.graph.es[edge.index][cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
 
-    def update_edge_attr_to_graph(self, edge_gdf, df_attr: str = None):
+    def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
         """Updates the given edge attribute from a DataFrame to a graph. 
         """
         for edge in edge_gdf.itertuples():
             updates: dict = getattr(edge, df_attr)
-            for key in updates.keys():
-                self.graph.es[getattr(edge, 'Index')][key] = updates[key]
+            for key, value in updates.items():
+                self.graph.es[getattr(edge, E.id_ig.name)][key] = value
 
     def find_nearest_node(self, point: Point) -> int:
         """Finds the nearest node to a given point.
@@ -170,14 +170,14 @@ class GraphHandler:
         for edge_id in edge_ids:
             edge = self.get_edge_by_id(edge_id)
             # omit edges with null geometry
-            if (not isinstance(edge[E.geometry.value], LineString)):
+            if (edge[E.length.value] == 0.0 or not isinstance(edge[E.geometry.value], LineString)):
                 continue
             edge_d = {}
             edge_d['length'] = edge[E.length.value]
-            edge_d['aqi_exp'] = edge['aqi_exp'] if ('aqi_exp' in edge) else None
-            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi_exp'][0]) if ('aqi_exp' in edge) else None
+            edge_d['aqi'] = edge['aqi']
+            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi']) if (edge_d['aqi'] != None) else None
             edge_d['noises'] = edge[E.noises.value]
-            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if (edge[E.noises.value] != None) else 0
+            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if (edge_d['noises'] != None) else 0
             edge_d['dBrange'] = noise_exps.get_noise_range(mean_db)
             edge_d['coords'] = edge[E.geometry.value].coords
             edge_d['coords_wgs'] = edge[E.geom_wgs.value].coords
@@ -204,6 +204,13 @@ class GraphHandler:
         new_edge_id = self.get_new_edge_id()
         self.graph.add_edge(source, target, **attrs)
         return new_edge_id
+
+    def get_link_edge_aqi_cost_estimates(self, edge_dict: dict, link_geom: 'LineString', sens) -> dict:
+        """Returns aqi exposures and costs for a split edge based on aqi exposures on the original edge
+        (from which the edge was split). 
+        """
+        aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
+        return { 'aqi': edge_dict['aqi'], **aqi_costs }
 
     def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, aq_sens: list, noise_sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
@@ -238,8 +245,8 @@ class GraphHandler:
         link1_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(noise_sens, db_costs, edge_dict=edge, link_geom=link1)
         link2_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(noise_sens, db_costs, edge_dict=edge, link_geom=link2)
         # calculate & add aq cost attributes for new linking edges 
-        link1_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(aq_sens, self.log, edge_dict=edge, link_geom=link1)
-        link2_aqi_cost_attrs = aq_exps.get_link_edge_aqi_cost_estimates(aq_sens, self.log, edge_dict=edge, link_geom=link2)
+        link1_aqi_cost_attrs = self.get_link_edge_aqi_cost_estimates(edge_dict=edge, link_geom=link1, sens=aq_sens)
+        link2_aqi_cost_attrs = self.get_link_edge_aqi_cost_estimates(edge_dict=edge, link_geom=link2, sens=aq_sens)
         # combine link attributes to prepare adding them as new edges
         link1_attrs = { **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs }

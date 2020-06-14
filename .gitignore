@@ -107,6 +107,7 @@ venv.bak/
 .vscode/
 src/.vscode/
 src/debug/
+src/aqi_updates/
 src/sample_data/
 .DS_Store
 src/graphs/kumpula_noises_final.graphml

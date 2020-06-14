@@ -35,19 +35,19 @@ class Path:
         """
         self.edges = G.get_edges_from_edge_ids(self.edge_ids)
 
-    def aggregate_path_attrs(self, geom: bool = True, length: bool = True, noises: bool = True, aqi: bool = False) -> None:
+    def aggregate_path_attrs(self, geom: bool = True, length: bool = True) -> None:
         """Aggregates path attributes form list of edges.
         """
         path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
         self.geometry = LineString(path_coords) if (geom == True) else self.geometry
         self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
-        self.missing_noises = False # TODO
-        self.missing_aqi = True # TODO
-        if (noises == True and not self.missing_noises):
+        self.missing_noises = True if (None in [edge['noises'] for edge in self.edges]) else False
+        self.missing_aqi = True if (None in [edge['aqi'] for edge in self.edges]) else False
+        if (not self.missing_noises):
             noises_list = [edge['noises'] for edge in self.edges]
             self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)
-        if (aqi == True and not self.missing_aqi):
-            aqi_exp_list = [edge['aqi_exp'] for edge in self.edges if edge['aqi_exp'] is not None]
+        if (not self.missing_aqi):
+            aqi_exp_list = [(edge['aqi'], edge['length']) for edge in self.edges]
             self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
 
     def set_noise_attrs(self, db_costs: dict) -> None:
