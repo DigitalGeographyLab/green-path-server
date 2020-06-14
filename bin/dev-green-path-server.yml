@@ -5,6 +5,8 @@ services:
     image: hellej/hope-green-path-server:dev
     volumes:
       - aqi-updates:/src/aqi_updates
+    ports:
+      - "5000:5000"
     deploy:
       restart_policy:
         condition: on-failure
