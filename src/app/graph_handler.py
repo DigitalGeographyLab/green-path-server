@@ -174,10 +174,10 @@ class GraphHandler:
                 continue
             edge_d = {}
             edge_d['length'] = edge[E.length.value]
-            edge_d['aqi'] = edge['aqi']
-            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge['aqi']) if (edge_d['aqi'] != None) else None
+            edge_d['aqi'] = edge[E.aqi.value]
+            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge_d['aqi']) if (edge_d['aqi']) else None
             edge_d['noises'] = edge[E.noises.value]
-            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if (edge_d['noises'] != None) else 0
+            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if (edge_d['noises']) else 0
             edge_d['dBrange'] = noise_exps.get_noise_range(mean_db)
             edge_d['coords'] = edge[E.geometry.value].coords
             edge_d['coords_wgs'] = edge[E.geom_wgs.value].coords
@@ -209,8 +209,11 @@ class GraphHandler:
         """Returns aqi exposures and costs for a split edge based on aqi exposures on the original edge
         (from which the edge was split). 
         """
-        aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
-        return { 'aqi': edge_dict['aqi'], **aqi_costs }
+        if (not edge_dict['aqi']):
+            return { E.aqi.value: None }
+        else:
+            aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
+            return { E.aqi.value: edge_dict['aqi'], **aqi_costs }
 
     def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, aq_sens: list, noise_sens: list, db_costs: dict) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
