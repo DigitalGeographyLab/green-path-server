@@ -1,16 +1,11 @@
 import logging
-import time
-from datetime import datetime
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import utils.utils as utils
-from utils.path_finder import PathFinder
-from utils.graph_handler import GraphHandler
-from utils.graph_aqi_updater import GraphAqiUpdater
-from utils.logger import Logger
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
+from app.graph_handler import GraphHandler
+from app.graph_aqi_updater import GraphAqiUpdater
+from app.path_finder import PathFinder
+from app.logger import Logger
 
 # version: 1.3
 
@@ -26,8 +21,8 @@ if __name__ != '__main__':
 logger = Logger(app_logger=app.logger)
 
 # initialize graph
-G = GraphHandler(logger, subset=False, set_noise_costs=True)
-aqi_updater = GraphAqiUpdater(logger, G, start=True)
+G = GraphHandler(logger, subset=True)
+aqi_updater = GraphAqiUpdater(logger, G)
 
 @app.route('/')
 def hello_world():

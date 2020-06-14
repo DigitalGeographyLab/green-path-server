@@ -8,14 +8,17 @@ Todo:
 
 from typing import List, Set, Dict, Tuple
 import time
-import networkx as nx
-from shapely.geometry import Point
-from shapely.ops import nearest_points
-import utils.graphs as graph_utils
-import utils.geometry as geom_utils
-import utils.utils as utils
-from utils.graph_handler import GraphHandler
-from utils.logger import Logger
+from shapely.geometry import Point, LineString
+from app.graph_handler import GraphHandler
+from app.logger import Logger
+from utils.igraphs import Edge as E, Node as N
+
+def __get_closest_point_on_line(line: LineString, point: Point) -> Point:
+    """Finds the closest point on a line to given point and returns it as Point.
+    """
+    projected = line.project(point)
+    closest_point = line.interpolate(projected)
+    return closest_point
 
 def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dict = None) -> Dict:
     """Finds (or creates) the nearest node to a given point. 
@@ -48,15 +51,15 @@ def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dic
     nearest_node = G.find_nearest_node(point)
     start_time = time.time()
     nearest_node_geom = G.get_node_point_geom(nearest_node)
-    nearest_edge_point = geom_utils.get_closest_point_on_line(nearest_edge['geometry'], point)
+    nearest_edge_point = __get_closest_point_on_line(nearest_edge[E.geometry.value], point)
     # return the nearest node if it is as near (or nearer) as the nearest edge (i.e. at the end of an edge)
-    if (nearest_edge_point.distance(nearest_node_geom) < 1 or nearest_node_geom.distance(point) < nearest_edge['geometry'].distance(point)):
+    if (nearest_edge_point.distance(nearest_node_geom) < 1 or nearest_node_geom.distance(point) < nearest_edge[E.geometry.value].distance(point)):
         return { 'node': nearest_node, 'offset': round(nearest_node_geom.distance(point), 1), 'add_links': False }
     # check if the nearest edge of the destination is one of the linking edges created for origin 
     if (link_edges is not None):
-        if (nearest_edge_point.distance(link_edges['link1']['geometry']) < 0.2):
+        if (nearest_edge_point.distance(link_edges['link1'][E.geometry.value]) < 0.2):
             nearest_edge = link_edges['link1']
-        if (nearest_edge_point.distance(link_edges['link2']['geometry']) < 0.2):
+        if (nearest_edge_point.distance(link_edges['link2'][E.geometry.value]) < 0.2):
             nearest_edge = link_edges['link2']
     # create a new node on the nearest edge to the graph
     new_node = G.add_new_node_to_graph(nearest_edge_point)

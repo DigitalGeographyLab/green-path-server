@@ -1,0 +1,9 @@
+.git
+.gitignore
+**/*__pycache__*
+**/*vscode*
+**/*.log
+**/*.env
+**/*.csv
+**/*.graphml
+!/src/graphs/kumpula_noises_final.graphml
