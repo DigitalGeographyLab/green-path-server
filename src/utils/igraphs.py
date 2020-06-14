@@ -8,7 +8,7 @@ from app.logger import Logger
 from shapely import wkt
 from shapely.geometry import LineString
 
-version = 1.0
+version = 1.1
 
 # Define schema for graph features (edges & nodes)
 
@@ -49,7 +49,7 @@ class Edge(Enum):
    noises: Dict[int, float] = 'n' # nodata = None, no noises = {}
    noise_source: NoiseSource = 'ns' # nodata = None, no noises = ''
    noise_sources: Dict[NoiseSource, int] = 'nss' # nodata = None, no noises = {}
-   aqi_exp: Tuple[float, float] = 'aqie' # air quality index exposure as tuple(aqi, length)
+   aqi: float = 'aqi' # air quality index
 
 def to_str(value):
     return str(value) if value != 'None' else None
@@ -87,7 +87,7 @@ edge_attr_converters = {
     Edge.noises: to_dict,
     Edge.noise_source: to_str,
     Edge.noise_sources: to_dict,
-    Edge.aqi_exp: to_tuple
+    Edge.aqi: to_float
 }
 
 node_attr_converters = {
