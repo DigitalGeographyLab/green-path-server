@@ -52,7 +52,7 @@ class GraphHandler:
         self.log.debug('graph nodes collected')
         self.db_costs = noise_exps.get_db_costs(version=3)
         self.set_noise_costs_to_edges()
-        self.graph.es[E.aqi_exp.value] = None # set default aqi exposure value to None
+        self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'graph initialized', log_level='info')
 
     def set_noise_costs_to_edges(self):
