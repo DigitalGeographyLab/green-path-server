@@ -204,10 +204,11 @@ class GraphHandler:
     def get_new_edge_id(self) -> int:
         return self.graph.ecount()
 
-    def add_new_edge_to_graph(self, source: int, target: int, attrs: dict = {}) -> int:
+    def add_new_edges_to_graph(self, edge_uvs: List[Tuple[int, int]]) -> List[int]:
+        """Adds new edges to graph and returns their ids as list."""
         new_edge_id = self.get_new_edge_id()
-        self.graph.add_edge(source, target, **attrs)
-        return new_edge_id
+        self.graph.add_edges(edge_uvs)
+        return [new_edge_id + edge_number for edge_number in range(0, len(edge_uvs))]
 
     def get_link_edge_aqi_cost_estimates(self, edge_dict: dict, link_geom: 'LineString', sens) -> dict:
         """Returns aqi exposures and costs for a split edge based on aqi exposures on the original edge
@@ -231,13 +232,14 @@ class GraphHandler:
             link1_d: A dict cotaining the basic edge attributes of the first new linking edge.
             link2_d: A dict cotaining the basic edge attributes of the second new linking edge.
         """
-        start_time = time.time()
+        time_func = time.time()
         node_from = edge[E.uv.value][0]
         node_to = edge[E.uv.value][1]
         node_from_p = self.get_node_point_geom(node_from)
         node_to_p = self.get_node_point_geom(node_to)
 
         # create link geometries from/to new node in projected and WGS CRS
+        time_create_attrs = time.time()
         link1, link2 = geom_utils.split_line_at_point(node_from_p, node_to_p, edge[E.geometry.value], split_point)
         link1_wgs, link2_wgs = tuple(geom_utils.project_geom(link, geom_epsg=3879, to_epsg=4326) for link in (link1, link2))
         link1_rev, link2_rev = tuple(LineString(link.coords[::-1]) for link in (link1, link2))
@@ -257,14 +259,29 @@ class GraphHandler:
         # combine link attributes to prepare adding them as new edges
         link1_attrs = { **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
         link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
+        self.log.duration(time_create_attrs, '1/3 prepared attributes for linking edges', unit='ms')
+
         # add linking edges with noise cost attributes to graph
-        self.add_new_edge_to_graph(node_from, new_node, { E.uv.value: (new_node, node_from), **link1_attrs, **link1_geom_attrs })
-        self.add_new_edge_to_graph(new_node, node_from, { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs })
-        self.add_new_edge_to_graph(new_node, node_to, { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs })
-        self.add_new_edge_to_graph(node_to, new_node, { E.uv.value: (new_node, node_to), **link2_attrs, **link2_rev_geom_attrs })
+        time_add_edges = time.time()
+        edge_tuples = [(node_from, new_node), (new_node, node_from), (new_node, node_to), (node_to, new_node)]
+        new_edge_ids = self.add_new_edges_to_graph(edge_tuples)
+
+        # set attributes to new edges
+        new_edge_attrs = {
+            0: { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs },
+            1: { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs },
+            2: { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs },
+            3: { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
+        }
+        for idx, edge_id in enumerate(new_edge_ids):
+            for key, value in new_edge_attrs[idx].items():
+                self.graph.es[edge_id][key] = value
+        self.log.duration(time_add_edges, '2/3 added new features to graph', unit='ms')
+
         link1_d = { E.uv.value: (new_node, node_from), **link1_attrs, **link1_geom_attrs }
         link2_d = { E.uv.value: (node_to, new_node), **link2_attrs, **link2_geom_attrs }
-        self.log.duration(start_time, 'added links for new node', unit='ms')
+        
+        self.log.duration(time_func, '3/3 created links for new node (GraphHandler function)', unit='ms')
         return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
 
     def get_least_cost_path(self, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
