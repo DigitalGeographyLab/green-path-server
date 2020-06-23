@@ -45,7 +45,7 @@ def get_noise_sensitivities() -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
     """
-    return [ 0.1, 0.2, 0.3, 0.5, 1, 2, 3, 5, 7, 10, 20 ]
+    return [ 0.1, 0.3, 0.5, 1.5, 4, 8, 20 ]
 
 def get_noise_range(dB: float) -> int:
     """Returns the lower limit of one of the six pre-defined dB ranges based on dB.

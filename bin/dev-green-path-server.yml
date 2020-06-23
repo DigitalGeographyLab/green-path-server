@@ -5,6 +5,7 @@ services:
     image: hellej/hope-green-path-server:dev
     environment:
       - WORKER_COUNT=1
+      - RUN_DEV=True
     volumes:
       - aqi-updates:/src/aqi_updates
     ports:

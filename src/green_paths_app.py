@@ -1,4 +1,5 @@
 import logging
+import os
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
@@ -21,7 +22,7 @@ if __name__ != '__main__':
 logger = Logger(app_logger=app.logger)
 
 # initialize graph
-G = GraphHandler(logger, subset=True)
+G = GraphHandler(logger, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
 aqi_updater = GraphAqiUpdater(logger, G)
 
 @app.route('/')
@@ -59,7 +60,7 @@ def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
         # keep the graph clean by removing nodes & edges created during routing
         path_finder.delete_added_graph_features()
 
-        if (error is not None):
+        if error:
             return error
 
     return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })

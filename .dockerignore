@@ -6,4 +6,5 @@
 **/*.env
 **/*.csv
 **/*.graphml
-!/src/graphs/kumpula_noises_final.graphml
+!/src/graphs/kumpula.graphml
+!/src/graphs/hma.graphml

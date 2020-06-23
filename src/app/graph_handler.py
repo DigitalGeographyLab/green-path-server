@@ -64,6 +64,7 @@ class GraphHandler:
         # drop edges without geometry
         edge_gdf = edge_gdf[edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))]
         edge_gdf = edge_gdf[[E.geometry.name]]
+        self.log.info(f'added {len(edge_gdf)} edges to edge_gdf')
         return edge_gdf
 
     def __set_noise_costs_to_edges(self):
