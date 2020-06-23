@@ -31,6 +31,7 @@ class Node(Enum):
 class Edge(Enum):
    id_ig: int = 'ii'
    id_otp: str = 'io'
+   id_way: int = 'iw' # for similar geometries (e.g. two-way connections between node pairs)
    uv: tuple = 'uv' # source & target node ids as a tuple
    name_otp: str = 'no'
    geometry: LineString = 'geom'
@@ -69,6 +70,7 @@ def to_tuple(value):
 edge_attr_converters = {
     Edge.id_ig: to_int,
     Edge.id_otp: to_str,
+    Edge.id_way: to_int,
     Edge.uv: to_tuple,
     Edge.name_otp: to_str,
     Edge.geometry: to_geom,

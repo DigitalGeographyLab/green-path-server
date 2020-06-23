@@ -39,23 +39,34 @@ class GraphHandler:
         self.log = logger
         self.log.info('graph subset: '+ str(subset))
         start_time = time.time()
-        if (subset == True): self.graph = ig_utils.read_graphml('graphs/kumpula_noises_final.graphml')
-        else: self.graph = ig_utils.read_ig_graphml('hel_ig_v1.graphml')
+        if subset:
+            self.graph = ig_utils.read_graphml('graphs/kumpula.graphml')
+        else:
+            self.graph = ig_utils.read_graphml('graphs/hma.graphml')
         self.ecount = self.graph.ecount()
         self.vcount = self.graph.vcount()
         self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read')
-        self.edge_gdf = ig_utils.get_edge_gdf(self.graph)
-        self.edges_sind = self.edge_gdf.sindex
+        self.edge_gdf = self.__get_edge_gdf()
+        self.edge_sindex = self.edge_gdf.sindex
         self.log.debug('graph edges collected')
         self.node_gdf = ig_utils.get_node_gdf(self.graph)
         self.nodes_sind = self.node_gdf.sindex
         self.log.debug('graph nodes collected')
         self.db_costs = noise_exps.get_db_costs(version=3)
-        self.set_noise_costs_to_edges()
+        self.__set_noise_costs_to_edges()
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'graph initialized', log_level='info')
 
-    def set_noise_costs_to_edges(self):
+    def __get_edge_gdf(self):
+        edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[E.id_way])
+        # drop edges with identical geometry
+        edge_gdf.drop_duplicates(E.id_way.name, inplace=True)
+        # drop edges without geometry
+        edge_gdf = edge_gdf[edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))]
+        edge_gdf = edge_gdf[[E.geometry.name]]
+        return edge_gdf
+
+    def __set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
         """
         sens = noise_exps.get_noise_sensitivities()
@@ -63,7 +74,7 @@ class GraphHandler:
             # first add estimated exposure to noise level of 40 dB to edge attrs
             edge_attrs = edge.attributes()
             noises = edge_attrs[E.noises.value]
-            if (noises != None):
+            if noises:
                 db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs[E.noises.value], edge_attrs[E.length.value])
                 if (db_40_exp > 0.0):
                     noises[40] = db_40_exp
@@ -71,7 +82,7 @@ class GraphHandler:
             
             # then calculate and update noise costs to edges
             for sen, cost_attr in [(sen, 'nc_'+ str(sen)) for sen in sens]: # iterate dict of noise sensitivities and respective cost attribute names
-                if (noises == None and isinstance(edge_attrs[E.geometry.value], LineString)):
+                if (not noises and isinstance(edge_attrs[E.geometry.value], LineString)):
                     # these are edges outside the extent of the noise data (having valid geometry)
                     # -> set high noise costs to avoid them in finding quiet paths
                     noise_cost = edge_attrs[E.length.value] * 20
@@ -79,7 +90,8 @@ class GraphHandler:
                     # set noise cost 0 to all edges without geometry
                     noise_cost = 0.0
                 else:
-                    noise_cost = noise_exps.get_noise_cost(noises=edge_attrs[E.noises.value], db_costs=self.db_costs, sen=sen)
+                    # else calculate normal noise exposure based noise cost coefficient
+                    noise_cost = noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen)
                 self.graph.es[edge.index][cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
@@ -101,7 +113,7 @@ class GraphHandler:
             The name of the nearest node (number). None if no nearest node is found.
         """
         start_time = time.time()
-        for radius in [100, 300, 700]:
+        for radius in [50, 100, 500]:
             possible_matches_index = list(self.node_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
                 break
@@ -135,18 +147,10 @@ class GraphHandler:
         return self.get_node_by_id(node_id)[N.geometry.value]
 
     def find_nearest_edge(self, point: Point) -> Dict:
-        """Finds the nearest edge to a given point.
-
-        Args:
-            point: A point location as Shapely Point object.
-        Note:
-            Point should be in projected coordinate system (EPSG:3879).
-        Returns:
-            The nearest edge as dictionary, having key-value pairs by the columns of the edge_gdf.
-            None if no nearest edge is found.
+        """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
         start_time = time.time()
-        for radius in [80, 150, 250, 350, 650]:
+        for radius in [35, 150, 400, 650]:
             possible_matches_index = list(self.edge_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
                 possible_matches = self.edge_gdf.iloc[possible_matches_index].copy()
@@ -163,8 +167,7 @@ class GraphHandler:
         return self.get_edge_by_id(edge_id)
 
     def get_edges_from_edge_ids(self, edge_ids: List[int]) -> List[dict]:
-        """Loads edges from graph by ordered list of nodes representing a path.
-        Loads edge attributes 'length', 'noises', 'dBrange' and 'coords'.
+        """Loads edge attributes from graph by ordered list of edges representing a path.
         """
         path_edges = []
         for edge_id in edge_ids:
@@ -267,12 +270,11 @@ class GraphHandler:
         """Calculates a least cost path by the given edge weight.
 
         Args:
-            orig_node: The name of the origin node (number).
-            dest_node: The name of the destination node (number).
+            orig_node: The name of the origin node (int).
+            dest_node: The name of the destination node (int).
             weight: The name of the edge attribute to use as cost in the least cost path optimization.
         Returns:
-            The least cost path as a sequence of nodes (node ids).
-            Returns None if the origin and destination nodes are the same or no path is found between them.
+            The least cost path as a sequence of edges (ids).
         """
         if (orig_node != dest_node):
             try:
