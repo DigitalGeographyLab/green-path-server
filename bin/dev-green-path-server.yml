@@ -17,6 +17,8 @@ services:
   
   hope-graph-updater:
     image: hellej/hope-graph-updater:dev
+    environment:
+      - RUN_DEV=True
     volumes:
       - aqi-updates:/src/aqi_updater/aqi_updates
     secrets:

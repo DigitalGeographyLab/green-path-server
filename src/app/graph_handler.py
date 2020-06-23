@@ -60,7 +60,7 @@ class GraphHandler:
     def __get_edge_gdf(self):
         edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[E.id_way])
         # drop edges with identical geometry
-        edge_gdf.drop_duplicates(E.id_way.name, inplace=True)
+        edge_gdf = edge_gdf.drop_duplicates(E.id_way.name)
         # drop edges without geometry
         edge_gdf = edge_gdf[edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))]
         edge_gdf = edge_gdf[[E.geometry.name]]
