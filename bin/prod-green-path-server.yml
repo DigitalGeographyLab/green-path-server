@@ -1,4 +1,4 @@
-version: '3.1'
+version: '3.7'
 
 services:
   hope-green-path-server:
@@ -19,6 +19,13 @@ services:
       update_config:
         parallelism: 1
         delay: 220s
+        order: stop-first
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 220s
   
   hope-graph-updater:
     image: hellej/hope-graph-updater:1
