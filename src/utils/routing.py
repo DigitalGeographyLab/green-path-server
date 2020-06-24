@@ -108,4 +108,6 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
     except Exception:
         raise Exception('Could not find destination')
 
+    G.load_new_edges_to_graph()
+
     return orig_node, dest_node, orig_link_edges, dest_link_edges

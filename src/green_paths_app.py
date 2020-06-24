@@ -59,6 +59,7 @@ def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
     finally:
         # keep the graph clean by removing nodes & edges created during routing
         path_finder.delete_added_graph_features()
+        G.reset_edge_cache()
 
         if error:
             return error
