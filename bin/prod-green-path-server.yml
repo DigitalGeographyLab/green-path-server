@@ -4,7 +4,7 @@ services:
   hope-green-path-server:
     image: hellej/hope-green-path-server:1
     environment:
-      - WORKER_COUNT=1
+      - WORKER_COUNT=2
       - RUN_DEV=False
       - LOG_LEVEL=info
     volumes:
@@ -12,7 +12,7 @@ services:
     ports:
       - "5000:5000"
     deploy:
-      replicas: 2
+      replicas: 3
       restart_policy:
         condition: on-failure
         delay: 5s
