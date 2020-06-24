@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ -z "${LOG_LEVEL}" ]]; then
-  export LOG_LEVEL="warning"
+  export LOG_LEVEL="info"
 fi
 
 if [[ -z "${WORKER_COUNT}" ]]; then

@@ -5,6 +5,7 @@ services:
     image: hellej/hope-green-path-server:1
     environment:
       - WORKER_COUNT=1
+      - RUN_DEV=False
       - LOG_LEVEL=info
     volumes:
       - aqi-updates:/src/aqi_updates
@@ -17,6 +18,8 @@ services:
   
   hope-graph-updater:
     image: hellej/hope-graph-updater:1
+    environment:
+      - RUN_DEV=False
     volumes:
       - aqi-updates:/src/aqi_updater/aqi_updates
     secrets:

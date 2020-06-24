@@ -6,6 +6,7 @@ services:
     environment:
       - WORKER_COUNT=1
       - RUN_DEV=True
+      - LOG_LEVEL=info
     volumes:
       - aqi-updates:/src/aqi_updates
     ports:
