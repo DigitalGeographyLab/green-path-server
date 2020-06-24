@@ -220,7 +220,14 @@ class GraphHandler:
             aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
             return { E.aqi.value: edge_dict['aqi'], **aqi_costs }
 
-    def create_linking_edges_for_new_node(self, new_node: int, split_point: Point, edge: dict, aq_sens: list, noise_sens: list, db_costs: dict) -> dict:
+    def create_linking_edges_for_new_node(self, 
+        new_node: int,
+        split_point: Point,
+        edge: dict,
+        aq_sens: list,
+        noise_sens: list,
+        db_costs: dict,
+        origin: bool) -> dict:
         """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
         for the new edges based on attributes of the original edge on which the new node was added. 
 
@@ -263,12 +270,18 @@ class GraphHandler:
         link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
 
         # add linking edges with noise cost attributes to graph (save for loading them to graph later)
-        self.__new_edges.update({
-            (node_from, new_node): { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs },
-            (new_node, node_from): { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs },
-            (new_node, node_to): { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs },
-            (node_to, new_node): { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
-        })
+        if origin:
+            # add linking edges from new node to existing nodes
+            self.__new_edges.update({
+                (new_node, node_from): { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs },
+                (new_node, node_to): { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs },
+            })
+        else:
+            # add linking edges from existing nodes to new node
+            self.__new_edges.update({
+                (node_from, new_node): { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs },
+                (node_to, new_node): { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
+            })
 
         link1_d = { E.uv.value: (new_node, node_from), **link1_attrs, **link1_geom_attrs }
         link2_d = { E.uv.value: (node_to, new_node), **link2_attrs, **link2_geom_attrs }

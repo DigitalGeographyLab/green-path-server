@@ -96,7 +96,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
         # add linking edges to graph if new node was created on the nearest edge
         if (orig_node is not None and orig_node['add_links'] == True):
             orig_link_edges = G.create_linking_edges_for_new_node(
-                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], aq_sens, noise_sens, db_costs)
+                orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], aq_sens, noise_sens, db_costs, True)
     except Exception:
         raise Exception('Could not find origin')
     try:
@@ -104,7 +104,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
         # add linking edges to graph if new node was created on the nearest edge
         if (dest_node is not None and dest_node['add_links'] == True):
             dest_link_edges = G.create_linking_edges_for_new_node(
-                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], aq_sens, noise_sens, db_costs)
+                dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], aq_sens, noise_sens, db_costs, False)
     except Exception:
         raise Exception('Could not find destination')
 
