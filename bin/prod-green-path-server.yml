@@ -12,9 +12,13 @@ services:
     ports:
       - "5000:5000"
     deploy:
+      replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
+      update_config:
+        parallelism: 1
+        delay: 220s
   
   hope-graph-updater:
     image: hellej/hope-graph-updater:1
