@@ -18,7 +18,7 @@ services:
         delay: 5s
       update_config:
         parallelism: 1
-        delay: 220s
+        delay: 5s
         order: stop-first
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000"]
