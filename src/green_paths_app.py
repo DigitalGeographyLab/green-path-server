@@ -8,7 +8,7 @@ from app.graph_aqi_updater import GraphAqiUpdater
 from app.path_finder import PathFinder
 from app.logger import Logger
 
-# version: 1.3
+# version: 1.4
 
 app = Flask(__name__)
 CORS(app)
