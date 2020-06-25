@@ -104,11 +104,10 @@ venv.bak/
 .mypy_cache/
 
 # other files
-.DS_Store
-src/.vscode/settings.json
-src/utils/credentials.csv
-src/credentials.csv
+.vscode/
+src/.vscode/
 src/debug/
-src/aqi_cache/
-src/graphs/ig_export_test.graphml
-src/data/graphs.gpkg
+src/aqi_updates/
+src/sample_data/
+.DS_Store
+src/graphs/hma.graphml

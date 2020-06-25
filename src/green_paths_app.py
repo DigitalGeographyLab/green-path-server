@@ -1,18 +1,14 @@
 import logging
-import time
-from datetime import datetime
+import os
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import utils.utils as utils
-from utils.path_finder import PathFinder
-from utils.graph_handler import GraphHandler
-from utils.graph_aqi_updater import GraphAqiUpdater
-from utils.logger import Logger
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
+from app.graph_handler import GraphHandler
+from app.graph_aqi_updater import GraphAqiUpdater
+from app.path_finder import PathFinder
+from app.logger import Logger
 
-# version: 1.3
+# version: 1.4
 
 app = Flask(__name__)
 CORS(app)
@@ -26,8 +22,8 @@ if __name__ != '__main__':
 logger = Logger(app_logger=app.logger)
 
 # initialize graph
-G = GraphHandler(logger, subset=False, set_noise_costs=True)
-aqi_updater = GraphAqiUpdater(logger, G, start=True)
+G = GraphHandler(logger, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
+aqi_updater = GraphAqiUpdater(logger, G)
 
 @app.route('/')
 def hello_world():
@@ -63,8 +59,9 @@ def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
     finally:
         # keep the graph clean by removing nodes & edges created during routing
         path_finder.delete_added_graph_features()
+        G.reset_edge_cache()
 
-        if (error is not None):
+        if error:
             return error
 
     return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })

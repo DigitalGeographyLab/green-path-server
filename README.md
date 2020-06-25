@@ -1,20 +1,26 @@
 # hope-green-path-server
 
 ## General
-Green Path is an open source route planner being developed for [Urban Innovative Action](https://www.uia-initiative.eu/en), [HOPE](https://www.uia-initiative.eu/en/uia-cities/helsinki) – Healthy Outdoor Premises for Everyone. Its goal is to inform people on clean routes for walking and cycling in Helsinki region. It utilizes Air Quality Index (AQI) from the Enfuser model (by the Finnish Meteorological Institute) and modelled traffic noise data. AQI is based on hourly updated and combined information on NO2, PM2.5, PM10 and O3. 
+This project is used as a backend for the web map application of the Green Paths route planner: [green-paths.web.app](https://green-paths.web.app/) / [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).
 
-Currently implemented features include calculation of walkable quiet paths with respect to typical daytime traffic noise levels ([Live demo](https://green-paths.web.app/)). The quiet path optimization method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
+Green Paths is an open source route planner being developed by Digital Geography Lab, University of Helsinki, for the project [HOPE](https://ilmanlaatu.eu/briefly-in-english/) – Healthy Outdoor Premises for Everyone funded by [Urban Innovative Action](https://www.uia-initiative.eu/en). Its goal is to inform people on clean air and quite routes for walking and cycling in Helsinki region. It utilizes Air Quality Index (AQI) data from the [FMI-ENFUSER](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service) modelling system (by the Finnish Meteorological Institute) and modelled [traffic noise data](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017) from the city of Helsinki. AQI is based on real-time hourly data as a composite measure of NO2, PM2.5, PM10 and O3. 
 
-This project is used as a backend for the web map application of the green path route planner: [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).
+Currently implemented features include calculation of walkable unpolluted and quiet paths with respect to real-time air quality and typical traffic noise levels. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
+
+## Green paths routing API
+See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentation of the green paths routing API and the schema of the paths. 
 
 ## Materials
-* [FMI Enfuser model](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service)
-* [HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
-* [OpenStreetMap](https://www.openstreetmap.org/about/) 
+* [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
+* [UIA HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
+* [FMI-Enfuser model](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service)
+* [SYKE - Traffic noise modelling data from Helsinki urban region](https://www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E)
 * [Traffic noise zones in Helsinki 2017](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017)
+* [OpenStreetMap](https://www.openstreetmap.org/about/) 
 
 ## Tech
-* Python (3.7)
+* Python 3.6
+* igraph
 * NetworkX
 * GeoPandas
 * Shapely
@@ -39,10 +45,10 @@ $ conda env create -f env_gp_server.yml
 ```
 $ conda activate gp-server
 
-# run with gunicorn
+# run with gunicorn (recommended)
 $ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 160 green_paths_app:app
 
-# or with python (flask)
+# or with python as a simple flask application
 $ python green_paths_app.py
 ```
 

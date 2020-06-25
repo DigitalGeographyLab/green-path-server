@@ -1,13 +1,10 @@
 """
-This module provides function for filtering out paths with nearly identical geometries. 
-
+This module provides functionality for filtering out paths with nearly identical geometries. 
 """
 
 from typing import List, Set, Dict, Tuple
-import time
-import utils.utils as utils
-from utils.path import Path
-from utils.logger import Logger
+from app.path import Path
+from app.logger import Logger
 
 def get_path_overlay_candidates_by_len(param_path: Path, all_paths: List[Path], len_diff: int = 25) -> List[Path]:
     """Returns paths with length difference not greater or less than specified in [len_diff] (m)
@@ -58,7 +55,6 @@ def get_unique_paths_by_geom_overlay(log: Logger, all_paths: List[Path], buffer_
     """
     if (len(all_paths) == 1):
         return None
-    start_time = time.time()
     paths_already_overlapped = []
     filtered_paths_names = []
     for path in all_paths:
@@ -71,5 +67,4 @@ def get_unique_paths_by_geom_overlay(log: Logger, all_paths: List[Path], buffer_
             paths_already_overlapped += [path.name for path in overlapping_paths]
 
     log.debug('filtered '+ str(len(filtered_paths_names)) +' unique paths from '+ str(len(all_paths)) +' unique paths by overlay')
-    log.duration(start_time, 'path overlay filtering done', unit='ms')
     return filtered_paths_names
