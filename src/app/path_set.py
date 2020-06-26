@@ -36,10 +36,10 @@ class PathSet:
         """Aggregates edge level path attributes to paths.
         """
         if (self.shortest_path is not None):
-            self.shortest_path.aggregate_path_attrs(geom=True)
+            self.shortest_path.aggregate_path_attrs()
         if (len(self.green_paths) > 0):
             for gp in self.green_paths:
-                gp.aggregate_path_attrs(geom=True)
+                gp.aggregate_path_attrs()
     
     def filter_out_green_paths_missing_exp_data(self) -> None:
         path_count = len(self.green_paths)

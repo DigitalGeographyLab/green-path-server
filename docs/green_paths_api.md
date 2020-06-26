@@ -71,7 +71,6 @@ When exploring the API and the source codes, please bear in mind that the word "
 | noise_pcts | object | no | Exposures (%) to different noise levels. Keys represent noise levels and values shares. |
 | noise_range_exps | object | no | Exposures (m) to different 10 dB noise level ranges. Keys represent noise levels and values distances (m). |
 | noises | object | no | Exposures to different noise levels. Keys represent noise levels and values distances (m). |
-| noises_diff | object | yes | Differences in exposures to different noise levels. Keys represent noise levels and values differences distances (m). |
 | path_score | number | yes | Ratio between difference in noise exposure index and length compared to the shortest path - i.e. reduction in noise exposure index per each additional meter walked. |
 
 ## Exceptions
@@ -141,7 +140,6 @@ Path_FC: {
         65: 9.66,
         70: 372.62
       },
-      noises_diff: null,
       path_score: null,
     },
     type: “Feature”
@@ -198,16 +196,6 @@ Path_FC: {
         60: 132.5,
         65: 40.85,
         70: 33.91
-      },
-      noises_diff: {
-        40: 0,
-        45: 151.41,
-        50: 16.88,
-        55: 116.62,
-        60: 126.99,
-        65: 31.19,
-        70: -338.71,
-        75: 0
       },
       path_score: 0.9,
       },

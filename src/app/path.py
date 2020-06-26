@@ -9,7 +9,7 @@ class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
-    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type: str, cost_coeff: float = 0.0):
+    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type: str, cost_coeff: float=0.0):
         self.orig_node: int = orig_node
         self.edge_ids: List[int] = edge_ids
         self.edges: List[dict] = []
@@ -35,12 +35,12 @@ class Path:
         """
         self.edges = G.get_edges_from_edge_ids(self.edge_ids)
 
-    def aggregate_path_attrs(self, geom: bool = True, length: bool = True) -> None:
+    def aggregate_path_attrs(self) -> None:
         """Aggregates path attributes form list of edges.
         """
-        path_coords = [coord for edge in self.edges for coord in edge['coords']] if (geom == True) else None
-        self.geometry = LineString(path_coords) if (geom == True) else self.geometry
-        self.length = round(sum(edge['length'] for edge in self.edges ), 2) if (length == True) else self.length
+        path_coords = [coord for edge in self.edges for coord in edge['coords']]
+        self.geometry = LineString(path_coords)
+        self.length = round(sum(edge['length'] for edge in self.edges ), 2)
         self.missing_noises = True if (None in [edge['noises'] for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge['aqi'] for edge in self.edges]) else False
         if (not self.missing_noises):
@@ -51,11 +51,11 @@ class Path:
             self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
 
     def set_noise_attrs(self, db_costs: dict) -> None:
-        if (self.noise_attrs is not None):
+        if self.noise_attrs:
             self.noise_attrs.set_noise_attrs(db_costs, self.length)
 
     def set_aqi_attrs(self) -> None:
-        if (self.aqi_attrs is not None):
+        if self.aqi_attrs:
             self.aqi_attrs.set_aqi_stats(self.length)
 
     def set_green_path_diff_attrs(self, shortest_path: 'Path') -> None:

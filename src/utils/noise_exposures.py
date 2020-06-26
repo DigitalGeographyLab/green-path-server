@@ -6,6 +6,7 @@ between paths.
 """
 
 from typing import List, Set, Dict, Tuple
+from collections import defaultdict
 from shapely.geometry import LineString
 from utils.igraphs import Edge as E
 
@@ -47,14 +48,14 @@ def get_noise_sensitivities() -> List[float]:
     """
     return [ 0.1, 0.3, 0.5, 1.5, 4, 8, 20 ]
 
-def get_noise_range(dB: float) -> int:
+def get_noise_range(db: float) -> int:
     """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
     """
-    if dB >= 70.0: return 70
-    elif dB >= 65.0: return 65
-    elif dB >= 60.0: return 60
-    elif dB >= 55.0: return 55
-    elif dB >= 50.0: return 50
+    if db >= 70.0: return 70
+    elif db >= 65.0: return 65
+    elif db >= 60.0: return 60
+    elif db >= 55.0: return 55
+    elif db >= 50.0: return 50
     else: return 40
 
 def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
@@ -68,20 +69,16 @@ def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
         (e.g. { 40: 15.2, 50: 62.4, 55: 10.5 })
     """
     # aggregate noise exposures to pre-defined dB-ranges
-    dB_range_lens = {}
-    for dB in noises.keys():
-        dB_range = get_noise_range(dB)
-        if (dB_range in dB_range_lens.keys()): 
-            dB_range_lens[dB_range] += noises[dB]
-        else: 
-            dB_range_lens[dB_range] = noises[dB]
+    db_range_lens = defaultdict(float)
+    for db, exp in noises.items():
+        dB_range = get_noise_range(db)
+        db_range_lens[dB_range] += exp
     
     # round exposures
-    dB_range_exps = {}
-    for dB_range in dB_range_lens.keys():
-        dB_range_exps[dB_range] = round(dB_range_lens[dB_range], 2)
+    for k, v in db_range_lens.items():
+        db_range_lens[k] = round(v, 2)
 
-    return dB_range_exps
+    return db_range_lens
 
 def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]:
     """Calculates percentages of aggregated exposures to different noise levels of total length.
@@ -102,31 +99,13 @@ def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]
 def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
     """Aggregates noise exposures (contaminated distances) from a list of noise exposures. 
     """
-    exps = {}
-    for exp_d in exp_list:
-        for db in exp_d.keys():
-            if db in exps.keys():
-                exps[db] += exp_d[db]
-            else:
-                exps[db] = exp_d[db]
-    for db in exps.keys():
-        exps[db] = round(exps[db], 2)
+    exps = defaultdict(float)
+    for db_exps in exp_list:
+        for db, exp in db_exps.items():
+            exps[db] += exp
+    for k, v in exps.items():
+        exps[k] = round(v, 2)
     return exps
-
-def get_noises_diff(s_noises: Dict[int, float], q_noises: Dict[int, float], full_db_range=True) -> Dict[int, float]:
-    """Calculates the differences in exposures (contaminated distances) to different noise levels between two noise exposure dictionaries.
-    """
-    dbs = [40, 45, 50, 55, 60, 65, 70, 75]
-    diff_dict = {}
-    for db in dbs:
-        if (full_db_range == False):
-            if((db not in s_noises.keys()) and (db not in q_noises.keys())):
-                continue
-        s_noise = s_noises[db] if db in s_noises.keys() else 0
-        q_noise = q_noises[db] if db in q_noises.keys() else 0
-        noise_diff = q_noise - s_noise
-        diff_dict[db] = round(noise_diff, 2)
-    return diff_dict
 
 def get_total_noises_len(noises: Dict[int, float]) -> float:
     """Returns a total length of exposures to all noise levels.
@@ -179,5 +158,5 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
 
 def estimate_db_40_exp(noises: dict, length: float) -> float:
     if (length == 0.0): return 0.0
-    total_db_length = get_total_noises_len(noises)
+    total_db_length = get_total_noises_len(noises) if noises else 0.0
     return round(length - total_db_length, 2)
