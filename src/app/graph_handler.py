@@ -69,11 +69,10 @@ class GraphHandler:
             # first add estimated exposure to noise level of 40 dB to edge attrs
             edge_attrs = edge.attributes()
             noises = edge_attrs[E.noises.value]
-            if noises:
-                db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs[E.noises.value], edge_attrs[E.length.value])
-                if (db_40_exp > 0.0):
-                    noises[40] = db_40_exp
-                self.graph.es[edge.index][E.noises.value] = noises
+            db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs[E.noises.value], edge_attrs[E.length.value])
+            if (db_40_exp > 0.0):
+                noises[40] = db_40_exp
+            self.graph.es[edge.index][E.noises.value] = noises
             
             # then calculate and update noise costs to edges
             for sen, cost_attr in [(sen, 'nc_'+ str(sen)) for sen in sens]: # iterate dict of noise sensitivities and respective cost attribute names
