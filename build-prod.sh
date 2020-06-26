@@ -5,15 +5,16 @@ set -ex
 RELEASE_TAG=${1}
 USER='hellej'
 
+DOCKER_IMAGE=${USER}/hope-green-path-server
+
 if [[ -z "${RELEASE_TAG}" ]]; then
-  echo "Add tag as argument (e.g. 1.0)"
-  exit 1
+  echo "Building image with tag 1"
+  docker build -t ${DOCKER_IMAGE}:1 .
+  docker push ${DOCKER_IMAGE}:1
+  exit 0
 fi
 
 echo "Building images with tags 1 & ${RELEASE_TAG}"
-
-DOCKER_IMAGE=${USER}/hope-green-path-server
-
 docker build -t ${DOCKER_IMAGE}:1 -t ${DOCKER_IMAGE}:${RELEASE_TAG} .
 
 for TAG in 1 ${RELEASE_TAG}; do
