@@ -130,15 +130,16 @@ class GraphAqiUpdater:
         return { 'aqi': aqi, **aq_costs }
 
     def get_missing_aq_update_attrs(self, length: float):
-        """Set AQI to None to all edges that did not receive AQI update. 
+        """Set AQI to None to all edges that did not receive AQI update. Set high AQ costs to edges with geometry and 0 to 
+        edges without.
         """
         aq_costs = {}
         if (length == 0.0):
             # set zero costs to edges with null geometry
-            aq_costs = { 'aqc_'+ str(sen) : 0 for sen in self.sens }
+            aq_costs = { 'aqc_'+ str(sen) : 0.0 for sen in self.sens }
         else:
-            # set high AQ costs to edges outside the AQI data extent (aqi_coeff=50)
-            aq_costs = { 'aqc_'+ str(sen) : aq_exps.calc_aqi_cost(length, aqi_coeff=50, sen=1) for sen in self.sens }
+            # set high AQ costs to edges outside the AQI data extent (aqi_coeff=40)
+            aq_costs = { 'aqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.sens }
         return { 'aqi': None, **aq_costs }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):

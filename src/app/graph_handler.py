@@ -220,8 +220,9 @@ class GraphHandler:
         """Returns aqi exposures and costs for a split edge based on aqi exposures on the original edge
         (from which the edge was split). 
         """
-        if (not edge_dict['aqi']):
-            return { E.aqi.value: None }
+        if (edge_dict['aqi'] is None):
+            # the path may start from an edge without AQI, but cost attributes need to be set anyway
+            return { E.aqi.value: None, **{'aqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens } }
         else:
             aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
             return { E.aqi.value: edge_dict['aqi'], **aqi_costs }
