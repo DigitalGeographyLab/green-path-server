@@ -7,6 +7,7 @@ from app.graph_handler import GraphHandler
 from app.graph_aqi_updater import GraphAqiUpdater
 from app.path_finder import PathFinder
 from app.logger import Logger
+import utils.geometry as geom_utils
 
 # version: 1.4
 
@@ -28,10 +29,6 @@ aqi_updater = GraphAqiUpdater(logger, G)
 @app.route('/')
 def hello_world():
     return 'Keep calm and walk green paths.'
-
-@app.route('/aqistatus')
-def aqi_status():
-    return jsonify(aqi_updater.get_aqi_update_status_response())
 
 @app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
@@ -65,6 +62,16 @@ def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
             return error
 
     return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
+
+@app.route('/aqistatus')
+def aqi_status():
+    return jsonify(aqi_updater.get_aqi_update_status_response())
+
+@app.route('/edge-attrs-near-point/<lat>,<lon>')
+def edge_attrs_near_point(lat, lon):
+    point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon({'lat': float(lat), 'lon': float(lon)}))
+    edge = G.find_nearest_edge(point)
+    return jsonify(G.format_edge_dict_for_debugging(edge) if edge else None)
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')

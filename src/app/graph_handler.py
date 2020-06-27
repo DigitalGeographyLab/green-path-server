@@ -140,7 +140,7 @@ class GraphHandler:
     def get_node_point_geom(self, node_id: int) -> Point:
         return self.__get_node_by_id(node_id)[N.geometry.value]
 
-    def find_nearest_edge(self, point: Point) -> Dict:
+    def find_nearest_edge(self, point: Point) -> dict:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
         start_time = time.time()
@@ -159,6 +159,13 @@ class GraphHandler:
         self.log.duration(start_time, 'found nearest edge', unit='ms')
         edge_id = possible_matches.loc[nearest].index[0]
         return self.__get_edge_by_id(edge_id)
+
+    def format_edge_dict_for_debugging(self, edge: dict) -> dict:
+        # map edge dict attribute names to the human readable ones defined in the enum
+        edge_d = { E(k).name if k in [item.value for item in E] else k: v for k, v in edge.items() }
+        edge_d[E.geometry.name] = str(edge_d[E.geometry.name])
+        edge_d[E.geom_wgs.name] = str(edge_d[E.geom_wgs.name])
+        return edge_d
 
     def get_edges_from_edge_ids(self, edge_ids: List[int]) -> List[dict]:
         """Loads edge attributes from graph by ordered list of edges representing a path.
@@ -297,7 +304,7 @@ class GraphHandler:
         self.__new_edges = {}
         self.log.duration(time_add_edges, 'loaded new features to graph', unit='ms')
 
-    def get_least_cost_path(self, orig_node: int, dest_node: int, weight: str = 'length') -> List[int]:
+    def get_least_cost_path(self, orig_node: int, dest_node: int, weight: str='length') -> List[int]:
         """Calculates a least cost path by the given edge weight.
 
         Args:
@@ -312,7 +319,7 @@ class GraphHandler:
                 s_path = self.graph.get_shortest_paths(orig_node, to=dest_node, weights=weight, mode=1, output="epath")
                 return s_path[0]
             except:
-                raise Exception('Could not find paths')
+                raise Exception(f'Could not find paths by {weight}')
         else:
             raise Exception('Origin and destination are the same location')
 
