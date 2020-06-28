@@ -158,7 +158,9 @@ class GraphHandler:
         nearest = possible_matches['distance'] == shortest_dist
         self.log.duration(start_time, 'found nearest edge', unit='ms')
         edge_id = possible_matches.loc[nearest].index[0]
-        return self.__get_edge_by_id(edge_id)
+        edge = self.__get_edge_by_id(edge_id)
+        edge['dist'] = round(shortest_dist, 2)
+        return edge
 
     def format_edge_dict_for_debugging(self, edge: dict) -> dict:
         # map edge dict attribute names to the human readable ones defined in the enum
