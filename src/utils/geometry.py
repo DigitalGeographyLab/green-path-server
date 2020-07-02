@@ -40,13 +40,19 @@ def project_geom(geom, geom_epsg: int = 4326, to_epsg: int = 3879):
     project = __projections[(geom_epsg, to_epsg)]
     return transform(project.transform, geom)
 
-def split_line_at_point(line: LineString, split_point: Point, tolerance: float=0.01) -> List[LineString]:
+def split_line_at_point(log, line: LineString, split_point: Point, tolerance: float=0.01) -> List[LineString]:
     """Splits a line at nearest intersecting point.
     Returns:
         A list containing two LineString objects.
     """
-    snap_line = snap(line, split_point, tolerance)
-    split_lines = split(snap_line, split_point)
+    # try with many snapping distances as sometimes this fails to split line into two parts
+    for snap_dist in (tolerance, 0.0001, 0.00001, 0.000001, 0.0000001):
+        snap_line = snap(line, split_point, snap_dist)
+        split_lines = split(snap_line, split_point)
+        if (len(split_lines) > 1):
+            break
+    if (snap_dist != tolerance):
+        log.warning(f'Used adjusted snapping distance {snap_dist} vs {tolerance} in splitting nearest edge')
     if (len(split_lines) == 1):
         raise ValueError('Split lines to only one line instead of 2 - split point was probably not on the line')
     return split_lines[0], split_lines[1]

@@ -255,8 +255,8 @@ class GraphHandler:
         # create link geometries from/to new node in projected and WGS CRS
         time_projections = time.time()
         split_point_wgs = geom_utils.project_geom(split_point, geom_epsg=3879, to_epsg=4326)
-        link1, link2 = geom_utils.split_line_at_point(edge[E.geometry.value], split_point)
-        link1_wgs, link2_wgs = geom_utils.split_line_at_point(edge[E.geom_wgs.value], split_point_wgs, tolerance=0.000001)
+        link1, link2 = geom_utils.split_line_at_point(self.log, edge[E.geometry.value], split_point)
+        link1_wgs, link2_wgs = geom_utils.split_line_at_point(self.log, edge[E.geom_wgs.value], split_point_wgs, tolerance=0.000001)
         link1_rev, link2_rev, link1_rev_wgs, link2_rev_wgs = (LineString(link.coords[::-1]) for link in (link1, link2, link1_wgs, link2_wgs))
         self.log.duration(time_projections, 'projected linking edge geoms', unit='ms')
 
