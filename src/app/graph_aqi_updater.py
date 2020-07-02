@@ -1,5 +1,6 @@
 import time
 import ast
+import gc
 import random
 import traceback
 import pandas as pd
@@ -42,11 +43,13 @@ class GraphAqiUpdater:
         self.check_interval = 5 + random.randint(1, 15)
         self.scheduler.add_job(self.maybe_read_update_aqi_to_graph, 'interval', seconds=self.check_interval, max_instances=2)
         self.start()
+        gc.collect()
 
     def create_updater_edge_df(self, G: GraphHandler):
         edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length])
         edge_df[E.id_ig.name] = edge_df.index
-        return edge_df[[E.id_ig.name, E.length.name]]
+        edge_df = edge_df[[E.id_ig.name, E.length.name]]
+        return edge_df
 
     def start(self):
         self.log.info('starting graph aqi updater with check interval (s): '+ str(self.check_interval))
@@ -64,7 +67,7 @@ class GraphAqiUpdater:
         """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
         """
         new_aqi_data_csv = self.new_aqi_data_available()
-        if (new_aqi_data_csv is not None):
+        if new_aqi_data_csv:
             try:
                 self.read_update_aqi_to_graph(new_aqi_data_csv)
             except Exception:
@@ -73,6 +76,8 @@ class GraphAqiUpdater:
                 self.log.error(traceback.format_exc())
                 self.log.warning('waiting 60 s after exception before next AQI update attempt')
                 time.sleep(60)
+            finally:
+                gc.collect()
                 self.aqi_data_wip = ''
 
     def get_expected_aqi_data_name(self) -> str:
@@ -106,7 +111,7 @@ class GraphAqiUpdater:
         """Returns the name of a new AQI csv file if it's not yet updated or being updated to a graph and it exists in aqi_dir.
         Else returns None.
         """
-        new_aqi_available = None
+        new_aqi_csv = None
         aqi_update_status = ''
 
         aqi_data_expected = self.get_expected_aqi_data_name()
@@ -116,14 +121,14 @@ class GraphAqiUpdater:
             aqi_update_status = 'AQI update already in progress'
         elif (aqi_data_expected in listdir(self.aqi_dir)):
             aqi_update_status = 'AQI update will be done from: '+ aqi_data_expected
-            new_aqi_available = aqi_data_expected
+            new_aqi_csv = aqi_data_expected
         else:
             aqi_update_status = 'expected AQI data is not available ('+ aqi_data_expected +')'
         
         if (aqi_update_status != self.aqi_update_status):
             self.log.info(aqi_update_status)
             self.aqi_update_status = aqi_update_status
-        return new_aqi_available
+        return new_aqi_csv
 
     def get_aq_update_attrs(self, aqi: float, length: float):
         aq_costs = aq_exps.get_aqi_costs(aqi, length, self.sens)
@@ -179,4 +184,3 @@ class GraphAqiUpdater:
         
         self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv
-        self.aqi_data_wip = ''
