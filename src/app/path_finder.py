@@ -53,7 +53,7 @@ class PathFinder:
             self.log.duration(start_time, 'origin & destination nodes set', unit='ms', log_level='info')
         except Exception as e:
             self.log.error('exception in finding nearest nodes:')
-            traceback.print_exc()
+            self.log.error(traceback.format_exc())
             raise Exception(str(e))
 
     def find_least_cost_paths(self):
@@ -85,7 +85,7 @@ class PathFinder:
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:
             self.log.error('exception in finding least cost paths:')
-            traceback.print_exc()
+            self.log.error(traceback.format_exc())
             raise Exception('Could not find paths')
 
     def process_paths_to_FC(self, edges: bool = True, FCs_to_files: bool = False) -> dict:
@@ -126,7 +126,7 @@ class PathFinder:
         
         except Exception:
             self.log.error('exception in processing paths:')
-            traceback.print_exc()
+            self.log.error(traceback.format_exc())
             raise Exception('Error in processing paths')
 
     def delete_added_graph_features(self):

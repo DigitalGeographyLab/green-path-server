@@ -70,7 +70,7 @@ class GraphAqiUpdater:
             except Exception:
                 self.aqi_update_status = 'could not complete AQI update from: '+ new_aqi_data_csv
                 self.log.error(self.aqi_update_status)
-                traceback.print_exc()
+                self.log.error(traceback.format_exc())
                 self.log.warning('waiting 60 s after exception before next AQI update attempt')
                 time.sleep(60)
                 self.aqi_data_wip = ''
