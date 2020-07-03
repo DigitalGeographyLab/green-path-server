@@ -181,6 +181,11 @@ class GraphAqiUpdater:
             self.log.error(f'edge count: {len(self.edge_df)} != all AQI updates: {len(missing_aqi_update_df) + len(aqi_update_df)}')
         else:
             self.log.info('AQI update succeeded')
+
+        # TODO see if these help to release some memory (remove if not)
+        del edge_aqi_updates
+        del aqi_update_df
+        del missing_aqi_update_df
         
         self.aqi_data_updatetime = datetime.utcnow()
         self.aqi_data_latest = aqi_updates_csv

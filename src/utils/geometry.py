@@ -46,7 +46,7 @@ def split_line_at_point(log, line: LineString, split_point: Point, tolerance: fl
         A list containing two LineString objects.
     """
     # try with many snapping distances as sometimes this fails to split line into two parts
-    for snap_dist in (tolerance, 0.0001, 0.00001, 0.000001, 0.0000001):
+    for snap_dist in (tolerance, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001):
         snap_line = snap(line, split_point, snap_dist)
         split_lines = split(snap_line, split_point)
         if (len(split_lines) > 1):
