@@ -282,15 +282,16 @@ class GraphHandler:
                 (new_node, node_from): { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs },
                 (new_node, node_to): { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs },
             })
+            link1_d = { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs }
+            link2_d = { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs }
         else:
             # add linking edges from existing nodes to new node
             self.__new_edges.update({
                 (node_from, new_node): { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs },
                 (node_to, new_node): { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
             })
-
-        link1_d = { E.uv.value: (new_node, node_from), **link1_attrs, **link1_geom_attrs }
-        link2_d = { E.uv.value: (node_to, new_node), **link2_attrs, **link2_geom_attrs }
+            link1_d = { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs }
+            link2_d = { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
         
         self.log.duration(time_func, 'created links for new node (GraphHandler function)', unit='ms')
         return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }
