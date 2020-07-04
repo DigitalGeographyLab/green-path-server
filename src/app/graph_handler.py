@@ -75,6 +75,7 @@ class GraphHandler:
             self.graph.es[edge.index][E.noises.value] = noises
             
             # then calculate and update noise costs to edges
+            updates = {}
             for sen, cost_attr in [(sen, 'nc_'+ str(sen)) for sen in sens]: # iterate dict of noise sensitivities and respective cost attribute names
                 if (not noises and isinstance(edge_attrs[E.geometry.value], LineString)):
                     # these are edges outside the extent of the noise data (having valid geometry)
@@ -86,15 +87,15 @@ class GraphHandler:
                 else:
                     # else calculate normal noise exposure based noise cost coefficient
                     noise_cost = noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen)
-                self.graph.es[edge.index][cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
+                updates[cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
+            self.graph.es[edge.index].update_attributes(updates)
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
         """Updates the given edge attribute from a DataFrame to a graph. 
         """
         for edge in edge_gdf.itertuples():
             updates: dict = getattr(edge, df_attr)
-            for key, value in updates.items():
-                self.graph.es[getattr(edge, E.id_ig.name)][key] = value
+            self.graph.es[getattr(edge, E.id_ig.name)].update_attributes(updates)
 
     def find_nearest_node(self, point: Point) -> int:
         """Finds the nearest node to a given point.
