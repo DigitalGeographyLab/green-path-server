@@ -52,14 +52,16 @@ def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dic
     start_time = time.time()
     nearest_node_geom = G.get_node_point_geom(nearest_node)
     nearest_edge_point = __get_closest_point_on_line(nearest_edge[E.geometry.value], point)
+    nearest_node_vs_edge_dist = nearest_node_geom.distance(point) - nearest_edge['dist']
 
     # use the nearest node if it is on the nearest edge and at least almost as near as the nearest edge
     # this can give a significant performance boost since adding (and deleting) linking edges to the graph is avoided 
-    if (nearest_node in nearest_edge[E.uv.value] and not link_edges):
-        acceptable_od_offset = 15 if not long_distance else 30
-        nearest_node_vs_edge_dist = nearest_node_geom.distance(point) - nearest_edge['dist']
-        if (nearest_node_vs_edge_dist < acceptable_od_offset):
+    if (not link_edges): # check only if new node was not created for origin (no need to try to avoid creating new node for destination)
+        acceptable_od_offset = 20 if not long_distance else 30
+        if (nearest_node_vs_edge_dist < acceptable_od_offset and nearest_node in nearest_edge[E.uv.value]):
             return { 'node': nearest_node, 'offset': round(nearest_node_geom.distance(point), 1), 'add_links': False }
+    if (nearest_node_vs_edge_dist < 10):
+        return { 'node': nearest_node, 'offset': round(nearest_node_geom.distance(point), 1), 'add_links': False }
     # check if the nearest edge of the destination is one of the linking edges created for origin 
     if link_edges:
         if (nearest_edge_point.distance(link_edges['link1'][E.geometry.value]) < 0.2):
@@ -100,7 +102,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
     try:
         orig_node = get_nearest_node(log, G, orig_point, long_distance=long_distance)
         # add linking edges to graph if new node was created on the nearest edge
-        if (orig_node is not None and orig_node['add_links'] == True):
+        if (orig_node and orig_node['add_links']):
             orig_link_edges = G.create_linking_edges_for_new_node(
                 orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], aq_sens, noise_sens, db_costs, True)
     except Exception:
@@ -108,7 +110,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
     try:
         dest_node = get_nearest_node(log, G, dest_point, link_edges=orig_link_edges, long_distance=long_distance)
         # add linking edges to graph if new node was created on the nearest edge
-        if (dest_node is not None and dest_node['add_links'] == True):
+        if (dest_node and dest_node['add_links']):
             dest_link_edges = G.create_linking_edges_for_new_node(
                 dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], aq_sens, noise_sens, db_costs, False)
     except Exception:
