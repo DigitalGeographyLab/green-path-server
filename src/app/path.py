@@ -4,18 +4,19 @@ import utils.geometry as geom_utils
 from app.path_noises import PathNoiseAttrs
 from app.path_aqi_attrs import PathAqiAttrs
 from app.graph_handler import GraphHandler
+from app.constants import RoutingMode, PathType
 
 class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
-    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type: str, cost_coeff: float=0.0):
+    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type, cost_coeff: float=0.0):
         self.orig_node: int = orig_node
         self.edge_ids: List[int] = edge_ids
         self.edges: List[dict] = []
         self.edge_groups: List[Tuple[int, List[dict]]] = []
         self.name: str = name
-        self.path_type: str = path_type
+        self.path_type: PathType = path_type
         self.cost_coeff: float = cost_coeff
         self.geometry = None
         self.length: float = None
@@ -45,10 +46,10 @@ class Path:
         self.missing_aqi = True if (None in [edge['aqi'] for edge in self.edges]) else False
         if (not self.missing_noises):
             noises_list = [edge['noises'] for edge in self.edges]
-            self.noise_attrs = PathNoiseAttrs(self.path_type, noises_list)
+            self.noise_attrs = PathNoiseAttrs(noises_list)
         if (not self.missing_aqi):
             aqi_exp_list = [(edge['aqi'], edge['length']) for edge in self.edges]
-            self.aqi_attrs = PathAqiAttrs(self.path_type, aqi_exp_list)
+            self.aqi_attrs = PathAqiAttrs(aqi_exp_list)
 
     def set_noise_attrs(self, db_costs: dict) -> None:
         if self.noise_attrs:
@@ -99,7 +100,7 @@ class Path:
         feature_d = self.__get_geojson_feature_dict(wgs_coords)
 
         props = {
-            'type' : self.path_type,
+            'type' : self.path_type.value,
             'id' : self.name,
             'length' : self.length,
             'len_diff' : self.len_diff,

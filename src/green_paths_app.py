@@ -6,6 +6,7 @@ from flask import jsonify
 from app.graph_handler import GraphHandler
 from app.graph_aqi_updater import GraphAqiUpdater
 from app.path_finder import PathFinder
+from app.constants import TravelMode, RoutingMode
 from app.logger import Logger
 import utils.geometry as geom_utils
 
@@ -30,22 +31,20 @@ aqi_updater = GraphAqiUpdater(logger, G)
 def hello_world():
     return 'Keep calm and walk green paths.'
 
-@app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
-def get_short_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
-    return get_green_paths('quiet', orig_lat, orig_lon, dest_lat, dest_lon)
+@app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_short_quiet_paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
+    try:
+        travel_mode = TravelMode(travel_mode)
+        routing_mode = RoutingMode(routing_mode)
+    except Exception as e:
+        return jsonify({'error': 'invalid travel_mode or routing_mode parameter in request'})
 
-@app.route('/cleanpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
-def get_short_clean_paths(orig_lat, orig_lon, dest_lat, dest_lon):
-    if (aqi_updater.get_aqi_updated_since_secs() is not None):
-        return get_green_paths('clean', orig_lat, orig_lon, dest_lat, dest_lon)
-    else:
+    if (routing_mode == RoutingMode.CLEAN and not aqi_updater.get_aqi_updated_since_secs()):
         return jsonify({'error': 'latest air quality data not available'})
 
-def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
     error = None
-    path_finder = PathFinder(logger, path_type, G, orig_lat, orig_lon, dest_lat, dest_lon)
-
     try:
+        path_finder = PathFinder(logger, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
         path_finder.find_origin_dest_nodes()
         path_finder.find_least_cost_paths()
         path_FC, edge_FC = path_finder.process_paths_to_FC()
@@ -54,7 +53,6 @@ def get_green_paths(path_type: str, orig_lat, orig_lon, dest_lat, dest_lon):
         error = jsonify({'error': str(e)})
 
     finally:
-        # keep the graph clean by removing nodes & edges created during routing
         path_finder.delete_added_graph_features()
         G.reset_edge_cache()
 
