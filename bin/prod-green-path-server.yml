@@ -27,6 +27,17 @@ services:
       retries: 3
       start_period: 220s
   
+  hope-green-path-server-test:
+    image: hellej/hope-green-path-server:1
+    environment:
+      - WORKER_COUNT=1
+      - RUN_DEV=False
+      - LOG_LEVEL=info
+    volumes:
+      - aqi-updates:/src/aqi_updates
+    deploy:
+      replicas: 1
+  
   hope-graph-updater:
     image: hellej/hope-graph-updater:1
     environment:
