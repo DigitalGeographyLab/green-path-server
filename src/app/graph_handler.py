@@ -88,6 +88,7 @@ class GraphHandler:
                     # else calculate normal noise exposure based noise cost coefficient
                     noise_cost = noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen)
                 updates[cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
+                updates['b'+ cost_attr] = round(edge_attrs[E.length_b.value] + noise_cost, 2) # biking costs
             self.graph.es[edge.index].update_attributes(updates)
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):

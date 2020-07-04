@@ -76,6 +76,7 @@ class PathFinder:
             for sen in sens:
                 # use aqi costs if optimizing clean paths - else use noise costs
                 cost_attr = 'aqc_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'nc_'+ str(sen)
+                cost_attr = 'b'+ cost_attr if (self.travel_mode == TravelMode.BIKE) else cost_attr
                 path_name = 'aq_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'q_'+ str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
                 self.path_set.add_green_path(Path(

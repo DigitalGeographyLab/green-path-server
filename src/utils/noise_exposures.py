@@ -153,7 +153,8 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     # calculate noise sensitivity specific noise costs
     for sen in sens:
         noise_cost = get_noise_cost(noises=cost_attrs[E.noises.value], db_costs=db_costs, sen=sen)
-        cost_attrs['nc_'+str(sen)] = round(noise_cost + link_geom.length, 2)
+        cost_attrs['nc_'+str(sen)] = round(link_geom.length + noise_cost, 2)
+        cost_attrs['bnc_'+str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
     return cost_attrs
 
 def estimate_db_40_exp(noises: dict, length: float) -> float:
