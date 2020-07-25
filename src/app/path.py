@@ -42,6 +42,7 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge['coords']]
         self.geometry = LineString(path_coords)
         self.length = round(sum(edge['length'] for edge in self.edges ), 2)
+        self.length_b = round(sum(edge['length_b'] for edge in self.edges ), 2)
         self.missing_noises = True if (None in [edge['noises'] for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge['aqi'] for edge in self.edges]) else False
         if (not self.missing_noises):
@@ -103,6 +104,7 @@ class Path:
             'type' : self.path_type.value,
             'id' : self.name,
             'length' : self.length,
+            'length_b' : self.length_b,
             'len_diff' : self.len_diff,
             'len_diff_rat' : self.len_diff_rat,
             'cost_coeff' : self.cost_coeff,

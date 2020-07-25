@@ -183,6 +183,7 @@ class GraphHandler:
                 continue
             edge_d = {}
             edge_d['length'] = edge[E.length.value]
+            edge_d['length_b'] = edge[E.length_b.value]
             edge_d['aqi'] = edge[E.aqi.value]
             edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge_d['aqi']) if (edge_d['aqi']) else None
             edge_d['noises'] = edge[E.noises.value]
