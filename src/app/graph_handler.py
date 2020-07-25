@@ -222,10 +222,15 @@ class GraphHandler:
         """
         if (edge_dict['aqi'] is None):
             # the path may start from an edge without AQI, but cost attributes need to be set anyway
-            return { E.aqi.value: None, **{'aqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens } }
+            return { 
+                E.aqi.value: None, 
+                **{'aqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens },
+                **{'baqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens }
+                }
         else:
             aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
-            return { E.aqi.value: edge_dict['aqi'], **aqi_costs }
+            aqi_costs_b = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens, prefix='b')
+            return { E.aqi.value: edge_dict['aqi'], **aqi_costs, **aqi_costs_b }
 
     def create_linking_edges_for_new_node(self, 
         new_node: int,

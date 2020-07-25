@@ -46,9 +46,9 @@ class GraphAqiUpdater:
         gc.collect()
 
     def create_updater_edge_df(self, G: GraphHandler):
-        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length])
+        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length, E.length_b])
         edge_df[E.id_ig.name] = edge_df.index
-        edge_df = edge_df[[E.id_ig.name, E.length.name]]
+        edge_df = edge_df[[E.id_ig.name, E.length.name, E.length_b.name]]
         return edge_df
 
     def start(self):
@@ -130,9 +130,10 @@ class GraphAqiUpdater:
             self.aqi_update_status = aqi_update_status
         return new_aqi_csv
 
-    def get_aq_update_attrs(self, aqi: float, length: float):
+    def get_aq_update_attrs(self, aqi: float, length: float, length_b: float):
         aq_costs = aq_exps.get_aqi_costs(aqi, length, self.sens)
-        return { 'aqi': aqi, **aq_costs }
+        aq_costs_b = aq_exps.get_aqi_costs(aqi, length_b, self.sens, prefix='b')
+        return { 'aqi': aqi, **aq_costs, **aq_costs_b }
 
     def get_missing_aq_update_attrs(self, length: float):
         """Set AQI to None to all edges that did not receive AQI update. Set high AQ costs to edges with geometry and 0 to 
@@ -142,10 +143,12 @@ class GraphAqiUpdater:
         if (length == 0.0):
             # set zero costs to edges with null geometry
             aq_costs = { 'aqc_'+ str(sen) : 0.0 for sen in self.sens }
+            aq_costs_b = { 'baqc_'+ str(sen) : 0.0 for sen in self.sens }
         else:
             # set high AQ costs to edges outside the AQI data extent (aqi_coeff=40)
             aq_costs = { 'aqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.sens }
-        return { 'aqi': None, **aq_costs }
+            aq_costs_b = { 'baqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.sens }
+        return { 'aqi': None, **aq_costs, **aq_costs_b }
     
     def read_update_aqi_to_graph(self, aqi_updates_csv: str):
         """Updates new AQI values and AQ costs to edges and AQI=None to edges that do not get AQI update. 
@@ -167,7 +170,7 @@ class GraphAqiUpdater:
         if (len(aqi_update_df) != aqi_update_count):
             self.log.info(f'failed to merge AQI updates to edge gdf, missing {aqi_update_count - len(aqi_update_df)} edges')  
         
-        aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.get_aq_update_attrs(x['aqi'], x[E.length.name]), axis=1)
+        aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.get_aq_update_attrs(x['aqi'], x[E.length.name], x[E.length_b.name]), axis=1)
         self.G.update_edge_attr_to_graph(aqi_update_df, df_attr='aq_updates')
 
         # update missing AQI and AQ costs to edges outside AQI data extent (AQI -> None)
