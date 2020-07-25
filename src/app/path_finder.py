@@ -26,8 +26,6 @@ class PathFinder:
         self.G = G
         orig_latLon = {'lat': float(orig_lat), 'lon': float(orig_lon)}
         dest_latLon = {'lat': float(dest_lat), 'lon': float(dest_lon)}
-        self.log.debug('initializing path finder from: '+ str(orig_latLon))
-        self.log.debug('to: '+ str(dest_latLon))
         self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
         self.noise_sens = noise_exps.get_noise_sensitivities()
@@ -37,6 +35,7 @@ class PathFinder:
         self.dest_node = None
         self.orig_link_edges = None
         self.dest_link_edges = None
+        self.log.debug(f'initialized path finder: {orig_latLon} - {dest_latLon} - {routing_mode} - {travel_mode}')
 
     def find_origin_dest_nodes(self):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
@@ -74,7 +73,7 @@ class PathFinder:
                 name='short',
                 path_type=PathType.SHORT))
             for sen in sens:
-                # use aqi costs if optimizing clean paths - else use noise costs
+                # use aqi costs if optimizing fresh air (clean) paths - else use noise costs
                 cost_attr = 'aqc_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'nc_'+ str(sen)
                 cost_attr = 'b'+ cost_attr if (self.travel_mode == TravelMode.BIKE) else cost_attr
                 path_name = 'aq_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'q_'+ str(sen)

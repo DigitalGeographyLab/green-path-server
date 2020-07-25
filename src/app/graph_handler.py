@@ -108,7 +108,6 @@ class GraphHandler:
         Returns:
             The name of the nearest node (number). None if no nearest node is found.
         """
-        start_time = time.time()
         for radius in [50, 100, 500]:
             possible_matches_index = list(self.__node_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
@@ -122,7 +121,6 @@ class GraphHandler:
         nearest = possible_matches.geometry.geom_equals(nearest_geom)
         nearest_point =  possible_matches.loc[nearest]
         nearest_node_id = nearest_point.index.tolist()[0]
-        self.log.duration(start_time, 'found nearest node', unit='ms')
         return nearest_node_id
 
     def __get_node_by_id(self, node_id: int) -> dict:
@@ -145,7 +143,6 @@ class GraphHandler:
     def find_nearest_edge(self, point: Point) -> dict:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
-        start_time = time.time()
         for radius in [35, 150, 400, 650]:
             possible_matches_index = list(self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
@@ -158,7 +155,6 @@ class GraphHandler:
             self.log.error('no near edges found')
             return None
         nearest = possible_matches['distance'] == shortest_dist
-        self.log.duration(start_time, 'found nearest edge', unit='ms')
         edge_id = possible_matches.loc[nearest].index[0]
         edge = self.__get_edge_by_id(edge_id)
         edge['dist'] = round(shortest_dist, 2)
