@@ -23,7 +23,7 @@ def get_aq_sensitivities() -> List[float]:
     Returns:
         A list of AQ sensitivity coefficients.
     """
-    return [ 5, 10, 20, 30, 40 ]
+    return [ 5, 15, 30 ]
 
 def get_aqi_coeff(aqi: float) -> float:
     """Returns cost coefficient for calculating AQI based costs. Raises InvalidAqiException if AQI is either missing
