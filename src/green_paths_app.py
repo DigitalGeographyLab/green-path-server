@@ -31,6 +31,16 @@ aqi_updater = GraphAqiUpdater(logger, G)
 def hello_world():
     return 'Keep calm and walk green paths.'
 
+# TODO remove this legacy path once UI is updated to use /paths/<travel_mode>/<routing_mode>/...
+@app.route('/quietpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_legacy_quiet_paths(orig_lat, orig_lon, dest_lat, dest_lon):
+    return get_short_quiet_paths(TravelMode.WALK, RoutingMode.QUIET, orig_lat, orig_lon, dest_lat, dest_lon)
+    
+# TODO remove this legacy path once UI is updated to use /paths/<travel_mode>/<routing_mode>/...
+@app.route('/cleanpaths/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_legacy_clean_paths(orig_lat, orig_lon, dest_lat, dest_lon):
+    return get_short_quiet_paths(TravelMode.WALK, RoutingMode.CLEAN, orig_lat, orig_lon, dest_lat, dest_lon)
+
 @app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def get_short_quiet_paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
     try:
