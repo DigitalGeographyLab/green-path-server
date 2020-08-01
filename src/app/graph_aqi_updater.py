@@ -132,7 +132,7 @@ class GraphAqiUpdater:
 
     def get_aq_update_attrs(self, aqi: float, length: float, length_b: float):
         aq_costs = aq_exps.get_aqi_costs(aqi, length, self.sens)
-        aq_costs_b = aq_exps.get_aqi_costs(aqi, length_b, self.sens, prefix='b')
+        aq_costs_b = aq_exps.get_aqi_costs(aqi, length, self.sens, length_b=length_b, prefix='b')
         return { 'aqi': aqi, **aq_costs, **aq_costs_b }
 
     def get_missing_aq_update_attrs(self, length: float):
