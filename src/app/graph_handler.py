@@ -88,6 +88,8 @@ class GraphHandler:
                     # else calculate normal noise exposure based noise cost coefficient
                     noise_cost = noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen)
                 updates[cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
+                bike_length = edge_attrs[E.length_b.value] if edge_attrs[E.length_b.value] else edge_attrs[E.length.value]
+                updates['b'+ cost_attr] = round(bike_length + noise_cost, 2) # biking costs
             self.graph.es[edge.index].update_attributes(updates)
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
@@ -107,7 +109,6 @@ class GraphHandler:
         Returns:
             The name of the nearest node (number). None if no nearest node is found.
         """
-        start_time = time.time()
         for radius in [50, 100, 500]:
             possible_matches_index = list(self.__node_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
@@ -121,7 +122,6 @@ class GraphHandler:
         nearest = possible_matches.geometry.geom_equals(nearest_geom)
         nearest_point =  possible_matches.loc[nearest]
         nearest_node_id = nearest_point.index.tolist()[0]
-        self.log.duration(start_time, 'found nearest node', unit='ms')
         return nearest_node_id
 
     def __get_node_by_id(self, node_id: int) -> dict:
@@ -144,7 +144,6 @@ class GraphHandler:
     def find_nearest_edge(self, point: Point) -> dict:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
-        start_time = time.time()
         for radius in [35, 150, 400, 650]:
             possible_matches_index = list(self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds))
             if (len(possible_matches_index) > 0):
@@ -157,7 +156,6 @@ class GraphHandler:
             self.log.error('no near edges found')
             return None
         nearest = possible_matches['distance'] == shortest_dist
-        self.log.duration(start_time, 'found nearest edge', unit='ms')
         edge_id = possible_matches.loc[nearest].index[0]
         edge = self.__get_edge_by_id(edge_id)
         edge['dist'] = round(shortest_dist, 2)
@@ -186,10 +184,11 @@ class GraphHandler:
                 continue
             edge_d = {}
             edge_d['length'] = edge[E.length.value]
+            edge_d['length_b'] = edge[E.length_b.value] if edge[E.length_b.value] else 0
             edge_d['aqi'] = edge[E.aqi.value]
-            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge_d['aqi']) if (edge_d['aqi']) else None
+            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge_d['aqi']) if edge_d['aqi'] else None
             edge_d['noises'] = edge[E.noises.value]
-            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if (edge_d['noises']) else 0
+            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if edge_d['noises'] else 0
             edge_d['dBrange'] = noise_exps.get_noise_range(mean_db)
             edge_d['coords'] = edge[E.geometry.value].coords
             edge_d['coords_wgs'] = edge[E.geom_wgs.value].coords
@@ -225,10 +224,15 @@ class GraphHandler:
         """
         if (edge_dict['aqi'] is None):
             # the path may start from an edge without AQI, but cost attributes need to be set anyway
-            return { E.aqi.value: None, **{'aqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens } }
+            return { 
+                E.aqi.value: None, 
+                **{'aqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens },
+                **{'baqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens }
+                }
         else:
             aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
-            return { E.aqi.value: edge_dict['aqi'], **aqi_costs }
+            aqi_costs_b = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens, prefix='b')
+            return { E.aqi.value: edge_dict['aqi'], **aqi_costs, **aqi_costs_b }
 
     def create_linking_edges_for_new_node(self, 
         new_node: int,

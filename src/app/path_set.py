@@ -1,5 +1,6 @@
 from typing import List, Set, Dict, Tuple
 import utils.paths_overlay_filter as path_overlay_filter
+from app.constants import RoutingMode, PathType
 from app.logger import Logger
 from app.path import Path
 
@@ -7,9 +8,9 @@ class PathSet:
     """An instance of PathSet holds, manipulates and filters both shortest and least cost paths.
     """
 
-    def __init__(self, logger: Logger, set_type: str):
+    def __init__(self, logger: Logger, routing_mode: RoutingMode):
         self.log = logger
-        self.set_type: str = set_type # either 'quiet' or 'clean'
+        self.routing_mode = routing_mode
         self.shortest_path: Path = None
         self.green_paths: List[Path] = []
 
@@ -43,9 +44,9 @@ class PathSet:
     
     def filter_out_green_paths_missing_exp_data(self) -> None:
         path_count = len(self.green_paths)
-        if (self.set_type == 'clean'):
+        if (self.routing_mode == RoutingMode.CLEAN):
             self.green_paths = [path for path in self.green_paths if not path.missing_aqi]
-        if (self.set_type == 'quiet'):
+        if (self.routing_mode == RoutingMode.QUIET):
             self.green_paths = [path for path in self.green_paths if not path.missing_noises]
         filtered_out_count = path_count - len(self.green_paths)
         if (filtered_out_count > 0):
@@ -65,7 +66,7 @@ class PathSet:
     def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
         """
-        cost_attr = 'aqc_norm' if (self.set_type == 'clean') else 'nei_norm'
+        cost_attr = 'aqc_norm' if (self.routing_mode == RoutingMode.CLEAN) else 'nei_norm'
         unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(self.log, self.get_all_paths(), buffer_m=buffer_m, cost_attr=cost_attr)
         if (unique_paths_names is not None):
             self.filter_paths_by_names(unique_paths_names)
@@ -77,7 +78,7 @@ class PathSet:
         if ('short' not in filter_names):
             self.log.debug('replacing shortest path with shortest green path')
             shortest_green_path = filtered_green_paths[0]
-            shortest_green_path.set_path_type('short')
+            shortest_green_path.set_path_type(PathType.SHORT)
             shortest_green_path.set_path_name('short')
             self.set_shortest_path(shortest_green_path)
             filtered_green_paths = filtered_green_paths[1:]
@@ -99,7 +100,7 @@ class PathSet:
         return self.__as_geojson_feature_collection(feats)
 
     def get_edges_as_feature_collection(self) -> dict:
-        if (self.set_type == 'clean'):
+        if (self.routing_mode == RoutingMode.CLEAN):
             edge_group_attr = 'aqi_cl'
         else:
             edge_group_attr = 'dBrange'

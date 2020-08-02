@@ -46,7 +46,7 @@ def get_noise_sensitivities() -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
     """
-    return [ 0.1, 0.3, 0.5, 1.5, 4, 8, 20 ]
+    return [ 0.1, 0.4, 1.3, 3.5, 6 ]
 
 def get_noise_range(db: float) -> int:
     """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
@@ -153,7 +153,8 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     # calculate noise sensitivity specific noise costs
     for sen in sens:
         noise_cost = get_noise_cost(noises=cost_attrs[E.noises.value], db_costs=db_costs, sen=sen)
-        cost_attrs['nc_'+str(sen)] = round(noise_cost + link_geom.length, 2)
+        cost_attrs['nc_'+str(sen)] = round(link_geom.length + noise_cost, 2)
+        cost_attrs['bnc_'+str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
     return cost_attrs
 
 def estimate_db_40_exp(noises: dict, length: float) -> float:

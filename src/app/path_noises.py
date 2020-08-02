@@ -5,8 +5,7 @@ class PathNoiseAttrs:
     """Holds and manipulates all noise exposure related path attributes.
     """
 
-    def __init__(self, path_type: str, noises_list: dict):
-        self.path_type: str = path_type
+    def __init__(self, noises_list: dict):
         self.noises: dict = noise_exps.aggregate_exposures(noises_list)
         self.mdB: float = None
         self.nei: float = None

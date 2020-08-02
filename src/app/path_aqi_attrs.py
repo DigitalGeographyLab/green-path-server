@@ -5,8 +5,7 @@ class PathAqiAttrs:
     """Holds and manipulates all AQI related path attributes.
     """
 
-    def __init__(self, path_type: str, aqi_exp_list: List[Tuple[float, float]]):
-        self.path_type: str = path_type
+    def __init__(self, aqi_exp_list: List[Tuple[float, float]]):
         self.aqi_exp_list = aqi_exp_list
         self.aqi_m: float = None
         self.aqc: float = None

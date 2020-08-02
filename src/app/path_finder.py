@@ -9,6 +9,7 @@ import utils.routing as routing_utils
 from app.path import Path
 from app.path_set import PathSet
 from app.graph_handler import GraphHandler
+from app.constants import TravelMode, RoutingMode, PathType
 from app.logger import Logger
 from utils.igraphs import Edge as E
 
@@ -18,23 +19,23 @@ class PathFinder:
     
     """
 
-    def __init__(self, logger: Logger, finder_type: str, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon):
+    def __init__(self, logger: Logger, travel_mode: TravelMode, routing_mode: RoutingMode, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon):
         self.log = logger
-        self.finder_type: str = finder_type # either 'quiet' or 'clean'
+        self.travel_mode = travel_mode
+        self.routing_mode = routing_mode
         self.G = G
         orig_latLon = {'lat': float(orig_lat), 'lon': float(orig_lon)}
         dest_latLon = {'lat': float(dest_lat), 'lon': float(dest_lon)}
-        self.log.debug('initializing path finder from: '+ str(orig_latLon))
-        self.log.debug('to: '+ str(dest_latLon))
         self.orig_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(orig_latLon))
         self.dest_point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon(dest_latLon))
         self.noise_sens = noise_exps.get_noise_sensitivities()
         self.aq_sens = aq_exps.get_aq_sensitivities()
-        self.path_set = PathSet(self.log, set_type=self.finder_type)
+        self.path_set = PathSet(self.log, routing_mode)
         self.orig_node = None
         self.dest_node = None
         self.orig_link_edges = None
         self.dest_link_edges = None
+        self.log.debug(f'initialized path finder: {orig_latLon} - {dest_latLon} - {routing_mode} - {travel_mode}')
 
     def find_origin_dest_nodes(self):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
@@ -62,7 +63,7 @@ class PathFinder:
         Raises:
             Only meaningful exception strings that can be shown in UI.
         """
-        sens = self.aq_sens if (self.finder_type == 'clean') else self.noise_sens
+        sens = self.aq_sens if (self.routing_mode == RoutingMode.CLEAN) else self.noise_sens
         try:
             start_time = time.time()
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=E.length.value)
@@ -70,17 +71,18 @@ class PathFinder:
                 orig_node=self.orig_node['node'],
                 edge_ids=shortest_path,
                 name='short',
-                path_type='short'))
+                path_type=PathType.SHORT))
             for sen in sens:
-                # use aqi costs if optimizing clean paths - else use noise costs
-                cost_attr = 'aqc_'+ str(sen) if (self.finder_type == 'clean') else 'nc_'+ str(sen)
-                path_name = 'aq_'+ str(sen) if (self.finder_type == 'clean') else 'q_'+ str(sen)
+                # use aqi costs if optimizing fresh air (clean) paths - else use noise costs
+                cost_attr = 'aqc_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'nc_'+ str(sen)
+                cost_attr = 'b'+ cost_attr if (self.travel_mode == TravelMode.BIKE) else cost_attr
+                path_name = 'aq_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'q_'+ str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
                 self.path_set.add_green_path(Path(
                     orig_node=self.orig_node['node'],
                     edge_ids=least_cost_path,
                     name=path_name,
-                    path_type=self.finder_type,
+                    path_type=PathType[self.routing_mode.name],
                     cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
         except Exception:
