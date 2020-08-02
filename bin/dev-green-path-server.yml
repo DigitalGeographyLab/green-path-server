@@ -1,18 +1,17 @@
-version: '3.7'
+version: "3.7"
 
 services:
   hope-green-path-server:
     image: hellej/hope-green-path-server:dev
     environment:
       - WORKER_COUNT=1
-      - RUN_DEV=True
       - LOG_LEVEL=info
     volumes:
       - aqi-updates:/src/aqi_updates
     ports:
       - "5000:5000"
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -25,12 +24,10 @@ services:
       interval: 15s
       timeout: 10s
       retries: 3
-      start_period: 220s
-  
+      start_period: 300s
+
   hope-graph-updater:
     image: hellej/hope-graph-updater:dev
-    environment:
-      - RUN_DEV=True
     volumes:
       - aqi-updates:/src/aqi_updater/aqi_updates
     secrets:
