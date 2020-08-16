@@ -57,7 +57,7 @@ def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dic
     # use the nearest node if it is on the nearest edge and at least almost as near as the nearest edge
     # this can give a significant performance boost since adding (and deleting) linking edges to the graph is avoided 
     if (not link_edges): # check only if new node was not created for origin (no need to try to avoid creating new node for destination)
-        acceptable_od_offset = 20 if not long_distance else 30
+        acceptable_od_offset = 25 if not long_distance else 35
         if (nearest_node_vs_edge_dist < acceptable_od_offset and nearest_node in nearest_edge[E.uv.value]):
             return { 'node': nearest_node, 'offset': round(nearest_node_geom.distance(point), 1), 'add_links': False }
     if (nearest_node_vs_edge_dist < 10):
