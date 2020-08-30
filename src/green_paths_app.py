@@ -1,4 +1,5 @@
 import logging
+import traceback
 import os
 from flask import Flask
 from flask_cors import CORS
@@ -6,7 +7,7 @@ from flask import jsonify
 from app.graph_handler import GraphHandler
 from app.graph_aqi_updater import GraphAqiUpdater
 from app.path_finder import PathFinder
-from app.constants import TravelMode, RoutingMode
+from app.constants import TravelMode, RoutingMode, RoutingException, ErrorKeys
 from app.logger import Logger
 import utils.geometry as geom_utils
 
@@ -21,11 +22,11 @@ if __name__ != '__main__':
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
 
-logger = Logger(app_logger=app.logger)
+log = Logger(app_logger=app.logger)
 
 # initialize graph
-G = GraphHandler(logger, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
-aqi_updater = GraphAqiUpdater(logger, G)
+G = GraphHandler(log, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
+aqi_updater = GraphAqiUpdater(log, G)
 
 @app.route('/')
 def hello_world():
@@ -37,20 +38,25 @@ def get_short_quiet_paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_la
         travel_mode = TravelMode(travel_mode)
         routing_mode = RoutingMode(routing_mode)
     except Exception as e:
-        return jsonify({'error': 'invalid travel_mode or routing_mode parameter in request'})
+        return jsonify({'error_key': 'routing.invalid_travel_or_routing_mode_in_request'})
 
     if (routing_mode == RoutingMode.CLEAN and not aqi_updater.get_aqi_updated_since_secs()):
-        return jsonify({'error': 'latest air quality data not available'})
+        return jsonify({'error_key': 'routing.no_real_time_aqi_available'})
 
     error = None
     try:
-        path_finder = PathFinder(logger, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
+        path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
         path_finder.find_origin_dest_nodes()
         path_finder.find_least_cost_paths()
         path_FC, edge_FC = path_finder.process_paths_to_FC()
 
+    except RoutingException as e:
+        log.error(traceback.format_exc())
+        error = jsonify({'error_key': str(e)})
+
     except Exception as e:
-        error = jsonify({'error': str(e)})
+        log.error(traceback.format_exc())
+        error = jsonify({'error_key': ErrorKeys.UNKNOWN_ERROR.value})
 
     finally:
         path_finder.delete_added_graph_features()

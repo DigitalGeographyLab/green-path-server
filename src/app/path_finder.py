@@ -1,5 +1,4 @@
 from typing import List, Set, Dict, Tuple
-import traceback
 import time
 import json
 import utils.noise_exposures as noise_exps 
@@ -9,7 +8,7 @@ import utils.routing as routing_utils
 from app.path import Path
 from app.path_set import PathSet
 from app.graph_handler import GraphHandler
-from app.constants import TravelMode, RoutingMode, PathType
+from app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKeys
 from app.logger import Logger
 from utils.igraphs import Edge as E
 
@@ -52,10 +51,15 @@ class PathFinder:
             self.orig_link_edges = orig_link_edges
             self.dest_link_edges = dest_link_edges
             self.log.duration(start_time, 'origin & destination nodes set', unit='ms', log_level='info')
+
+        except RoutingException as e:
+            raise e
+
         except Exception as e:
-            self.log.error('exception in finding nearest nodes:')
-            self.log.error(traceback.format_exc())
-            raise Exception(str(e))
+            raise RoutingException(ErrorKeys.ORIGIN_OR_DEST_NOT_FOUND.value)
+
+        if (self.orig_node == self.dest_node):
+            raise RoutingException(ErrorKeys.OD_SAME_LOCATION.value)
 
     def find_least_cost_paths(self):
         """Finds both shortest and least cost paths. 
@@ -85,10 +89,13 @@ class PathFinder:
                     path_type=PathType[self.routing_mode.name],
                     cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
-        except Exception:
-            self.log.error('exception in finding least cost paths:')
-            self.log.error(traceback.format_exc())
-            raise Exception('Could not find paths')
+
+        except RoutingException as e:
+            raise e
+
+        except Exception as e:
+            self.log.error('exception in finding least cost paths')
+            raise RoutingException(ErrorKeys.PATHFINDING_ERROR.value)
 
     def process_paths_to_FC(self, edges: bool = True, FCs_to_files: bool = False) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
@@ -128,8 +135,7 @@ class PathFinder:
         
         except Exception:
             self.log.error('exception in processing paths:')
-            self.log.error(traceback.format_exc())
-            raise Exception('Error in processing paths')
+            raise RoutingException(ErrorKeys.PATH_PROCESSING_ERROR.value)
 
     def delete_added_graph_features(self):
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.

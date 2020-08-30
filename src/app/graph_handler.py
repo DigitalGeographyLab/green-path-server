@@ -8,6 +8,7 @@ import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
 import utils.geometry as geom_utils
 from app.logger import Logger
+from app.constants import RoutingException, ErrorKeys
 
 class GraphHandler:
     """Graph handler provides functions for accessing and manipulating graph during least cost path optimization. 
@@ -329,7 +330,7 @@ class GraphHandler:
             except:
                 raise Exception(f'Could not find paths by {weight}')
         else:
-            raise Exception('Origin and destination are the same location')
+            raise RoutingException(ErrorKeys.OD_SAME_LOCATION.value)
 
     def reset_edge_cache(self):
         self.__edge_cache = {}

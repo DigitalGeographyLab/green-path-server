@@ -12,3 +12,15 @@ class PathType(Enum):
     SHORT = 'short'
     CLEAN = RoutingMode.CLEAN.value
     QUIET = RoutingMode.QUIET.value
+
+class RoutingException(Exception):
+    pass
+
+class ErrorKeys(Enum):
+    DESTINATION_NOT_FOUND = 'destination_not_found'
+    ORIGIN_NOT_FOUND = 'origin_not_found'
+    ORIGIN_OR_DEST_NOT_FOUND = 'origin_or_destination_not_found'
+    PATHFINDING_ERROR = 'error_in_path_finding'
+    PATH_PROCESSING_ERROR = 'error_in_path_processing'
+    OD_SAME_LOCATION = 'od_are_same_location'
+    UNKNOWN_ERROR = 'unknown_error'

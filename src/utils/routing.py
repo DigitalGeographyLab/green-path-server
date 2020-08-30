@@ -12,6 +12,7 @@ from shapely.geometry import Point, LineString
 from app.graph_handler import GraphHandler
 from app.logger import Logger
 from utils.igraphs import Edge as E, Node as N
+from app.constants import RoutingException, ErrorKeys
 
 def __get_closest_point_on_line(line: LineString, point: Point) -> Point:
     """Finds the closest point on a line to given point and returns it as Point.
@@ -106,7 +107,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
             orig_link_edges = G.create_linking_edges_for_new_node(
                 orig_node['node'], orig_node['nearest_edge_point'], orig_node['nearest_edge'], aq_sens, noise_sens, db_costs, True)
     except Exception:
-        raise Exception('Could not find origin')
+        raise RoutingException(ErrorKeys.ORIGIN_NOT_FOUND.value)
     try:
         dest_node = get_nearest_node(log, G, dest_point, link_edges=orig_link_edges, long_distance=long_distance)
         # add linking edges to graph if new node was created on the nearest edge
@@ -114,7 +115,7 @@ def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_poi
             dest_link_edges = G.create_linking_edges_for_new_node(
                 dest_node['node'], dest_node['nearest_edge_point'], dest_node['nearest_edge'], aq_sens, noise_sens, db_costs, False)
     except Exception:
-        raise Exception('Could not find destination')
+        raise RoutingException(ErrorKeys.DESTINATION_NOT_FOUND.value)
 
     G.load_new_edges_to_graph()
 
