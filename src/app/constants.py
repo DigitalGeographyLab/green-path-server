@@ -23,4 +23,7 @@ class ErrorKeys(Enum):
     PATHFINDING_ERROR = 'error_in_path_finding'
     PATH_PROCESSING_ERROR = 'error_in_path_processing'
     OD_SAME_LOCATION = 'od_are_same_location'
+    NO_REAL_TIME_AQI_AVAILABLE = 'no_real_time_aqi_available'
+    INVALID_TRAVEL_MODE_PARAM = 'invalid_travel_mode_in_request_params'
+    INVALID_EXPOSURE_MODE_PARAM = 'invalid_exposure_mode_in_request_params'
     UNKNOWN_ERROR = 'unknown_error'

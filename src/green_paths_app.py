@@ -32,16 +32,20 @@ aqi_updater = GraphAqiUpdater(log, G)
 def hello_world():
     return 'Keep calm and walk green paths.'
 
-@app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
-def get_short_quiet_paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
+@app.route('/paths/<travel_mode>/<exposure_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_lat, dest_lon):
     try:
         travel_mode = TravelMode(travel_mode)
-        routing_mode = RoutingMode(routing_mode)
-    except Exception as e:
-        return jsonify({'error_key': 'routing.invalid_travel_or_routing_mode_in_request'})
+    except Exception:
+        return jsonify({'error_key': ErrorKeys.INVALID_TRAVEL_MODE_PARAM.value})
+
+    try:
+        routing_mode = RoutingMode(exposure_mode)
+    except Exception:
+        return jsonify({'error_key': ErrorKeys.INVALID_EXPOSURE_MODE_PARAM.value})
 
     if (routing_mode == RoutingMode.CLEAN and not aqi_updater.get_aqi_updated_since_secs()):
-        return jsonify({'error_key': 'routing.no_real_time_aqi_available'})
+        return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
 
     error = None
     try:
@@ -54,7 +58,7 @@ def get_short_quiet_paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_la
         log.error(traceback.format_exc())
         error = jsonify({'error_key': str(e)})
 
-    except Exception as e:
+    except Exception:
         log.error(traceback.format_exc())
         error = jsonify({'error_key': ErrorKeys.UNKNOWN_ERROR.value})
 
