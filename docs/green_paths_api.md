@@ -6,19 +6,24 @@ This page contains useful information of the green paths routing API:
 
 When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is already being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it's probably a good idea to take a look at it when familiarizing with the API. 
 
+## Path variables
+- travel_mode: either `walk` or `bike` 
+- exposure_mode: either `quiet` or `clean` (for fresh air paths) 
+- orig/dest_coords: <latitude,longitude>, e.g. 60.20772,24.96716
+
 ## Endpoints
 - www.greenpaths.fi/
-- www.greenpaths.fi/quietpaths/<orig_coords>/<dest_coords>
-- www.greenpaths.fi/cleanpaths/<orig_coords>/<dest_coords>
-- e.g. www.greenpaths.fi/quietpaths/60.20772,24.96716/60.2037,24.9653
-- e.g. www.greenpaths.fi/cleanpaths/60.20772,24.96716/60.2037,24.9653
+- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
+- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
+- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
+- e.g. www.greenpaths.fi/paths/walk/clean/60.20772,24.96716/60.2037,24.9653
 
 ## Response
 - 2 X GeoJSON FeatureCollections
 - Edge_FC & Path_FC
 
 ```
-  const response = await axios.get(https://www.greenpaths.fi/cleanpaths/60.20772,24.96716/60.2037,24.9653)
+  const response = await axios.get(https://www.greenpaths.fi/paths/bike/clean/60.20772,24.96716/60.2037,24.9653)
   const Path_FC = response.data.path_FC
 ```
 
@@ -46,9 +51,10 @@ When exploring the API and the source codes, please bear in mind that the word "
 | Property | Type | Nullable | Description  |
 | ------------- | ---- | --- | ----------- |
 | type | string | no | Type of the path: either “short”, “quiet” or "clean" (clean = fresh air). |
-| id | string | no | Unique name of the path (e.g. “short” or “qp_0.2”). |
+| id | string | no | Unique name of the path within the returned FeatureCollection (e.g. “short” or “qp_0.2”). |
 | cost_coeff | number | no | Noise or AQI sensitivity coefficient with which the green path was optimized. |
 | length | number | no | Length of the path (m). |
+| length_b | number | no | Biking safety adjusted distance of the path, hence longer than the real distance (m). |
 | len_diff | number | no | Difference in path length compared to the shortest path (m). |
 | len_diff_rat | number | yes | Difference in path length compared to the shortest path (%). |
 | aqc | number | no | Air pollution exposure index. |
@@ -74,13 +80,13 @@ When exploring the API and the source codes, please bear in mind that the word "
 | path_score | number | yes | Ratio between difference in noise exposure index and length compared to the shortest path - i.e. reduction in noise exposure index per each additional meter walked. |
 
 ## Exceptions
-- Currently, only very simple exception forwarding is implemented at the server. 
-- In case anything goes wrong during routing, the server returns a descriptive error message (in the error property of the data) to be shown to the user. 
-- One way to check and catch a potential routing error is presented below:
+- Possible routing errors are defined as error keys in [src/app/constants.py](../src/app/constants.py)
+- In case of routing error, the respective key is returned in property `error_key` of the response (data)
+- One way of catching these errors is demonstrated below:
 
 ```
-  const response = await axios.get(https://www.greenpaths.fi/cleanpaths/60.20772,24.96716/60.2037,24.9653)
-  if (response.data.error) throw response.data.error
+  const response = await axios.get(https://www.greenpaths.fi/bike/quiet/60.20772,24.96716/60.2037,24.9653)
+  if (response.data.error_key) throw response.data.error_key
 ```
 
 ## Example Path_FC
@@ -93,6 +99,7 @@ Path_FC: {
       id: "short",
       cost_coeff: 0,
       length: 492.92,
+      length_b: 521.0,
       len_diff: 0,
       len_diff_rat: null,
       aqc: 160.62,
@@ -150,6 +157,7 @@ Path_FC: {
       id: "q_20",
       cost_coeff: 20,
       length: 629.29,
+      length_b: 650.2,
       len_diff: 136.4,
       len_diff_rat: 27.7,
       aqc: 206.76,
