@@ -322,15 +322,15 @@ class TestAqiExposures(unittest.TestCase):
     def test_aq_update_attrs(self):
         aqi_updater = GraphAqiUpdater(logger, G, start=False)
         aqi_exp = (0.0, 10.0)
-        aq_costs = aqi_updater.get_aq_update_attrs(aqi_exp)
+        aq_costs = aqi_updater.__get_aq_update_attrs(aqi_exp)
         self.assertEqual(aq_costs['aqc_1'], 1010.0)
         self.assertEqual(aq_costs['has_aqi'], False)
         aqi_exp = (1.0, 10.0)
-        aq_costs = aqi_updater.get_aq_update_attrs(aqi_exp)
+        aq_costs = aqi_updater.__get_aq_update_attrs(aqi_exp)
         self.assertEqual(aq_costs['aqc_1'], 10.0)
         self.assertEqual(aq_costs['has_aqi'], True)
         aqi_exp = (2.0, 10.0)
-        aq_costs = aqi_updater.get_aq_update_attrs(aqi_exp)
+        aq_costs = aqi_updater.__get_aq_update_attrs(aqi_exp)
         self.assertEqual(aq_costs['aqc_1'], 12.5)
         self.assertEqual(aq_costs['has_aqi'], True)
     

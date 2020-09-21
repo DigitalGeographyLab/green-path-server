@@ -118,7 +118,7 @@ class Path:
 
     def __get_geojson_feature_dict(self, coords: List[tuple]) -> dict:
         """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
-        feature inside a GeoJSON feature collection. The given geometry is projected to EPSG:4326. 
+        feature inside a GeoJSON feature collection. 
         """
         feature = { 
             'type': 'Feature', 

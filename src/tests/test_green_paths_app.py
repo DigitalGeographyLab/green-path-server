@@ -19,7 +19,7 @@ expected_ecount = G.graph.ecount()
 expected_vcount = G.graph.vcount()
 aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
 aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
-aqi_updater.read_update_aqi_to_graph(aqi_edge_updates_csv)
+aqi_updater.__read_update_aqi_to_graph(aqi_edge_updates_csv)
 
 def get_quiet_path_stats(G, od_dict, logging=False):
     FC = tests.get_short_green_paths(logger, 'quiet', G, od_dict['orig_latLon'], od_dict['dest_latLon'], logging=logging)
@@ -58,7 +58,7 @@ class TestGraphAqiUpdater(unittest.TestCase):
 
     def test_aqi_updater(self):
         aqi_updater = GraphAqiUpdater(logger, G, aqi_dir='data/tests/aqi_cache/', start=False)
-        expected_aqi_csv = aqi_updater.get_expected_aqi_data_name()
+        expected_aqi_csv = aqi_updater.__get_expected_aqi_data_name()
         # test expected aqi data file name
         self.assertEqual(len(expected_aqi_csv), 21)
 
