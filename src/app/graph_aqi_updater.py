@@ -36,6 +36,7 @@ class GraphAqiUpdater:
     def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_updates/'):
         self.log = logger
         self.__aqi_update_status = ''
+        self.__aqi_update_error = ''
         self.__aqi_data_wip = ''
         self.__aqi_data_latest = ''
         self.__aqi_data_updatetime = None
@@ -55,7 +56,7 @@ class GraphAqiUpdater:
         return edge_df
 
     def __start(self):
-        self.log.info('starting graph aqi updater with check interval (s): '+ str(self.__check_interval))
+        self.log.info('Starting graph aqi updater with check interval (s): '+ str(self.__check_interval))
         self.__scheduler.start()
 
     def get_aqi_update_status_response(self):
@@ -71,17 +72,23 @@ class GraphAqiUpdater:
         """
         new_aqi_data_csv = self.__new_aqi_data_available()
         if new_aqi_data_csv:
-            try:
-                self.__read_update_aqi_to_graph(new_aqi_data_csv)
-            except Exception:
-                self.__aqi_update_status = 'could not complete AQI update from: '+ new_aqi_data_csv
-                self.log.error(self.__aqi_update_status)
-                self.log.error(traceback.format_exc())
-                self.log.warning('waiting 60 s after exception before next AQI update attempt')
-                time.sleep(60)
-            finally:
-                gc.collect()
-                self.__aqi_data_wip = ''
+            for attempt in range(3):
+                try:
+                    self.__aqi_update_error = ''
+                    self.__read_update_aqi_to_graph(new_aqi_data_csv)
+                    self.__validate_graph_aqi()
+                    self.__aqi_data_wip = ''
+                    gc.collect()
+                    break
+                except Exception:
+                    self.__aqi_update_error = f'AQI update attempt no. {attempt+1}/3 failed from AQI update file: {new_aqi_data_csv}'
+                    self.log.error(self.__aqi_update_error)
+                    self.log.error(traceback.format_exc())
+                    if attempt < 2:
+                        wait_for_s = 10 + attempt * 10
+                        self.log.warning(f'Waiting {wait_for_s} s after exception before next AQI update attempt')
+                        time.sleep(wait_for_s)
+                    gc.collect()
 
     def __get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
@@ -118,7 +125,9 @@ class GraphAqiUpdater:
         aqi_update_status = ''
 
         aqi_data_expected = self.__get_expected_aqi_data_name()
-        if (aqi_data_expected == self.__aqi_data_latest):
+        if self.__aqi_update_error:
+            aqi_update_status = self.__aqi_update_error
+        elif (aqi_data_expected == self.__aqi_data_latest):
             aqi_update_status = 'latest AQI was updated to graph'
         elif (aqi_data_expected == self.__aqi_data_wip):
             aqi_update_status = 'AQI update already in progress'
@@ -156,7 +165,7 @@ class GraphAqiUpdater:
     def __read_update_aqi_to_graph(self, aqi_updates_csv: str):
         """Updates new AQI values and AQ costs to edges and AQI=None to edges that do not get AQI update. 
         """
-        self.log.info('starting AQI update from: '+ aqi_updates_csv)
+        self.log.info('Starting AQI update from: '+ aqi_updates_csv)
         self.__aqi_data_wip = aqi_updates_csv
 
         # read aqi update csv
@@ -171,7 +180,7 @@ class GraphAqiUpdater:
         # update AQI and AQ costs to graph
         aqi_update_df = pd.merge(self.__edge_df, edge_aqi_updates, on=E.id_ig.name, how='inner')
         if (len(aqi_update_df) != aqi_update_count):
-            self.log.info(f'failed to merge AQI updates to edge gdf, missing {aqi_update_count - len(aqi_update_df)} edges')  
+            self.log.info(f'Failed to merge AQI updates to edge gdf, missing {aqi_update_count - len(aqi_update_df)} edges')  
         
         aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.__get_aq_update_attrs(x['aqi'], x[E.length.name], x[E.length_b.name]), axis=1)
         self.__G.update_edge_attr_to_graph(aqi_update_df, df_attr='aq_updates')
@@ -184,9 +193,9 @@ class GraphAqiUpdater:
 
         # check that all edges got either AQI value or AQI=None
         if (len(self.__edge_df) != (len(missing_aqi_update_df) + len(aqi_update_df))):
-            self.log.error(f'edge count: {len(self.__edge_df)} != all AQI updates: {len(missing_aqi_update_df) + len(aqi_update_df)}')
+            self.log.error(f'Edge count: {len(self.__edge_df)} != all AQI updates: {len(missing_aqi_update_df) + len(aqi_update_df)}')
         else:
-            self.log.info('AQI update succeeded')
+            self.log.info('AQI update done')
 
         # TODO see if these help to release some memory (remove if not)
         del edge_aqi_updates
@@ -195,3 +204,21 @@ class GraphAqiUpdater:
         
         self.__aqi_data_updatetime = datetime.utcnow()
         self.__aqi_data_latest = aqi_updates_csv
+
+    def __validate_graph_aqi(self):
+        edge_count = self.__G.graph.ecount()
+        has_aqi_count = 0
+        missing_aqi_count = 0
+        for edge in self.__G.graph.es:
+            if not edge[E.aqi.value]:
+                missing_aqi_count += 1
+            else:
+                has_aqi_count += 1
+
+        aqi_ok_ratio = has_aqi_count/edge_count
+        missing_ratio = missing_aqi_count/edge_count
+
+        if aqi_ok_ratio > 0.2 and missing_ratio > 0.03:
+            raise Exception(f'Graph got incomplete AQI update (aqi_ok_ratio: {round(aqi_ok_ratio, 4)}, missing_ratio: {round(missing_ratio, 4)})')
+        else:
+            self.log.info(f'Graph AQI update resulted aqi_ok_ratio: {round(aqi_ok_ratio, 4)} & missing_ratio: {round(missing_ratio, 4)}')
