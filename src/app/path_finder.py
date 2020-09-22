@@ -34,7 +34,7 @@ class PathFinder:
         self.dest_node = None
         self.orig_link_edges = None
         self.dest_link_edges = None
-        self.log.debug(f'initialized path finder: {orig_latLon} - {dest_latLon} - {routing_mode} - {travel_mode}')
+        self.log.debug(f'Initialized path finder: {orig_latLon} - {dest_latLon} - {routing_mode} - {travel_mode}')
 
     def find_origin_dest_nodes(self):
         """Finds & sets origin & destination nodes and linking edges as instance variables.
@@ -94,7 +94,6 @@ class PathFinder:
             raise e
 
         except Exception as e:
-            self.log.error('exception in finding least cost paths')
             raise RoutingException(ErrorKeys.PATHFINDING_ERROR.value)
 
     def process_paths_to_FC(self, edges: bool = True, FCs_to_files: bool = False) -> dict:
@@ -134,13 +133,12 @@ class PathFinder:
             return (path_FC, edge_FC) if (edges == True) else path_FC
         
         except Exception:
-            self.log.error('exception in processing paths:')
             raise RoutingException(ErrorKeys.PATH_PROCESSING_ERROR.value)
 
     def delete_added_graph_features(self):
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
         """
-        self.log.debug('deleting created nodes & edges from the graph')
+        self.log.debug('Deleting created nodes & edges from the graph')
         self.G.delete_added_linking_edges(
             orig_edges=self.orig_link_edges,
             orig_node=self.orig_node, 

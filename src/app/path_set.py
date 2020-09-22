@@ -50,10 +50,10 @@ class PathSet:
             self.green_paths = [path for path in self.green_paths if not path.missing_noises]
         filtered_out_count = path_count - len(self.green_paths)
         if (filtered_out_count > 0):
-            self.log.info('filtered out '+ str(filtered_out_count) + ' green paths without exposure data')
+            self.log.info('Filtered out '+ str(filtered_out_count) + ' green paths without exposure data')
 
     def filter_out_unique_edge_sequence_paths(self) -> None:
-        self.log.debug('green path count: '+ str(len(self.green_paths)))
+        self.log.debug('Green path count: '+ str(len(self.green_paths)))
         filtered = []
         prev_edges = self.shortest_path.edge_ids
         for path in self.green_paths:
@@ -61,7 +61,7 @@ class PathSet:
                 filtered.append(path)
             prev_edges = path.edge_ids
         self.green_paths = filtered
-        self.log.debug('green path count after filter by unique edge sequence: '+ str(len(self.green_paths)))
+        self.log.debug('Green path count after filter by unique edge sequence: '+ str(len(self.green_paths)))
 
     def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
@@ -76,7 +76,7 @@ class PathSet:
         """
         filtered_green_paths = [path for path in self.green_paths if path.name in filter_names]
         if ('short' not in filter_names):
-            self.log.debug('replacing shortest path with shortest green path')
+            self.log.debug('Replacing shortest path with shortest green path')
             shortest_green_path = filtered_green_paths[0]
             shortest_green_path.set_path_type(PathType.SHORT)
             shortest_green_path.set_path_name('short')

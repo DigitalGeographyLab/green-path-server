@@ -165,13 +165,13 @@ def read_graphml(graph_file: str, log: Logger = None) -> ig.Graph:
             converter = node_attr_converters[Node(attr)]
             G.vs[attr] = [converter(value) for value in list(G.vs[attr])]
         except Exception:
-            if (log is not None): log.warning(f'failed to read node attribute {attr}')
+            if (log is not None): log.warning(f'Failed to read node attribute {attr}')
     for attr in G.es[0].attributes():
         try:
             converter = edge_attr_converters[Edge(attr)]
             G.es[attr] = [converter(value) for value in list(G.es[attr])]
         except Exception:
-            if (log is not None): log.warning(f'failed to read edge attribute {attr}')
+            if (log is not None): log.warning(f'Failed to read edge attribute {attr}')
     return G
 
 def export_to_graphml(G: ig.Graph, graph_file: str, n_attrs=[], e_attrs=[]):

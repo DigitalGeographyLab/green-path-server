@@ -128,14 +128,14 @@ class GraphAqiUpdater:
         if self.__aqi_update_error:
             aqi_update_status = self.__aqi_update_error
         elif (aqi_data_expected == self.__aqi_data_latest):
-            aqi_update_status = 'latest AQI was updated to graph'
+            aqi_update_status = 'Latest AQI was updated to graph'
         elif (aqi_data_expected == self.__aqi_data_wip):
             aqi_update_status = 'AQI update already in progress'
         elif (aqi_data_expected in listdir(self.__aqi_dir)):
             aqi_update_status = 'AQI update will be done from: '+ aqi_data_expected
             new_aqi_csv = aqi_data_expected
         else:
-            aqi_update_status = 'expected AQI data is not available ('+ aqi_data_expected +')'
+            aqi_update_status = 'Expected AQI data is not available ('+ aqi_data_expected +')'
         
         if (aqi_update_status != self.__aqi_update_status):
             self.log.info(aqi_update_status)

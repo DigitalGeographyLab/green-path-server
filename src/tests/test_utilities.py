@@ -31,7 +31,7 @@ def find_edges_between_node_pair(self, graph, source: int, target: int, directed
         else:
             return [e.attributes() for e in self.graph.es.select(_within=[source, target])]
     except Exception:
-        self.log.warning('tried to find edges from/to invalid vertex id: '+ str(source) +' or: '+ str(target))
+        self.log.warning('Tried to find edges from/to invalid vertex id: '+ str(source) +' or: '+ str(target))
         return []
 
 # @unittest.SkipTest

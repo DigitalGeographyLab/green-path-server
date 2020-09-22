@@ -31,7 +31,7 @@ class GraphHandler:
             subset: A boolean variable indicating whether a subset of the graph should be loaded (subset is for testing / developing).
         """
         self.log = logger
-        self.log.info('graph subset: '+ str(subset))
+        self.log.info('Graph subset: '+ str(subset))
         start_time = time.time()
         if subset:
             self.graph = ig_utils.read_graphml('graphs/kumpula.graphml')
@@ -39,16 +39,16 @@ class GraphHandler:
             self.graph = ig_utils.read_graphml('graphs/hma.graphml')
         self.ecount = self.graph.ecount()
         self.vcount = self.graph.vcount()
-        self.log.info('graph of '+ str(self.graph.ecount()) + ' edges read')
+        self.log.info('Graph of '+ str(self.graph.ecount()) + ' edges read')
         self.__edge_gdf = self.__get_edge_gdf()
         self.__edge_sindex = self.__edge_gdf.sindex
         self.__node_gdf = ig_utils.get_node_gdf(self.graph)
         self.__nodes_sind = self.__node_gdf.sindex
         self.db_costs = noise_exps.get_db_costs(version=3)
         self.__set_noise_costs_to_edges()
-        self.log.info('noise costs set')
+        self.log.info('Noise costs set')
         self.graph.es[E.aqi.value] = None # set default AQI value to None
-        self.log.duration(start_time, 'graph initialized', log_level='info')
+        self.log.duration(start_time, 'Graph initialized', log_level='info')
         self.__new_edges: Dict[Tuple[int, int], Dict] = {}
         self.__edge_cache: Dict[int, dict] = {}
 
@@ -59,7 +59,7 @@ class GraphHandler:
         # drop edges without geometry
         edge_gdf = edge_gdf[edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))]
         edge_gdf = edge_gdf[[E.geometry.name]]
-        self.log.info(f'added {len(edge_gdf)} edges to edge_gdf')
+        self.log.info(f'Added {len(edge_gdf)} edges to edge_gdf')
         return edge_gdf
 
     def __set_noise_costs_to_edges(self):
@@ -115,7 +115,7 @@ class GraphHandler:
             if (len(possible_matches_index) > 0):
                 break
         if (len(possible_matches_index) == 0):
-            self.log.warning('no near node found')
+            self.log.warning('No near node found')
             return None
         possible_matches = self.__node_gdf.iloc[possible_matches_index]
         points_union = possible_matches.geometry.unary_union
@@ -129,14 +129,14 @@ class GraphHandler:
         try:
             return self.graph.vs[node_id].attributes()
         except Exception:
-            self.log.warning('could not find node by id: '+ str(node_id))
+            self.log.warning('Could not find node by id: '+ str(node_id))
             return None
 
     def __get_edge_by_id(self, edge_id: int) -> dict:
         try:
             return self.graph.es[edge_id].attributes()
         except Exception:
-            self.log.warning('could not find edge by id: '+ str(edge_id))
+            self.log.warning('Could not find edge by id: '+ str(edge_id))
             return None
 
     def get_node_point_geom(self, node_id: int) -> Point:
@@ -154,7 +154,7 @@ class GraphHandler:
                 if (shortest_dist < radius):
                     break
         if (len(possible_matches_index) == 0):
-            self.log.error('no near edges found')
+            self.log.error('No near edges found')
             return None
         nearest = possible_matches['distance'] == shortest_dist
         edge_id = possible_matches.loc[nearest].index[0]
@@ -355,12 +355,12 @@ class GraphHandler:
 
         try:
             self.graph.delete_vertices(delete_node_ids)
-            self.log.debug(f'deleted {len(delete_node_ids)} nodes')
+            self.log.debug(f'Deleted {len(delete_node_ids)} nodes')
         except Exception:
-            self.log.error('could not delete added nodes or edges from the graph')
+            self.log.error('Could not delete added nodes or edges from the graph')
 
         # make sure that graph has the expected number of edges and nodes after routing
         if (self.graph.ecount() != self.ecount):
-            self.log.error('graph has incorrect number of edges: '+ str(self.graph.ecount()) + ' is not '+ str(self.ecount))
+            self.log.error('Graph has incorrect number of edges: '+ str(self.graph.ecount()) + ' is not '+ str(self.ecount))
         if (self.graph.vcount() != self.vcount):
-            self.log.error('graph has incorrect number of nodes: '+ str(self.graph.vcount()) + ' is not '+ str(self.vcount))
+            self.log.error('Graph has incorrect number of nodes: '+ str(self.graph.vcount()) + ' is not '+ str(self.vcount))
