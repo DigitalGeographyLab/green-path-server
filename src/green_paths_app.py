@@ -22,7 +22,7 @@ if __name__ != '__main__':
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
 
-log = Logger(app_logger=app.logger)
+log = Logger(app_logger=app.logger, b_printing=False)
 
 # initialize graph
 G = GraphHandler(log, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))

@@ -1,0 +1,13 @@
+name: gp-env-win
+
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pylint
+  - pytest
+  - apscheduler
+  - geopandas
+  - python-igraph
+  - flask
+  - flask-cors

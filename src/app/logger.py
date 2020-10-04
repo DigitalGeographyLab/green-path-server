@@ -59,7 +59,6 @@ class Logger:
             log_str = '--- %s ms --- %s' % (time_elapsed, text)
 
         level = 'DEBUG' if log_level == 'debug' else 'INFO'
-        self.print_log(log_str, level)
         if self.app_logger:
             if log_level == 'debug':
                 self.debug(log_str)

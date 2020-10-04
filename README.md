@@ -42,11 +42,15 @@ email, or any other method with the owners of this repository before making a ch
 $ git clone git@github.com:DigitalGeographyLab/hope-green-path-server.git
 $ cd hope-green-path-server/src
 
-# create Python environment with Conda
+# create Python environment with conda (on Windows, use the env file: conda-env-win.yml)
 $ conda env create -f conda-env.yml
 ```
 
-## Running the server locally
+[Download graph data](https://drive.google.com/file/d/1jM-CPjBZdIXjKnPMwB7k8NV3hGC63VkI/view?usp=sharing) and place the downloaded file (`hma.graphml`) in the directory `src/graphs`. 
+
+The `hma.graphml` street network graph covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen). The other graph file (`kumpula.graphml`) is a small subset of the full graph and can be used for development and testing purposes (with environment variable `GRAPH_SUBSET=True`). 
+
+## Running the server locally (linux/osx)
 ```
 $ conda activate gp-env
 
@@ -55,6 +59,19 @@ $ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 450 green_
 
 # or
 $ sh start-application.sh
+```
+
+## Running the server locally (win)
+In order to run the app on Windows, you must serve it with Flask as instructed in this chapter (Gunicorn cannot be installed on Windows).
+
+For testing and development purposes, set the environment variable `GRAPH_SUBSET=True` or edit the [affected line](https://github.com/DigitalGeographyLab/hope-green-path-server/blob/8ed6caa2ab2eeadf5107cdafede22bc2d2487e70/src/green_paths_app.py#L28) directly in the code. 
+
+Printing log messages to command prompt is disabled by default. If you want to print log messages (to command prompt), you can enable it [here](https://github.com/DigitalGeographyLab/hope-green-path-server/blob/8ed6caa2ab2eeadf5107cdafede22bc2d2487e70/src/green_paths_app.py#L25) (by setting `b_printing=True`). 
+
+Start the application:
+```
+> conda activate gp-env-win
+> python green_paths_app.py
 ```
 
 ## Running the tests
