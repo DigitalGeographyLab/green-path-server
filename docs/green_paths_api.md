@@ -6,17 +6,16 @@ This page contains useful information of the green paths routing API:
 
 When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is already being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it's probably a good idea to take a look at it when familiarizing with the API. 
 
+## Endpoints
+- www.greenpaths.fi/
+- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
+- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
+- e.g. www.greenpaths.fi/paths/walk/clean/60.20772,24.96716/60.2037,24.9653
+
 ## Path variables
 - travel_mode: either `walk` or `bike` 
 - exposure_mode: either `quiet` or `clean` (for fresh air paths) 
 - orig/dest_coords: <latitude,longitude>, e.g. 60.20772,24.96716
-
-## Endpoints
-- www.greenpaths.fi/
-- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
-- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
-- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
-- e.g. www.greenpaths.fi/paths/walk/clean/60.20772,24.96716/60.2037,24.9653
 
 ## Response
 - 2 X GeoJSON FeatureCollections
