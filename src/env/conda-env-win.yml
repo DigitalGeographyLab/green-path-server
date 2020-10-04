@@ -3,11 +3,13 @@ name: gp-env-win
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.7
   - pylint
   - pytest
   - apscheduler
   - geopandas
-  - python-igraph
   - flask
   - flask-cors
+  - pip
+  - pip:
+    - python_igraph-0.7.1.post6-cp37-cp37m-win_amd64.whl

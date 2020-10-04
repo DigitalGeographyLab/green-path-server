@@ -39,11 +39,16 @@ email, or any other method with the owners of this repository before making a ch
 
 ## Installation
 ```
-$ git clone git@github.com:DigitalGeographyLab/hope-green-path-server.git
-$ cd hope-green-path-server/src
-
-# create Python environment with conda (on Windows, use the env file: conda-env-win.yml)
+$ git clone https://github.com/DigitalGeographyLab/hope-green-path-server.git
+$ cd hope-green-path-server/src/env
+```
+**unix/osx**
+```
 $ conda env create -f conda-env.yml
+```
+**Windows**
+```
+> conda env create -f conda-env-win.yml
 ```
 
 [Download graph data](https://drive.google.com/file/d/1jM-CPjBZdIXjKnPMwB7k8NV3hGC63VkI/view?usp=sharing) and place the downloaded file (`hma.graphml`) in the directory `src/graphs`. 
@@ -52,6 +57,7 @@ The `hma.graphml` street network graph covers the Helsinki Metropolitan Area (i.
 
 ## Running the server locally (linux/osx)
 ```
+$ cd src
 $ conda activate gp-env
 
 $ export GRAPH_SUBSET=True
@@ -70,9 +76,15 @@ Printing log messages to command prompt is disabled by default. If you want to p
 
 Start the application:
 ```
+> cd src
 > conda activate gp-env-win
 > python green_paths_app.py
 ```
+
+Now for example the following request should return some (quiet) paths as GeoJSON:
+[http://localhost:5000/paths/walk/quiet/60.20772,24.96716/60.2037,24.9653](http://localhost:5000/paths/walk/quiet/60.20772,24.96716/60.2037,24.9653)
+
+Learn how to use the API by reading [the documentation](docs/green_paths_api.md). 
 
 ## Running the tests
 ```
