@@ -88,5 +88,6 @@ Learn how to use the API by reading [the documentation](docs/green_paths_api.md)
 
 ## Running the tests
 ```
-WIP
+$ cd src
+$ python -m pytest tests
 ```

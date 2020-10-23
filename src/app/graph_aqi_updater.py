@@ -17,7 +17,7 @@ from utils.igraphs import Edge as E
 from typing import List, Set, Dict, Tuple, Optional
 
 class GraphAqiUpdater:
-    """GraphAqiUpdater triggers an AQI to graph update if new AQI data is available in /aqi_cache.
+    """GraphAqiUpdater updates new AQI to graph if new AQI data is available in /aqi_cache.
 
     Attributes:
         __aqi_update_status (str): A message describing the current state of the AQI updater. 

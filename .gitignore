@@ -111,3 +111,4 @@ src/aqi_updates/*
 src/sample_data/
 .DS_Store
 src/graphs/hma.graphml
+src/tests_bu
