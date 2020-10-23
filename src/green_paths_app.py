@@ -52,8 +52,9 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
     except Exception:
         return jsonify({'error_key': ErrorKeys.INVALID_EXPOSURE_MODE_PARAM.value})
 
-    if (routing_mode == RoutingMode.CLEAN and not aqi_updater.get_aqi_updated_since_secs()):
-        return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
+    if routing_mode == RoutingMode.CLEAN:
+        if not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']:
+            return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
 
     error = None
     try:
