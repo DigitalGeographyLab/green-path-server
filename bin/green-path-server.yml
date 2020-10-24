@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   hope-green-path-server:
-    image: hellej/hope-green-path-server:1
+    image: "hellej/hope-green-path-server:${GP_IMAGE_TAG}"
     environment:
       - WORKER_COUNT=2
       - LOG_LEVEL=info
@@ -27,7 +27,7 @@ services:
       start_period: 300s
 
   hope-graph-updater:
-    image: hellej/hope-graph-updater:1
+    image: "hellej/hope-graph-updater:${GP_IMAGE_TAG}"
     volumes:
       - aqi-updates:/src/aqi_updater/aqi_updates
     secrets:

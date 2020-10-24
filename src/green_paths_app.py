@@ -31,6 +31,8 @@ log = Logger(app_logger=app.logger, b_printing=False)
 # initialize graph
 G = GraphHandler(log, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
 aqi_updater = GraphAqiUpdater(log, G)
+
+# start AQI map data service
 aqi_map_data_api = get_aqi_map_data_api(log, 'aqi_updates/')
 aqi_map_data_api.start()
 
@@ -52,8 +54,9 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
     except Exception:
         return jsonify({'error_key': ErrorKeys.INVALID_EXPOSURE_MODE_PARAM.value})
 
-    if (routing_mode == RoutingMode.CLEAN and not aqi_updater.get_aqi_updated_since_secs()):
-        return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
+    if routing_mode == RoutingMode.CLEAN:
+        if not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']:
+            return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
 
     error = None
     try:
@@ -85,9 +88,14 @@ def aqi_status():
     return jsonify(aqi_updater.get_aqi_update_status_response())
 
 
+@app.route('/aqi-map-data-status')
+def aqi_map_data_status():
+    return aqi_map_data_api.get_status()
+
+
 @app.route('/aqi-map-data')
 def aqi_map_data():
-    return aqi_map_data_api.get_aqi_map_data()
+    return aqi_map_data_api.get_data()
 
 
 @app.route('/edge-attrs-near-point/<lat>,<lon>')

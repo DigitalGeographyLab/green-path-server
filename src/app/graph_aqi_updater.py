@@ -1,12 +1,10 @@
 import time
-import ast
 import gc
 import random
 import traceback
 import pandas as pd
-from shapely.geometry import LineString
 from os import listdir
-from datetime import datetime
+from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.graph_handler import GraphHandler
 import utils.aq_exposures as aq_exps
@@ -14,7 +12,7 @@ import utils.igraphs as ig_utils
 from app.logger import Logger
 import utils.igraphs as ig_utils
 from utils.igraphs import Edge as E
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional, Union
 
 class GraphAqiUpdater:
     """GraphAqiUpdater updates new AQI to graph if new AQI data is available in /aqi_cache.
@@ -23,7 +21,6 @@ class GraphAqiUpdater:
         __aqi_update_status (str): A message describing the current state of the AQI updater. 
         __aqi_data_wip (str): The name of an aqi data csv file that is currently being updated to a graph.
         __aqi_data_latest (str): The name of the aqi data csv file that was last updated to a graph.
-        __aqi_data_updatetime: datetime.utcnow() of the latest successful aqi update.
         __G: A GraphHandler object via which aqi values are updated to a graph.
         __edge_df: A pandas DataFrame object containing edges to be updated (as by __create_updater_edge_df()).
         __sens (List[float]): A list of air quality sensitivity coefficients.
@@ -39,7 +36,6 @@ class GraphAqiUpdater:
         self.__aqi_update_error = ''
         self.__aqi_data_wip = ''
         self.__aqi_data_latest = ''
-        self.__aqi_data_updatetime = None
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
         self.__sens = aq_exps.get_aq_sensitivities()
@@ -59,12 +55,22 @@ class GraphAqiUpdater:
         self.log.info('Starting graph aqi updater with check interval (s): '+ str(self.__check_interval))
         self.__scheduler.start()
 
+    def __get_latest_aqi_data_utc_time_secs(self) -> Union[int, None]:
+        if self.__aqi_data_latest:
+            try:
+                aqi_data_time = self.__aqi_data_latest.split('aqi_', 1)[1].split('.')[0]
+                dt = datetime.strptime(aqi_data_time, '%Y-%m-%dT%H')
+                return int(dt.replace(tzinfo=timezone.utc).timestamp())
+            except Exception:
+                self.log.error(f'Could not parse UTC time from {self.__aqi_data_latest}')
+                return None
+        else:
+            return None
+
     def get_aqi_update_status_response(self):
         return { 
-            'b_updated': self.__bool_graph_aqi_is_up_to_date(), 
-            'latest_data': self.__aqi_data_latest, 
-            'update_time_utc': self.__get_aqi_update_time_str(), 
-            'updated_since_secs': self.get_aqi_updated_since_secs()
+            'aqi_data_updated': self.__aqi_data_latest != '',
+            'aqi_data_utc_time_secs': self.__get_latest_aqi_data_utc_time_secs()
             }
 
     def __maybe_read_update_aqi_to_graph(self):
@@ -95,27 +101,6 @@ class GraphAqiUpdater:
         """
         curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
         return 'aqi_'+ curdt +'.csv'
-
-    def __get_aqi_update_time_str(self) -> str:
-        return self.__aqi_data_updatetime.strftime('%y/%m/%d %H:%M:%S') if self.__aqi_data_updatetime is not None else None
-
-    def get_aqi_updated_since_secs(self) -> int:
-        if (self.__aqi_data_updatetime is not None):
-            updated_since_secs = (datetime.utcnow() - self.__aqi_data_updatetime).total_seconds()
-            return int(round(updated_since_secs))
-        else:
-            return None
-
-    def __bool_graph_aqi_is_up_to_date(self) -> bool:
-        """Returns True if the latest AQI is updated to graph, else returns False. This can be attached to an API endpoint
-        from which clients can ask whether the green path service supports real-time AQ routing at the moment.
-        """
-        if (self.__aqi_data_updatetime is None):
-            return False
-        elif (self.get_aqi_updated_since_secs() < 60 * 70):
-            return True
-        else:
-            return False
 
     def __new_aqi_data_available(self) -> str:
         """Returns the name of a new AQI csv file if it's not yet updated or being updated to a graph and it exists in aqi_dir.
