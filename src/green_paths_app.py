@@ -31,6 +31,8 @@ log = Logger(app_logger=app.logger, b_printing=False)
 # initialize graph
 G = GraphHandler(log, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
 aqi_updater = GraphAqiUpdater(log, G)
+
+# start AQI map data service
 aqi_map_data_api = get_aqi_map_data_api(log, 'aqi_updates/')
 aqi_map_data_api.start()
 
@@ -86,9 +88,14 @@ def aqi_status():
     return jsonify(aqi_updater.get_aqi_update_status_response())
 
 
+@app.route('/aqi-map-data-status')
+def aqi_map_data_status():
+    return aqi_map_data_api.get_status()
+
+
 @app.route('/aqi-map-data')
 def aqi_map_data():
-    return aqi_map_data_api.get_aqi_map_data()
+    return aqi_map_data_api.get_data()
 
 
 @app.route('/edge-attrs-near-point/<lat>,<lon>')
