@@ -6,17 +6,17 @@ from app.graph_handler import GraphHandler
 from app.graph_aqi_updater import GraphAqiUpdater
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def log():
     yield Logger(b_printing=False)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def graph_handler(log):
     yield GraphHandler(log, subset=True)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def aqi_updater(graph_handler, log):
     yield GraphAqiUpdater(log, graph_handler, aqi_dir='tests/aqi_cache/')
 

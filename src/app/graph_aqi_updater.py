@@ -1,5 +1,6 @@
 import time
 import gc
+import os
 import random
 import traceback
 import pandas as pd
@@ -32,6 +33,7 @@ class GraphAqiUpdater:
 
     def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_updates/'):
         self.log = logger
+        self.__test_mode: bool = eval(os.getenv('TEST_MODE', 'False'))
         self.__aqi_update_status = ''
         self.__aqi_update_error = ''
         self.__aqi_data_wip = ''
@@ -39,10 +41,16 @@ class GraphAqiUpdater:
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
         self.__sens = aq_exps.get_aq_sensitivities()
-        self.__aqi_dir = aqi_dir
+        self.__aqi_dir = aqi_dir if not self.__test_mode else 'aqi_updates/test_data/'
         self.__scheduler = BackgroundScheduler()
         self.__check_interval = 5 + random.randint(1, 15)
-        self.__scheduler.add_job(self.__maybe_read_update_aqi_to_graph, 'interval', seconds=self.__check_interval, max_instances=2)
+        self.__scheduler.add_job(
+            self.__maybe_read_update_aqi_to_graph, 
+            'interval', 
+            seconds=self.__check_interval, 
+            max_instances=2,
+            next_run_time=datetime.now()
+        )
         self.__start()
 
     def __create_updater_edge_df(self, G: GraphHandler):
@@ -99,8 +107,11 @@ class GraphAqiUpdater:
     def __get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
         """
-        curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
-        return 'aqi_'+ curdt +'.csv'
+        if self.__test_mode:
+            return 'aqi_2020-10-25T14.csv'
+        else:
+            curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
+            return 'aqi_'+ curdt +'.csv'
 
     def __new_aqi_data_available(self) -> str:
         """Returns the name of a new AQI csv file if it's not yet updated or being updated to a graph and it exists in aqi_dir.
@@ -187,7 +198,6 @@ class GraphAqiUpdater:
         del aqi_update_df
         del missing_aqi_update_df
         
-        self.__aqi_data_updatetime = datetime.utcnow()
         self.__aqi_data_latest = aqi_updates_csv
 
     def __validate_graph_aqi(self):
