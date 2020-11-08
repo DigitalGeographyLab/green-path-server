@@ -1,3 +1,5 @@
+[![API tests status](https://github.com/DigitalGeographyLab/hope-green-path-server/workflows/API%20tests/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions)
+
 # hope-green-path-server
 
 This project is used as a backend for the web map application of the Green Paths route planner: [green-paths.web.app](https://green-paths.web.app/) / [DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).

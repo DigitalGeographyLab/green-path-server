@@ -1,4 +1,4 @@
-name: API tests with pytest
+name: API tests
 
 on: [push]
 
