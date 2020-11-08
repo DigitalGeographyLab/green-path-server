@@ -1,9 +1,9 @@
-name: Python Package using Conda
+name: API tests with pytest
 
 on: [push]
 
 jobs:
-  build-linux:
+  linux-conda-pytest:
     runs-on: ubuntu-latest
 
     steps:
