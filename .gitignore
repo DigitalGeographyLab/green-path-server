@@ -106,6 +106,7 @@ venv.bak/
 src/.vscode/
 src/debug/
 src/aqi_updates/*
+!src/aqi_updates/test_data
 !src/aqi_updates/aqi_2020-09-22T18.csv
 !src/aqi_updates/aqi_map.json
 src/sample_data/
