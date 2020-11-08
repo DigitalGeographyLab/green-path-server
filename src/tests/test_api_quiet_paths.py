@@ -20,33 +20,6 @@ def path_set_1(client) -> dict:
 
 
 @pytest.fixture
-def test_line_geometry() -> Callable[[dict], None]:
-    def test_func(geometry: dict):
-        assert geometry['type'] == 'LineString'
-        coords = geometry['coordinates']
-        assert isinstance(coords, list)
-        line = LineString(coords)
-        assert isinstance(line, LineString)
-        assert line.is_valid
-        # test that the length is a positive number
-        proj_line = project_geom(line)
-        assert isinstance(proj_line.length, (float, int))
-        assert proj_line.length >= 0.1
-    return test_func
-
-
-@pytest.fixture
-def test_exposure_prop_types() -> Callable[[dict], None]:
-    def test_func(exp_dict: Dict[str, Union[int, float]]):
-        assert isinstance(exp_dict, dict)
-        for key, val in exp_dict.items():
-            num_key = int(key)
-            assert isinstance(num_key, int)
-            assert isinstance(val, (float, int))
-    return test_func
-
-
-@pytest.fixture
 def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]:
     def test_func(props: dict):
         assert isinstance(props['cost_coeff'], (float, int))

@@ -33,7 +33,7 @@ class GraphAqiUpdater:
 
     def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_updates/'):
         self.log = logger
-        self.__test_mode: bool = eval(os.getenv('TEST_MODE', 'False'))
+        self.__test_mode: bool = os.getenv('TEST_MODE', 'False') == 'True'
         self.__aqi_update_status = ''
         self.__aqi_update_error = ''
         self.__aqi_data_wip = ''
