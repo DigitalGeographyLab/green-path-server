@@ -27,29 +27,29 @@ class PathSet:
     def set_path_edges(self, G) -> None:
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
         """
-        if (self.shortest_path is not None):
+        if self.shortest_path:
             self.shortest_path.set_path_edges(G)
-        if (len(self.green_paths) > 0):
+        if self.green_paths:
             for gp in self.green_paths:
                 gp.set_path_edges(G)
 
     def aggregate_path_attrs(self) -> None:
         """Aggregates edge level path attributes to paths.
         """
-        if (self.shortest_path is not None):
+        if self.shortest_path:
             self.shortest_path.aggregate_path_attrs()
-        if (len(self.green_paths) > 0):
+        if self.green_paths:
             for gp in self.green_paths:
                 gp.aggregate_path_attrs()
     
     def filter_out_green_paths_missing_exp_data(self) -> None:
         path_count = len(self.green_paths)
-        if (self.routing_mode == RoutingMode.CLEAN):
+        if self.routing_mode == RoutingMode.CLEAN:
             self.green_paths = [path for path in self.green_paths if not path.missing_aqi]
-        if (self.routing_mode == RoutingMode.QUIET):
+        if self.routing_mode == RoutingMode.QUIET:
             self.green_paths = [path for path in self.green_paths if not path.missing_noises]
         filtered_out_count = path_count - len(self.green_paths)
-        if (filtered_out_count > 0):
+        if filtered_out_count:
             self.log.info('Filtered out '+ str(filtered_out_count) + ' green paths without exposure data')
 
     def filter_out_unique_edge_sequence_paths(self) -> None:
@@ -67,8 +67,13 @@ class PathSet:
         """Filters out short / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
         """
         cost_attr = 'aqc_norm' if (self.routing_mode == RoutingMode.CLEAN) else 'nei_norm'
-        unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(self.log, self.get_all_paths(), buffer_m=buffer_m, cost_attr=cost_attr)
-        if (unique_paths_names is not None):
+        unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(
+            self.log, 
+            self.get_all_paths(), 
+            buffer_m=buffer_m, 
+            cost_attr=cost_attr
+        )
+        if unique_paths_names:
             self.filter_paths_by_names(unique_paths_names)
 
     def filter_paths_by_names(self, filter_names: List[str]) -> None:
@@ -99,14 +104,12 @@ class PathSet:
         feats = [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
         return self.__as_geojson_feature_collection(feats)
 
-    def get_edges_as_feature_collection(self) -> dict:
-        if (self.routing_mode == RoutingMode.CLEAN):
-            edge_group_attr = 'aqi_cl'
-        else:
-            edge_group_attr = 'dBrange'
-        
+    def get_edges_as_feature_collection(self) -> dict:        
         for path in [self.shortest_path] + self.green_paths:
-            path.aggregate_edge_groups_by_attr(edge_group_attr)
+            path.aggregate_edge_groups_by_attr(
+                aq = self.routing_mode == RoutingMode.CLEAN,
+                noise = self.routing_mode == RoutingMode.QUIET
+            )
         
         feat_lists = [path.get_edge_groups_as_features() for path in [self.shortest_path] + self.green_paths]
 

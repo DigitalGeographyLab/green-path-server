@@ -4,7 +4,7 @@ import json
 import utils.noise_exposures as noise_exps 
 import utils.aq_exposures as aq_exps 
 import utils.geometry as geom_utils
-import utils.routing as routing_utils
+import app.od_handler as od_handler
 from app.path import Path
 from app.path_set import PathSet
 from app.graph_handler import GraphHandler
@@ -44,7 +44,7 @@ class PathFinder:
         """
         start_time = time.time()
         try:
-            orig_node, dest_node, orig_link_edges, dest_link_edges = routing_utils.get_orig_dest_nodes_and_linking_edges(
+            orig_node, dest_node, orig_link_edges, dest_link_edges = od_handler.get_orig_dest_nodes_and_linking_edges(
                 self.log, self.G, self.orig_point, self.dest_point, self.aq_sens, self.noise_sens, self.G.db_costs)
             self.orig_node = orig_node
             self.dest_node = dest_node

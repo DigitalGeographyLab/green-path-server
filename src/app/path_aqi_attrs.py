@@ -27,8 +27,8 @@ class PathAqiAttrs:
     def set_aqi_diff_attrs(self, s_path_aqi_attrs: 'PathAqiAttrs', len_diff: float) -> None:
         self.aqi_m_diff = round(self.aqi_m - s_path_aqi_attrs.aqi_m, 2)
         self.aqc_diff = round(self.aqc - s_path_aqi_attrs.aqc, 2)
-        self.aqc_diff_rat = round((self.aqc_diff / s_path_aqi_attrs.aqc) * 100, 1) if s_path_aqi_attrs.aqc > 0 else 0
-        self.aqc_diff_score = round(self.aqc_diff/len_diff * -1, 1) if len_diff > 0 else 0
+        self.aqc_diff_rat = round((self.aqc_diff / s_path_aqi_attrs.aqc) * 100, 1) if s_path_aqi_attrs.aqc else 0
+        self.aqc_diff_score = round(self.aqc_diff/len_diff * -1, 1) if len_diff else 0
 
     def get_aqi_props_dict(self) -> dict:
         return {
@@ -41,4 +41,4 @@ class PathAqiAttrs:
             'aqc_diff': self.aqc_diff,
             'aqc_diff_rat': self.aqc_diff_rat,
             'aqc_diff_score': self.aqc_diff_score
-            }
+        }

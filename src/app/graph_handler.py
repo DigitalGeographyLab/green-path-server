@@ -2,6 +2,7 @@ import time
 from typing import List, Set, Dict, Tuple
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
+from app.types import PathEdge 
 from utils.igraph import Edge as E, Node as N
 import utils.igraph as ig_utils
 import utils.noise_exposures as noise_exps
@@ -15,13 +16,13 @@ class GraphHandler:
     
     Attributes:
         graph: An igraph graph object.
-        edge_gdf: The edges of the graph as a GeoDataFrame.
-        edges_sind: Spatial index of the edges GeoDataFrame.
-        node_gdf: The nodes of the graph as a GeoDataFrame.
-        nodes_sind: Spatial index of the nodes GeoDataFrame.
-        db_costs: Cost coefficients for different noise levels.
-        new_edges: New edges are first collected to dictionary and then added all at once.
-        edge_cache: A cache of path edges for current routing request. 
+        __edge_gdf: The edges of the graph as a GeoDataFrame.
+        __edges_sind: Spatial index of the edges GeoDataFrame.
+        __node_gdf: The nodes of the graph as a GeoDataFrame.
+        __nodes_sind: Spatial index of the nodes GeoDataFrame.
+        __db_costs: Cost coefficients for different noise levels.
+        __new_edges: New edges are first collected to dictionary and then added all at once.
+        __edge_cache: A cache of path edges for current routing request. 
     """
 
     def __init__(self, logger: Logger, subset: bool = False, gdf_attrs: list = []):
@@ -50,7 +51,7 @@ class GraphHandler:
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
         self.__new_edges: Dict[Tuple[int, int], Dict] = {}
-        self.__edge_cache: Dict[int, dict] = {}
+        self.__edge_cache: Dict[int, PathEdge] = {}
 
     def __get_edge_gdf(self):
         edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[E.id_way])
@@ -67,11 +68,11 @@ class GraphHandler:
         """
         sens = noise_exps.get_noise_sensitivities()
         for edge in self.graph.es:
-            # first add estimated exposure to noise level of 40 dB to edge attrs
+            # first add estimated exposure to 40 dB noise level to edge attrs
             edge_attrs = edge.attributes()
             noises = edge_attrs[E.noises.value]
             db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs[E.noises.value], edge_attrs[E.length.value])
-            if (db_40_exp > 0.0):
+            if db_40_exp > 0.0:
                 noises[40] = db_40_exp
             self.graph.es[edge.index][E.noises.value] = noises
             
@@ -94,27 +95,29 @@ class GraphHandler:
             self.graph.es[edge.index].update_attributes(updates)
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
-        """Updates the given edge attribute from a DataFrame to a graph. 
+        """Updates the given edge attribute(s) from a DataFrame to a graph. The attribute(s) to update
+        are given as series of dictionaries (df_attr): keys will be used ass attribute names and values
+        as values in the graph. 
         """
         for edge in edge_gdf.itertuples():
             updates: dict = getattr(edge, df_attr)
             self.graph.es[getattr(edge, E.id_ig.name)].update_attributes(updates)
 
     def find_nearest_node(self, point: Point) -> int:
-        """Finds the nearest node to a given point.
+        """Finds the nearest node to a given point from the graph.
 
         Args:
             point: A point location as Shapely Point object.
         Note:
             Point should be in projected coordinate system (EPSG:3879).
         Returns:
-            The name of the nearest node (number). None if no nearest node is found.
+            The name (id) of the nearest node. None if no nearest node is found.
         """
         for radius in [50, 100, 500]:
             possible_matches_index = list(self.__node_gdf.sindex.intersection(point.buffer(radius).bounds))
-            if (len(possible_matches_index) > 0):
+            if possible_matches_index:
                 break
-        if (len(possible_matches_index) == 0):
+        if not possible_matches_index:
             self.log.warning('No near node found')
             return None
         possible_matches = self.__node_gdf.iloc[possible_matches_index]
@@ -132,7 +135,8 @@ class GraphHandler:
             self.log.warning('Could not find node by id: '+ str(node_id))
             return None
 
-    def __get_edge_by_id(self, edge_id: int) -> dict:
+    def get_edge_by_id(self, edge_id: int) -> dict:
+        """Returns edge by given id as dictionary of attribute names and values."""
         try:
             return self.graph.es[edge_id].attributes()
         except Exception:
@@ -147,54 +151,56 @@ class GraphHandler:
         """
         for radius in [35, 150, 400, 650]:
             possible_matches_index = list(self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds))
-            if (len(possible_matches_index) > 0):
+            if possible_matches_index:
                 possible_matches = self.__edge_gdf.iloc[possible_matches_index].copy()
                 possible_matches['distance'] = [geom.distance(point) for geom in possible_matches[E.geometry.name]]
                 shortest_dist = possible_matches['distance'].min()
                 if (shortest_dist < radius):
                     break
-        if (len(possible_matches_index) == 0):
+        if not possible_matches_index:
             self.log.error('No near edges found')
             return None
         nearest = possible_matches['distance'] == shortest_dist
         edge_id = possible_matches.loc[nearest].index[0]
-        edge = self.__get_edge_by_id(edge_id)
+        edge = self.get_edge_by_id(edge_id)
         edge['dist'] = round(shortest_dist, 2)
         return edge
 
     def format_edge_dict_for_debugging(self, edge: dict) -> dict:
-        # map edge dict attribute names to the human readable ones defined in the enum
+        # map edge dict attribute names to the descriptive ones defined in Edge enum
         edge_d = { E(k).name if k in [item.value for item in E] else k: v for k, v in edge.items() }
         edge_d[E.geometry.name] = str(edge_d[E.geometry.name])
         edge_d[E.geom_wgs.name] = str(edge_d[E.geom_wgs.name])
         return edge_d
 
-    def get_edges_from_edge_ids(self, edge_ids: List[int]) -> List[dict]:
+    def get_path_edges_by_ids(self, edge_ids: List[int]) -> List[PathEdge]:
         """Loads edge attributes from graph by ordered list of edges representing a path.
         """
-        path_edges = []
+        path_edges: List[PathEdge] = []
         for edge_id in edge_ids:
             edge_d = self.__edge_cache.get(edge_id)
             if edge_d:
                 path_edges.append(edge_d)
                 continue
 
-            edge = self.__get_edge_by_id(edge_id)
+            edge = self.get_edge_by_id(edge_id)
             # omit edges with null geometry
             if (edge[E.length.value] == 0.0 or not isinstance(edge[E.geometry.value], LineString)):
                 continue
-            edge_d = {}
-            edge_d['length'] = edge[E.length.value]
-            edge_d['length_b'] = edge[E.length_b.value] if edge[E.length_b.value] else 0
-            edge_d['aqi'] = edge[E.aqi.value]
-            edge_d['aqi_cl'] = aq_exps.get_aqi_class(edge_d['aqi']) if edge_d['aqi'] else None
-            edge_d['noises'] = edge[E.noises.value]
-            mean_db = noise_exps.get_mean_noise_level(edge_d['noises'], edge_d['length']) if edge_d['noises'] else 0
-            edge_d['dBrange'] = noise_exps.get_noise_range(mean_db)
-            edge_d['coords'] = edge[E.geometry.value].coords
-            edge_d['coords_wgs'] = edge[E.geom_wgs.value].coords
-            self.__edge_cache[edge_id] = edge_d
-            path_edges.append(edge_d)
+            
+            path_edge = PathEdge(
+                length = edge[E.length.value],
+                length_b = edge[E.length_b.value] if edge[E.length_b.value] else 0,
+                aqi = edge[E.aqi.value],
+                aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
+                noises = edge[E.noises.value],
+                coords = edge[E.geometry.value].coords,
+                coords_wgs = edge[E.geom_wgs.value].coords
+            )
+
+            self.__edge_cache[edge_id] = path_edge
+            path_edges.append(path_edge)
+
         return path_edges
 
     def __get_new_node_id(self) -> int:
@@ -242,9 +248,20 @@ class GraphHandler:
         aq_sens: list,
         noise_sens: list,
         db_costs: dict,
-        origin: bool) -> dict:
-        """Creates new edges from a new node that connect the node to the existing nodes in the graph. Also estimates and sets the edge cost attributes
-        for the new edges based on attributes of the original edge on which the new node was added. 
+        origin: bool
+    ) -> dict:
+        """Creates new edges to/from a new node to connect it to two existing nodes of the graph. 
+        Also estimates and sets the edge cost attributes for the new edges based on attributes 
+        of the original edge on which the new node was added. 
+
+        Args:
+            new_node: identifier of the new node.
+            split_point: geometry of the new node (for splitting the underlying edge).
+            edge: edge on which the new node was created.
+            aq_sens: air quality sensitivities to use in calculating aq costs for new edges.
+            noise_sens: noise sensitivities to use in calculating noise costs for new edges.
+            db_costs: dB specific cost coefficients to use in calculating noise costs.
+            origin: a boolean variable indicating whether the operation is to be done for origin (not dest.).
 
         Returns:
             A dictionary containing the following keys:
