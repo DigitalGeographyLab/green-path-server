@@ -11,7 +11,7 @@ import time
 from shapely.geometry import Point, LineString
 from app.graph_handler import GraphHandler
 from app.logger import Logger
-from utils.igraphs import Edge as E, Node as N
+from utils.igraph import Edge as E, Node as N
 from app.constants import RoutingException, ErrorKeys
 
 def __get_closest_point_on_line(line: LineString, point: Point) -> Point:

@@ -8,7 +8,7 @@ between paths.
 from typing import List, Set, Dict, Tuple
 from collections import defaultdict
 from shapely.geometry import LineString
-from utils.igraphs import Edge as E
+from utils.igraph import Edge as E
 
 def calc_db_cost_v2(db) -> float:
     """Returns a noise cost for given dB based on a linear scale (dB >= 45 & dB <= 75).

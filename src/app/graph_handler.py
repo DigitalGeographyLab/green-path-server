@@ -2,8 +2,8 @@ import time
 from typing import List, Set, Dict, Tuple
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
-from utils.igraphs import Edge as E, Node as N
-import utils.igraphs as ig_utils
+from utils.igraph import Edge as E, Node as N
+import utils.igraph as ig_utils
 import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
 import utils.geometry as geom_utils

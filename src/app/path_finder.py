@@ -10,7 +10,7 @@ from app.path_set import PathSet
 from app.graph_handler import GraphHandler
 from app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKeys
 from app.logger import Logger
-from utils.igraphs import Edge as E
+from utils.igraph import Edge as E
 
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 

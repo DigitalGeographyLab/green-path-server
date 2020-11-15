@@ -1,5 +1,5 @@
 import pytest
-from utils.igraphs import Edge as E
+from utils.igraph import Edge as E
 from app.logger import Logger
 from app.logger import Logger
 from app.graph_handler import GraphHandler

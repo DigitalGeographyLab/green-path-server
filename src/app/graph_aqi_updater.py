@@ -9,10 +9,9 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.graph_handler import GraphHandler
 import utils.aq_exposures as aq_exps
-import utils.igraphs as ig_utils
 from app.logger import Logger
-import utils.igraphs as ig_utils
-from utils.igraphs import Edge as E
+import utils.igraph as ig_utils
+from utils.igraph import Edge as E
 from typing import List, Set, Dict, Tuple, Optional, Union
 
 class GraphAqiUpdater:
