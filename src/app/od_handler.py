@@ -1,11 +1,3 @@
-"""
-This module provides functions for solving the least cost path problem between two points. 
-
-Todo:
-    * Try python-igraph library
-
-"""
-
 from typing import List, Set, Dict, Tuple
 import time
 from shapely.geometry import Point, LineString
@@ -14,12 +6,14 @@ from app.logger import Logger
 from utils.igraph import Edge as E, Node as N
 from app.constants import RoutingException, ErrorKeys
 
+
 def __get_closest_point_on_line(line: LineString, point: Point) -> Point:
     """Finds the closest point on a line to given point and returns it as Point.
     """
     projected = line.project(point)
     closest_point = line.interpolate(projected)
     return closest_point
+
 
 def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dict=None, long_distance: bool=False) -> Dict:
     """Finds (or creates) the nearest node to a given point. 
@@ -76,6 +70,7 @@ def get_nearest_node(log: Logger, G: GraphHandler, point: Point, link_edges: dic
     links_to = { 'nearest_edge': nearest_edge, 'nearest_edge_point': nearest_edge_point }
     log.duration(start_time, 'got geoms for adding node & links', unit='ms')
     return { 'node': new_node, 'offset': round(nearest_edge_point.distance(point), 1), 'add_links': True, **links_to }
+
 
 def get_orig_dest_nodes_and_linking_edges(log: Logger, G: GraphHandler, orig_point: Point, dest_point: Point, aq_sens: List[float], noise_sens: List[float], db_costs: Dict[int,float]):
     """Finds the nearest nodes to origin and destination as well as the newly created edges that connect 

@@ -10,17 +10,22 @@ from pyproj import CRS
 from shapely.geometry import Point, LineString
 from shapely.ops import split, snap, transform
 
+
 def get_xy_from_geom(geom: Point) -> Dict[str, float]:
     return { 'x': geom.x, 'y': geom.y }
+
 
 def get_coords_from_lat_lon(latLon: Dict[str, float]) -> List[float]:
     return [latLon['lon'], latLon['lat']]
 
+
 def get_point_from_lat_lon(latLon: Dict[str, float]) -> Point:
     return Point(get_coords_from_lat_lon(latLon))
 
+
 def round_coordinates(coords_list: List[tuple], digits=6) -> List[tuple]:
     return [ (round(coords[0], digits), round(coords[1], digits)) for coords in coords_list]
+
 
 __projections = {
     (4326, 3879): pyproj.Transformer.from_crs(
@@ -40,7 +45,13 @@ def project_geom(geom, geom_epsg: int = 4326, to_epsg: int = 3879):
     project = __projections[(geom_epsg, to_epsg)]
     return transform(project.transform, geom)
 
-def split_line_at_point(log, line: LineString, split_point: Point, tolerance: float=0.01) -> List[LineString]:
+
+def split_line_at_point(
+    log, 
+    line: LineString, 
+    split_point: Point, 
+    tolerance: float = 0.01
+) -> List[LineString]:
     """Splits a line at nearest intersecting point.
     Returns:
         A list containing two LineString objects.

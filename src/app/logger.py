@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 
+
 class Logger:
     """A somewhat generic logger class that can be used to write log messages to gunicorn, log file and/or console/terminal output. 
 

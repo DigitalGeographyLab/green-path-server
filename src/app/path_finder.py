@@ -12,6 +12,7 @@ from app.constants import TravelMode, RoutingMode, PathType, RoutingException, E
 from app.logger import Logger
 from utils.igraph import Edge as E
 
+
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
     origin & destination nodes to returning the paths as GeoJSON feature collection.

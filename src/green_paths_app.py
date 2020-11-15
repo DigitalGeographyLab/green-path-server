@@ -13,8 +13,6 @@ from app.logger import Logger
 import utils.geometry as geom_utils
 
 
-# version: 1.4
-
 app = Flask(__name__)
 CORS(app)
 
@@ -40,6 +38,28 @@ aqi_map_data_api.start()
 @app.route('/')
 def hello_world():
     return 'Keep calm and walk green paths.'
+
+
+@app.route('/aqistatus')
+def aqi_status():
+    return jsonify(aqi_updater.get_aqi_update_status_response())
+
+
+@app.route('/aqi-map-data-status')
+def aqi_map_data_status():
+    return aqi_map_data_api.get_status()
+
+
+@app.route('/aqi-map-data')
+def aqi_map_data():
+    return aqi_map_data_api.get_data()
+
+
+@app.route('/edge-attrs-near-point/<lat>,<lon>')
+def edge_attrs_near_point(lat, lon):
+    point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon({'lat': float(lat), 'lon': float(lon)}))
+    edge = G.find_nearest_edge(point)
+    return jsonify(G.format_edge_dict_for_debugging(edge) if edge else None)
 
 
 @app.route('/paths/<travel_mode>/<exposure_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
@@ -81,28 +101,6 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
             return error
 
     return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
-
-
-@app.route('/aqistatus')
-def aqi_status():
-    return jsonify(aqi_updater.get_aqi_update_status_response())
-
-
-@app.route('/aqi-map-data-status')
-def aqi_map_data_status():
-    return aqi_map_data_api.get_status()
-
-
-@app.route('/aqi-map-data')
-def aqi_map_data():
-    return aqi_map_data_api.get_data()
-
-
-@app.route('/edge-attrs-near-point/<lat>,<lon>')
-def edge_attrs_near_point(lat, lon):
-    point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon({'lat': float(lat), 'lon': float(lon)}))
-    edge = G.find_nearest_edge(point)
-    return jsonify(G.format_edge_dict_for_debugging(edge) if edge else None)
 
 
 if __name__ == '__main__':

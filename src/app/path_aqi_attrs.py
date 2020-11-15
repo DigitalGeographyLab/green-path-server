@@ -1,28 +1,21 @@
+from dataclasses import dataclass
 from typing import List, Set, Dict, Tuple, Optional
 import utils.aq_exposures as aq_exps
 
+
+@dataclass
 class PathAqiAttrs:
     """Holds and manipulates all AQI related path attributes.
     """
-
-    def __init__(self, aqi_exp_list: List[Tuple[float, float]]):
-        self.aqi_exp_list = aqi_exp_list
-        self.aqi_m: float = None
-        self.aqc: float = None
-        self.aqc_norm: float = None
-        self.aqi_cl_exps: Dict[int, float] = None
-        self.aqi_pcts: dict = None
-        self.aqi_m_diff: float = None
-        self.aqc_diff: float = None
-        self.aqc_diff_rat: float = None
-        self.aqc_diff_score: float = None
-
-    def set_aqi_stats(self, length: float) -> None:
-        self.aqi_m = aq_exps.get_mean_aqi(self.aqi_exp_list)
-        self.aqc = aq_exps.get_total_aqi_cost_from_exps(self.aqi_exp_list)
-        self.aqc_norm = round(self.aqc / length, 3)
-        self.aqi_cl_exps = aq_exps.aggregate_aqi_class_exps(self.aqi_exp_list)
-        self.aqi_pcts = aq_exps.get_aqi_class_pcts(self.aqi_cl_exps, length)
+    aqi_m: float
+    aqc: float
+    aqc_norm: float
+    aqi_cl_exps: Dict[int, float]
+    aqi_pcts: dict
+    aqi_m_diff: float = None
+    aqc_diff: float = None
+    aqc_diff_rat: float = None
+    aqc_diff_score: float = None
 
     def set_aqi_diff_attrs(self, s_path_aqi_attrs: 'PathAqiAttrs', len_diff: float) -> None:
         self.aqi_m_diff = round(self.aqi_m - s_path_aqi_attrs.aqi_m, 2)
@@ -42,3 +35,20 @@ class PathAqiAttrs:
             'aqc_diff_rat': self.aqc_diff_rat,
             'aqc_diff_score': self.aqc_diff_score
         }
+
+
+def create_aqi_attrs(
+    aqi_exp_list: List[Tuple[float, float]], 
+    length: float
+) -> PathAqiAttrs:
+
+    aqc = aq_exps.get_total_aqi_cost_from_exps(aqi_exp_list)
+    aqi_cl_exps = aq_exps.aggregate_aqi_class_exps(aqi_exp_list)
+
+    return PathAqiAttrs(
+        aqi_m = aq_exps.get_mean_aqi(aqi_exp_list),
+        aqc = aqc,
+        aqc_norm = round(aqc / length, 3),
+        aqi_cl_exps = aqi_cl_exps,
+        aqi_pcts = aq_exps.get_aqi_class_pcts(aqi_cl_exps, length),
+    )

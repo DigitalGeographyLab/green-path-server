@@ -11,6 +11,7 @@ import utils.geometry as geom_utils
 from app.logger import Logger
 from app.constants import RoutingException, ErrorKeys
 
+
 class GraphHandler:
     """Graph handler provides functions for accessing and manipulating graph during least cost path optimization. 
     

@@ -14,6 +14,7 @@ import utils.igraph as ig_utils
 from utils.igraph import Edge as E
 from typing import List, Set, Dict, Tuple, Optional, Union
 
+
 class GraphAqiUpdater:
     """GraphAqiUpdater updates new AQI to graph if new AQI data is available in /aqi_cache.
 

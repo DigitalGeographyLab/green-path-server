@@ -2,10 +2,11 @@ from shapely.geometry import Point, LineString
 from typing import List, Set, Dict, Tuple, Optional
 import utils.geometry as geom_utils
 from app.types import PathEdge
-from app.path_noises import PathNoiseAttrs
-from app.path_aqi_attrs import PathAqiAttrs
+from app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs
+from app.path_aqi_attrs import PathAqiAttrs, create_aqi_attrs
 from app.graph_handler import GraphHandler
 from app.constants import RoutingMode, PathType
+
 
 class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
@@ -46,20 +47,20 @@ class Path:
         self.length_b = round(sum(edge.length_b for edge in self.edges), 2)
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge.aqi for edge in self.edges]) else False
-        if not self.missing_noises:
-            noises_list = [edge.noises for edge in self.edges]
-            self.noise_attrs = PathNoiseAttrs(noises_list)
-        if not self.missing_aqi:
-            aqi_exp_list = [(edge.aqi, edge.length) for edge in self.edges]
-            self.aqi_attrs = PathAqiAttrs(aqi_exp_list)
 
     def set_noise_attrs(self, db_costs: dict) -> None:
-        if self.noise_attrs:
-            self.noise_attrs.set_noise_attrs(db_costs, self.length)
+        if not self.missing_noises:
+            noises_list = [edge.noises for edge in self.edges]
+            self.noise_attrs = create_path_noise_attrs(
+                noises_list = noises_list, 
+                db_costs = db_costs, 
+                length = self.length
+            )
 
     def set_aqi_attrs(self) -> None:
-        if self.aqi_attrs:
-            self.aqi_attrs.set_aqi_stats(self.length)
+        if not self.missing_aqi:
+            aqi_exp_list = [(edge.aqi, edge.length) for edge in self.edges]
+            self.aqi_attrs = create_aqi_attrs(aqi_exp_list, self.length)
 
     def set_green_path_diff_attrs(self, shortest_path: 'Path') -> None:
         self.len_diff = round(self.length - shortest_path.length, 1)
@@ -108,15 +109,15 @@ class Path:
         feature_d = self.__get_geojson_feature_dict(wgs_coords)
 
         props = {
-            'type' : self.path_type.value,
-            'id' : self.name,
-            'length' : self.length,
-            'length_b' : self.length_b,
-            'len_diff' : self.len_diff,
-            'len_diff_rat' : self.len_diff_rat,
-            'cost_coeff' : self.cost_coeff,
-            'missing_aqi' : self.missing_aqi,
-            'missing_noises' : self.missing_noises,
+            'type': self.path_type.value,
+            'id': self.name,
+            'length': self.length,
+            'length_b': self.length_b,
+            'len_diff': self.len_diff,
+            'len_diff_rat': self.len_diff_rat,
+            'cost_coeff': self.cost_coeff,
+            'missing_aqi': self.missing_aqi,
+            'missing_noises': self.missing_noises,
         }
         noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs else {}
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs else {}

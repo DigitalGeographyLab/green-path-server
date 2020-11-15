@@ -4,6 +4,7 @@ from app.constants import RoutingMode, PathType
 from app.logger import Logger
 from app.path import Path
 
+
 class PathSet:
     """An instance of PathSet holds, manipulates and filters both shortest and least cost paths.
     """

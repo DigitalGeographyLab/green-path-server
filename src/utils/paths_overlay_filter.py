@@ -6,14 +6,25 @@ from typing import List, Set, Dict, Tuple
 from app.path import Path
 from app.logger import Logger
 
-def get_path_overlay_candidates_by_len(param_path: Path, all_paths: List[Path], len_diff: int = 25) -> List[Path]:
+
+def __get_path_overlay_candidates_by_len(
+    param_path: Path, 
+    all_paths: List[Path], 
+    len_diff: int = 25
+) -> List[Path]:
     """Returns paths with length difference not greater or less than specified in [len_diff] (m)
     compared to the length of [path]. If [all_paths] contains [param_path], the latter is included in the returned list.
     """
     overlay_candidates = [path for path in all_paths if (path.length < (param_path.length + len_diff)) & (path.length > (param_path.length - len_diff))]
     return overlay_candidates
 
-def get_overlapping_paths(log: Logger, param_path: Path, compare_paths: List[Path], buffer_m: int = None) -> List[Path]:
+
+def __get_overlapping_paths(
+    log: Logger, 
+    param_path: Path, 
+    compare_paths: List[Path], 
+    buffer_m: int = None
+) -> List[Path]:
     """Returns [compare_paths] that are within a buffered geometry of [param_path].
     """
     overlapping_paths = [param_path]
@@ -26,7 +37,11 @@ def get_overlapping_paths(log: Logger, param_path: Path, compare_paths: List[Pat
         log.debug(f'Found {len(overlapping_paths)} overlapping paths for: {param_path.name} - {[path.name for path in overlapping_paths]}')
     return overlapping_paths
 
-def get_least_cost_path(paths: List[Path], cost_attr: str = 'nei_norm') -> Path:
+
+def __get_least_cost_path(
+    paths: List[Path], 
+    cost_attr: str = 'nei_norm'
+) -> Path:
     """Returns the least expensive (best) path by given cost attribute.
     """
     if (len(paths) == 1):
@@ -40,7 +55,13 @@ def get_least_cost_path(paths: List[Path], cost_attr: str = 'nei_norm') -> Path:
     ordered.sort(key=get_cost)
     return ordered[0]
 
-def get_unique_paths_by_geom_overlay(log: Logger, all_paths: List[Path], buffer_m: int = None, cost_attr: str = 'nei_norm') -> List[str]:
+
+def get_unique_paths_by_geom_overlay(
+    log: Logger, 
+    all_paths: List[Path], 
+    buffer_m: int = None, 
+    cost_attr: str = 'nei_norm'
+) -> List[str]:
     """Filters a list of paths by comparing buffered line geometries of the paths and selecting only the unique paths by given buffer_m (m).
 
     Args:
@@ -59,9 +80,9 @@ def get_unique_paths_by_geom_overlay(log: Logger, all_paths: List[Path], buffer_
     filtered_paths_names = []
     for path in all_paths:
         if (path.name not in filtered_paths_names and path.name not in paths_already_overlapped):
-            overlay_candidates = get_path_overlay_candidates_by_len(path, all_paths, len_diff=25)
-            overlapping_paths = get_overlapping_paths(log, path, overlay_candidates, buffer_m)
-            best_overlapping_path = get_least_cost_path(overlapping_paths, cost_attr=cost_attr)
+            overlay_candidates = __get_path_overlay_candidates_by_len(path, all_paths, len_diff=25)
+            overlapping_paths = __get_overlapping_paths(log, path, overlay_candidates, buffer_m)
+            best_overlapping_path = __get_least_cost_path(overlapping_paths, cost_attr=cost_attr)
             if (best_overlapping_path.name not in filtered_paths_names):
                 filtered_paths_names.append(best_overlapping_path.name)
             paths_already_overlapped += [path.name for path in overlapping_paths]

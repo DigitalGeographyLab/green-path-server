@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class TravelMode(Enum):
     WALK = 'walk'
     BIKE = 'bike'

@@ -10,6 +10,7 @@ from collections import defaultdict
 from shapely.geometry import LineString
 from utils.igraph import Edge as E
 
+
 def calc_db_cost_v2(db) -> float:
     """Returns a noise cost for given dB based on a linear scale (dB >= 45 & dB <= 75).
     """
@@ -18,12 +19,14 @@ def calc_db_cost_v2(db) -> float:
     db_cost = (db-40) / (75-40)
     return round(db_cost, 3)
 
+
 def calc_db_cost_v3(db) -> float:
     """Returns a noise cost for given dB: every 10 dB increase doubles the cost (dB >= 45 & dB <= 75).
     """
     if (db <= 44): return 0.0
     db_cost = pow(10, (0.3 * db)/10)
     return round(db_cost / 100, 3)
+
 
 def get_db_costs(version: int = 3) -> Dict[int, float]:
     """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the base (noise) cost for edges. 
@@ -42,11 +45,13 @@ def get_db_costs(version: int = 3) -> Dict[int, float]:
     else:
         raise ValueError('Argument version must be either 2 or 3')
 
+
 def get_noise_sensitivities() -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
     """
     return [ 0.1, 0.4, 1.3, 3.5, 6 ]
+
 
 def get_noise_range(db: float) -> int:
     """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
@@ -57,6 +62,7 @@ def get_noise_range(db: float) -> int:
     elif db >= 55.0: return 55
     elif db >= 50.0: return 50
     else: return 40
+
 
 def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
     """Calculates aggregated exposures to different noise level ranges.
@@ -80,6 +86,7 @@ def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
 
     return db_range_lens
 
+
 def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]:
     """Calculates percentages of aggregated exposures to different noise levels of total length.
 
@@ -96,6 +103,7 @@ def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]
 
     return range_pcts
 
+
 def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
     """Aggregates noise exposures (contaminated distances) from a list of noise exposures. 
     """
@@ -107,6 +115,7 @@ def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
         exps[k] = round(v, 2)
     return exps
 
+
 def get_total_noises_len(noises: Dict[int, float]) -> float:
     """Returns a total length of exposures to all noise levels.
     """
@@ -114,6 +123,7 @@ def get_total_noises_len(noises: Dict[int, float]) -> float:
         return 0.0
     else:
         return round(sum(noises.values()), 3)
+
 
 def get_mean_noise_level(noises: dict, length: float) -> float:
     """Returns a mean noise level based on noise exposures weighted by the contaminated distances to different noise levels.
@@ -123,7 +133,12 @@ def get_mean_noise_level(noises: dict, length: float) -> float:
     mean_db = sum_db/length
     return round(mean_db, 1)
 
-def get_noise_cost(noises: Dict[int, float] = {}, db_costs: Dict[int, float] = {}, sen: float = 1) -> float:
+
+def get_noise_cost(
+    noises: Dict[int, float] = {}, 
+    db_costs: Dict[int, float] = {}, 
+    sen: float = 1
+) -> float:
     """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
     """
     if (not noises):
@@ -132,7 +147,13 @@ def get_noise_cost(noises: Dict[int, float] = {}, db_costs: Dict[int, float] = {
         noise_cost = sum([db_costs[db] * length * sen for db, length in noises.items()])
         return round(noise_cost, 2)
 
-def interpolate_link_noises(link_len_ratio: float, link_geom: LineString, edge_geom: LineString, edge_noises: dict) -> dict:
+
+def interpolate_link_noises(
+    link_len_ratio: float, 
+    link_geom: LineString, 
+    edge_geom: LineString, 
+    edge_noises: dict
+) -> dict:
     """Interpolates noise exposures for a split edge by multiplying each contaminated distance with a proportion
     between the edge length to the length of the original edge.
     """
@@ -141,6 +162,7 @@ def interpolate_link_noises(link_len_ratio: float, link_geom: LineString, edge_g
     for db in edge_noises.keys():
         link_noises[db] = round(edge_noises[db] * link_len_ratio, 3)
     return link_noises
+
 
 def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom=None) -> dict:
     """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
@@ -156,6 +178,7 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
         cost_attrs['nc_'+str(sen)] = round(link_geom.length + noise_cost, 2)
         cost_attrs['bnc_'+str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
     return cost_attrs
+
 
 def estimate_db_40_exp(noises: dict, length: float) -> float:
     if (length == 0.0): return 0.0
