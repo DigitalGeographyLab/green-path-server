@@ -213,7 +213,7 @@ class GraphAqiUpdater:
         aqi_ok_ratio = has_aqi_count/edge_count
         missing_ratio = missing_aqi_count/edge_count
 
-        if aqi_ok_ratio > 0.2 and missing_ratio > 0.03:
+        if aqi_ok_ratio < 0.7 or missing_ratio > 0.3:
             raise Exception(f'Graph got incomplete AQI update (aqi_ok_ratio: {round(aqi_ok_ratio, 4)}, missing_ratio: {round(missing_ratio, 4)})')
         else:
             self.log.info(f'Graph AQI update resulted aqi_ok_ratio: {round(aqi_ok_ratio, 4)} & missing_ratio: {round(missing_ratio, 4)}')

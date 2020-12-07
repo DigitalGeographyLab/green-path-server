@@ -23,8 +23,8 @@ if __name__ != '__main__':
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
 
-
 log = Logger(app_logger=app.logger, b_printing=False)
+
 
 # initialize graph
 G = GraphHandler(log, subset=eval(os.getenv('GRAPH_SUBSET', 'False')))
@@ -39,21 +39,17 @@ aqi_map_data_api.start()
 def hello_world():
     return 'Keep calm and walk green paths.'
 
-
 @app.route('/aqistatus')
 def aqi_status():
     return jsonify(aqi_updater.get_aqi_update_status_response())
-
 
 @app.route('/aqi-map-data-status')
 def aqi_map_data_status():
     return aqi_map_data_api.get_status()
 
-
 @app.route('/aqi-map-data')
 def aqi_map_data():
     return aqi_map_data_api.get_data()
-
 
 @app.route('/edge-attrs-near-point/<lat>,<lon>')
 def edge_attrs_near_point(lat, lon):
@@ -78,29 +74,25 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
         if not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']:
             return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
 
-    error = None
+    path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
+
     try:
-        path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
         path_finder.find_origin_dest_nodes()
         path_finder.find_least_cost_paths()
         path_FC, edge_FC = path_finder.process_paths_to_FC()
+        return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
 
     except RoutingException as e:
         log.error(traceback.format_exc())
-        error = jsonify({'error_key': str(e)})
+        return jsonify({'error_key': str(e)})
 
     except Exception:
         log.error(traceback.format_exc())
-        error = jsonify({'error_key': ErrorKeys.UNKNOWN_ERROR.value})
+        return jsonify({'error_key': ErrorKeys.UNKNOWN_ERROR.value})
 
     finally:
         path_finder.delete_added_graph_features()
         G.reset_edge_cache()
-
-        if error:
-            return error
-
-    return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC })
 
 
 if __name__ == '__main__':

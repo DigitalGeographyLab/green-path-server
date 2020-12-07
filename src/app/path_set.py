@@ -23,8 +23,6 @@ class PathSet:
 
     def get_all_paths(self) -> List[Path]: return [self.shortest_path] + self.green_paths
 
-    def get_green_path_count(self) -> int: return len(self.green_paths)
-
     def set_path_edges(self, G) -> None:
         """Loads edges for all paths in the set from a graph (based on node lists of the paths).
         """
