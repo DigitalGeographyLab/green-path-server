@@ -190,6 +190,7 @@ class GraphHandler:
                 continue
             
             path_edge = PathEdge(
+                id = edge[E.id_ig.value],
                 length = edge[E.length.value],
                 length_b = edge[E.length_b.value] if edge[E.length_b.value] else 0,
                 aqi = edge[E.aqi.value],

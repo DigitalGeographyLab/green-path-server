@@ -69,7 +69,7 @@ When exploring the API and the source codes, please bear in mind that the word "
 | missing_noises | boolean | no | A boolean variable indicating whether noise data was available for all of the edges of the path. |
 | mdB | number | no | dBmean |
 | mdB_diff | number | yes | Difference in dBmean compared to the shortest path. |
-| nei | number | no | Noise exposure index (EI). |
+| nei | number | no | Noise exposure index (EI). See the method: utils.noise_exposures.get_noise_cost() |
 | nei_diff | number | yes | Difference in noise exposure index (EIdiff) compared to the shortest path. |
 | nei_diff_rat | number | yes | Difference in noise exposure index (EIdiff) as percentages compared to the shortest path. |
 | nei_norm | number | no | Distance-normalized noise exposure index (EIn). |
@@ -77,6 +77,14 @@ When exploring the API and the source codes, please bear in mind that the word "
 | noise_range_exps | object | no | Exposures (m) to different 10 dB noise level ranges. Keys represent noise levels and values distances (m). |
 | noises | object | no | Exposures to different noise levels. Keys represent noise levels and values distances (m). |
 | path_score | number | yes | Ratio between difference in noise exposure index and length compared to the shortest path - i.e. reduction in noise exposure index per each additional meter walked. |
+
+**Additional properties in research mode:**
+| Property | Type | Nullable | Description  |
+| ------------- | ---- | --- | ----------- |
+| edge_ids | list | no | List of edge IDs of the edges that the path consists of. Note that the first and last edge may not exist in the graph as they can be virtual/temporary edges between O/D location and the nearest "real" vertex. Hence, the first and last edge of the path are included as separate properties (objects) as described below. |
+| edge_first_props | object | no | Object containing the following properties of the first edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
+| edge_last_props | object | no | Object containing the following properties of the last edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
+
 
 ## Exceptions
 - Possible routing errors are defined as error keys in [src/app/constants.py](../src/app/constants.py)

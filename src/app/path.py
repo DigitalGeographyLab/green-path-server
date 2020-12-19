@@ -1,11 +1,12 @@
-from shapely.geometry import Point, LineString
-from typing import List, Set, Dict, Tuple, Optional
+from shapely.geometry import LineString
+from typing import List, Tuple
+import env
 import utils.geometry as geom_utils
 from app.types import PathEdge
 from app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs
 from app.path_aqi_attrs import PathAqiAttrs, create_aqi_attrs
 from app.graph_handler import GraphHandler
-from app.constants import RoutingMode, PathType
+from app.constants import PathType
 
 
 class Path:
@@ -121,7 +122,14 @@ class Path:
         }
         noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs else {}
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs else {}
-        feature_d['properties'] = { **props, **noise_props, **aqi_props }
+
+        research_props = {
+            'edge_ids': self.edge_ids,
+            'edge_first_props': self.edges[0].as_props(),
+            'edge_last_props': self.edges[len(self.edges)-1].as_props(),
+        } if env.research_mode else {}
+
+        feature_d['properties'] = { **props, **noise_props, **aqi_props, **research_props }
         return feature_d
 
     def __get_geojson_feature_dict(self, coords: List[tuple]) -> dict:
