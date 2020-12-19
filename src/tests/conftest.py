@@ -1,5 +1,6 @@
 from typing import Dict, Union, Tuple, Callable
 from unittest.mock import patch
+import os
 import pytest
 import json
 import time
@@ -12,26 +13,17 @@ __aq_sensitivities = [ 5, 15, 30 ]
 
 
 @pytest.fixture(scope='module')
-def monkeymodule():
-    from _pytest.monkeypatch import MonkeyPatch
-    mpatch = MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
-
-
-@pytest.fixture(scope='module')
-def clean_path_test_env(monkeymodule):
-    monkeymodule.setenv('GRAPH_SUBSET', 'True')
-    monkeymodule.setenv('TEST_MODE', 'True')
-
-
-@pytest.fixture(scope='module')
-def initial_client(clean_path_test_env):
-    with patch('utils.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities):
-        with patch('utils.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities):
-            from green_paths_app import app
-            with app.test_client() as gp_client:
-                yield gp_client
+def initial_client():
+    patch_env_test_mode = patch('env.test_mode', return_value=True)
+    patch_env_graph_subset = patch('env.graph_subset', return_value=True)
+    
+    patch_noise_sens = patch('utils.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
+    patch_aq_sens = patch('utils.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
+    
+    with patch_env_test_mode, patch_env_graph_subset, patch_noise_sens, patch_aq_sens:
+        from green_paths_app import app
+        with app.test_client() as gp_client:
+            yield gp_client
 
 
 @pytest.fixture(scope='module')

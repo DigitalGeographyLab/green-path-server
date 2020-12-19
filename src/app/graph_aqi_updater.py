@@ -7,6 +7,7 @@ import pandas as pd
 from os import listdir
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
+import env
 from app.graph_handler import GraphHandler
 import utils.aq_exposures as aq_exps
 from app.logger import Logger
@@ -33,7 +34,6 @@ class GraphAqiUpdater:
 
     def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_updates/'):
         self.log = logger
-        self.__test_mode: bool = os.getenv('TEST_MODE', 'False') == 'True'
         self.__aqi_update_status = ''
         self.__aqi_update_error = ''
         self.__aqi_data_wip = ''
@@ -41,7 +41,7 @@ class GraphAqiUpdater:
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
         self.__sens = aq_exps.get_aq_sensitivities()
-        self.__aqi_dir = aqi_dir if not self.__test_mode else 'aqi_updates/test_data/'
+        self.__aqi_dir = aqi_dir if not env.test_mode else 'aqi_updates/test_data/'
         self.__scheduler = BackgroundScheduler()
         self.__check_interval = 5 + random.randint(1, 15)
         self.__scheduler.add_job(
@@ -107,7 +107,7 @@ class GraphAqiUpdater:
     def __get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
         """
-        if self.__test_mode:
+        if env.test_mode:
             return 'aqi_2020-10-25T14.csv'
         else:
             curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
