@@ -1,5 +1,5 @@
 import time
-from typing import List, Set, Dict, Tuple
+from typing import List, Dict, Tuple
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 from app.types import PathEdge 
@@ -26,19 +26,16 @@ class GraphHandler:
         __edge_cache: A cache of path edges for current routing request. 
     """
 
-    def __init__(self, logger: Logger, subset: bool = False, gdf_attrs: list = []):
+    def __init__(self, logger: Logger, graph_file: str):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
             subset: A boolean variable indicating whether a subset of the graph should be loaded (subset is for testing / developing).
         """
         self.log = logger
-        self.log.info('Graph subset: '+ str(subset))
+        self.log.info(f'Loading graph from file: {graph_file}')
         start_time = time.time()
-        if subset:
-            self.graph = ig_utils.read_graphml('graphs/kumpula.graphml')
-        else:
-            self.graph = ig_utils.read_graphml('graphs/hma.graphml')
+        self.graph = ig_utils.read_graphml(graph_file)
         self.ecount = self.graph.ecount()
         self.vcount = self.graph.vcount()
         self.log.info('Graph of '+ str(self.graph.ecount()) + ' edges read')
