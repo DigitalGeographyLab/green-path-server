@@ -1,6 +1,5 @@
 from typing import Dict, Union, Tuple, Callable
 from unittest.mock import patch
-import os
 import pytest
 import json
 import time
@@ -14,13 +13,13 @@ __aq_sensitivities = [ 5, 15, 30 ]
 
 @pytest.fixture(scope='module')
 def initial_client():
-    patch_env_test_mode = patch('env.test_mode', return_value=True)
-    patch_env_graph_subset = patch('env.graph_subset', return_value=True)
+    patch_env_test_mode = patch('env.test_mode', True)
+    patch_env_graph_file = patch('env.graph_file', r'graphs/kumpula.graphml')
     
     patch_noise_sens = patch('utils.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
     patch_aq_sens = patch('utils.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
     
-    with patch_env_test_mode, patch_env_graph_subset, patch_noise_sens, patch_aq_sens:
+    with patch_env_test_mode, patch_env_graph_file, patch_noise_sens, patch_aq_sens:
         from green_paths_app import app
         with app.test_client() as gp_client:
             yield gp_client

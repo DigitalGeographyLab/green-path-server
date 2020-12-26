@@ -1,5 +1,5 @@
 import time
-from typing import List, Dict, Tuple
+from typing import List, Set, Dict, Tuple
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 from app.types import PathEdge 
