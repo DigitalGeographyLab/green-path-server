@@ -2,9 +2,11 @@ from shapely.geometry import LineString
 from typing import List, Tuple
 import env
 import utils.geometry as geom_utils
+from app.logger import Logger
 from app.types import PathEdge
 from app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs
 from app.path_aqi_attrs import PathAqiAttrs, create_aqi_attrs
+from app.path_gvi_attrs import PathGviAttrs, create_gvi_attrs
 from app.graph_handler import GraphHandler
 from app.constants import PathType
 
@@ -27,8 +29,10 @@ class Path:
         self.len_diff_rat: float = None
         self.missing_aqi: bool = False
         self.missing_noises: bool = False
+        self.missing_gvi: bool = False
         self.noise_attrs: PathNoiseAttrs = None
         self.aqi_attrs: PathAqiAttrs = None
+        self.gvi_attrs: PathGviAttrs = None
     
     def set_path_name(self, path_name: str): self.name = path_name
 
@@ -39,7 +43,7 @@ class Path:
         """
         self.edges = G.get_path_edges_by_ids(self.edge_ids)
 
-    def aggregate_path_attrs(self) -> None:
+    def aggregate_path_attrs(self, log: Logger) -> None:
         """Aggregates path attributes form list of edges.
         """
         path_coords = [coord for edge in self.edges for coord in edge.coords]
@@ -48,6 +52,9 @@ class Path:
         self.length_b = round(sum(edge.length_b for edge in self.edges), 2)
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge.aqi for edge in self.edges]) else False
+        self.missing_gvi = True if (None in [edge.gvi for edge in self.edges]) else False
+        if self.missing_gvi:
+            log.warning(f'Found missing GVI values for path ({[edge.gvi for edge in self.edges]})')
 
     def set_noise_attrs(self, db_costs: dict) -> None:
         if not self.missing_noises:
@@ -63,6 +70,11 @@ class Path:
             aqi_exp_list = [(edge.aqi, edge.length) for edge in self.edges]
             self.aqi_attrs = create_aqi_attrs(aqi_exp_list, self.length)
 
+    def set_gvi_attrs(self) -> None:
+        if not self.missing_gvi:
+            gvi_exp_list = [(edge.gvi, edge.length) for edge in self.edges]
+            self.gvi_attrs = create_gvi_attrs(gvi_exp_list)
+
     def set_green_path_diff_attrs(self, shortest_path: 'Path') -> None:
         self.len_diff = round(self.length - shortest_path.length, 1)
         self.len_diff_rat = round((self.len_diff / shortest_path.length) * 100, 1) if shortest_path.length > 0 else 0
@@ -70,6 +82,8 @@ class Path:
             self.noise_attrs.set_noise_diff_attrs(shortest_path.noise_attrs, len_diff=self.len_diff)
         if self.aqi_attrs and shortest_path.aqi_attrs:
             self.aqi_attrs.set_aqi_diff_attrs(shortest_path.aqi_attrs, len_diff=self.len_diff)
+        if self.gvi_attrs and shortest_path.gvi_attrs:
+            self.gvi_attrs.set_gvi_diff_attrs(shortest_path.gvi_attrs)
     
     def aggregate_edge_groups_by_attr(self, aq: bool, noise: bool) -> None:
         if aq == noise or (not aq and not noise):
@@ -122,6 +136,7 @@ class Path:
         }
         noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs else {}
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs else {}
+        gvi_props = self.gvi_attrs.get_gvi_props_dict() if self.gvi_attrs else {}
 
         research_props = {
             'edge_ids': self.edge_ids,
@@ -129,7 +144,13 @@ class Path:
             'edge_last_props': self.edges[len(self.edges)-1].as_props(),
         } if env.research_mode else {}
 
-        feature_d['properties'] = { **props, **noise_props, **aqi_props, **research_props }
+        feature_d['properties'] = { 
+            **props, 
+            **noise_props, 
+            **aqi_props,
+            **gvi_props,
+            **research_props 
+        }
         return feature_d
 
     def __get_geojson_feature_dict(self, coords: List[tuple]) -> dict:

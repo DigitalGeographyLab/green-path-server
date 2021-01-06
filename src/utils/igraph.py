@@ -13,7 +13,7 @@ is read to pandas DataFrame object.
 
 import ast
 from enum import Enum
-from typing import List, Set, Dict, Tuple
+from typing import List, Dict
 import geopandas as gpd
 import igraph as ig
 from pyproj import CRS
@@ -63,14 +63,20 @@ class Edge(Enum):
    noise_source: NoiseSource = 'ns' # nodata = None, no noises = ''
    noise_sources: Dict[NoiseSource, int] = 'nss' # nodata = None, no noises = {}
    aqi: float = 'aqi' # air quality index
+   gvi_gsv: float = 'g_gsv' # mean green view index (GVI) calculated from Google Street View (GSV) images
+   gvi_low_veg_share: float = 'g_lv' # share of low (<2m) vegetation in 30m buffer around edge
+   gvi_high_veg_share: float = 'g_hv' # share of high (>2m) vegetation in 30m buffer around edge
+   gvi_comb_gsv_veg: float = 'g_gsv_v' # combined GVI of GSV GVI and both vegetation shares
+   gvi_comb_gsv_high_veg: float = 'g_gsv_hv' # combined GVI of GSV GVI and high vegetation share
+   gvi: float = 'g' # combined GVI to use in routing (one of the above two)
 
 
 def to_str(value):
     return str(value) if value != 'None' else None
 def to_int(value):
-    return int(value)
+    return int(value) if value != 'None' else None
 def to_float(value):
-    return float(value)
+    return float(value) if value != 'None' else None
 def to_geom(value):
     return wkt.loads(value)
 def to_bool(value):
@@ -103,7 +109,13 @@ __value_converter_by_edge_attribute = {
     Edge.noises: to_dict,
     Edge.noise_source: to_str,
     Edge.noise_sources: to_dict,
-    Edge.aqi: to_float
+    Edge.aqi: to_float,
+    Edge.gvi_gsv: to_float,
+    Edge.gvi_low_veg_share: to_float,
+    Edge.gvi_high_veg_share: to_float,
+    Edge.gvi_comb_gsv_veg: to_float,
+    Edge.gvi_comb_gsv_high_veg: to_float,
+    Edge.gvi: to_float
 }
 
 __value_converter_by_node_attribute = {
@@ -142,8 +154,8 @@ def get_edge_gdf(
     geom_attr: Enum = Edge.geometry, 
     epsg: int = 3879
 ) -> gpd.GeoDataFrame:
-    """Returns all edges of a graph as pandas GeoDataFrame. The default is to load the projected geometry,
-    but it can be overridden by defining another geom_attr and a corresponding epsg. 
+    """Returns all edges of a graph as GeoPandas GeoDataFrame. The default is to load the projected geometry,
+    but it can be overridden by defining another geom_attr and the corresponding epsg. 
     """
 
     edge_dicts = []
@@ -201,7 +213,7 @@ def get_node_gdf(
 
 
 def read_graphml(graph_file: str, log = None) -> ig.Graph:
-    """Loads an igraph graph object from GraphML file, including all found edge and node
+    """Loads an igraph graph object from GraphML file, including all edge and node
     attributes that are found in the data and recognized by this module. 
     
     Since all attributes are saved in text format, an attribute specific converter must be found 
@@ -237,8 +249,8 @@ def export_to_graphml(
     e_attrs: List[Edge] = []
 ) -> None:
     """Writes the given graph object to a text file in GraphML format. Only the
-    selected edge and node attributes are included in the export if some are given. 
-    If no edge or node attributes are given, all found attributes are exported. 
+    selected edge and node attributes are included in the export if some are specified. 
+    If no edge or node attributes are specified, all found attributes are exported. 
     Attribute values are written as text, converted by str(value). 
     """
 

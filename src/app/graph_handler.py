@@ -193,6 +193,7 @@ class GraphHandler:
                 aqi = edge[E.aqi.value],
                 aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
                 noises = edge[E.noises.value],
+                gvi = edge[E.gvi.value],
                 coords = edge[E.geometry.value].coords,
                 coords_wgs = edge[E.geom_wgs.value].coords
             )
@@ -292,9 +293,11 @@ class GraphHandler:
         # calculate & add aq cost attributes for new linking edges 
         link1_aqi_cost_attrs = self.__get_link_edge_aqi_cost_estimates(edge_dict=edge, link_geom=link1, sens=aq_sens)
         link2_aqi_cost_attrs = self.__get_link_edge_aqi_cost_estimates(edge_dict=edge, link_geom=link2, sens=aq_sens)
-        # combine link attributes to prepare adding them as new edges
-        link1_attrs = { **link1_noise_cost_attrs, **link1_aqi_cost_attrs }
-        link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs }
+        # set GVI attributes for linking edges TODO add GVI costs when needed
+        link_gvi_attrs = { E.gvi.value: edge[E.gvi.value] }
+        # combine attributes for linking edges to one dictionary per new edge
+        link1_attrs = { **link1_noise_cost_attrs, **link1_aqi_cost_attrs, **link_gvi_attrs }
+        link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs, **link_gvi_attrs }
 
         # add linking edges with noise cost attributes to graph (save for loading them to graph later)
         if origin:

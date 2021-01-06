@@ -24,6 +24,10 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
     def test_func(props: dict):
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
+        test_exposure_prop_types(props['gvi_cl_exps'])
+        test_exposure_prop_types(props['gvi_cl_pcts'])
+        assert isinstance(props['gvi_m'], (float, int))
+        assert props['gvi_m_diff'] is None
         assert props['id'] == 'short'
         assert isinstance(props['len_diff'], (float, int))
         assert props['len_diff_rat'] is None
@@ -50,6 +54,10 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
 def test_quiet_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]:
     def test_func(props: dict):
         assert isinstance(props['cost_coeff'], (float, int))
+        test_exposure_prop_types(props['gvi_cl_exps'])
+        test_exposure_prop_types(props['gvi_cl_pcts'])
+        assert isinstance(props['gvi_m'], (float, int))
+        assert isinstance(props['gvi_m_diff'], (float, int))
         assert isinstance(props['id'], str)
         assert isinstance(props['len_diff'], (float, int))
         assert isinstance(props['len_diff_rat'], (float, int))
