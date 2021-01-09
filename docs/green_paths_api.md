@@ -65,6 +65,10 @@ When exploring the API and the source codes, please bear in mind that the word "
 | aqi_m | number | no | Mean AQI. |
 | aqi_m_diff | number | yes | Difference in mean AQI compared to the shortest path. |
 | aqi_pcts | object | no | Exposures (%) to different AQI classes. Keys are class names and values exposures as shares. |
+| gvi_m | number | no | Mean green view index (GVI) on the path. |
+| gvi_m_diff | number | yes | Difference in mean GVI compared to the shortest path. |
+| gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1 (e.g. 2 -> 0.1-0.2).  |
+| gvi_cl_pcts | object | no | Exposures (%) to different GVI ranges (classes). Same as above but object values are relative shares as percentages. |
 | missing_aqi | boolean | no | A boolean variable indicating whether AQI data was available for all of the edges of the path. |
 | missing_noises | boolean | no | A boolean variable indicating whether noise data was available for all of the edges of the path. |
 | mdB | number | no | dBmean |
