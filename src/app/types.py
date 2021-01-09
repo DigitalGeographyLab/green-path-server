@@ -13,6 +13,7 @@ class PathEdge:
     aqi: Union[float, None]
     aqi_cl: Union[float, None]
     noises: Union[dict, None]
+    gvi: Union[float, None]
     coords: List[Tuple[float]]
     coords_wgs: List[Tuple[float]]
     db_range: int = field(init=False)
@@ -22,11 +23,14 @@ class PathEdge:
         self.db_range = noise_exps.get_noise_range(mean_db)
 
     def as_props(self) -> dict:
+        """Used in research mode only (?).
+        """
         return {
             'id': self.id,
             'length': self.length,
             'aqi': self.aqi,
             'noises': self.noises,
+            'gvi': self.gvi,
             'coords': geom_utils.round_coordinates(self.coords),
             'coords_wgs': geom_utils.round_coordinates(self.coords_wgs)
         }

@@ -1,6 +1,5 @@
 import logging
 import traceback
-import os
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
@@ -28,7 +27,7 @@ log = Logger(app_logger=app.logger, b_printing=False)
 
 
 # initialize graph
-G = GraphHandler(log, subset=env.graph_subset)
+G = GraphHandler(log, env.graph_file)
 aqi_updater = GraphAqiUpdater(log, G)
 
 # start AQI map data service

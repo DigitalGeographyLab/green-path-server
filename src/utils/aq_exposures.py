@@ -145,10 +145,10 @@ def get_aqi_class_pcts(aqi_cl_exps: Dict[int, float], length: float) -> dict:
         aqi_cl_exps: A dictionary of exposures to different AQI classes (1, 2, 3...) as distances (m).
         length: The length of the path.
     """
-    aci_cl_pcts = {}
+    aqi_cl_pcts = {}
     for aqi_cl in aqi_cl_exps.keys():
-        aci_cl_pcts[aqi_cl] = round(aqi_cl_exps[aqi_cl]*100/length, 2)
-    return aci_cl_pcts
+        aqi_cl_pcts[aqi_cl] = round(aqi_cl_exps[aqi_cl]*100/length, 2)
+    return aqi_cl_pcts
 
 
 def get_mean_aqi(aqi_exp_list: List[Tuple[float, float]]) -> float:

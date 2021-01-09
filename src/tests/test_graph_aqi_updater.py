@@ -1,9 +1,11 @@
 import pytest
+import env
 from utils.igraph import Edge as E
 from app.logger import Logger
 from app.logger import Logger
 from app.graph_handler import GraphHandler
 from app.graph_aqi_updater import GraphAqiUpdater
+from unittest.mock import patch
 
 
 @pytest.fixture(scope='module')
@@ -13,12 +15,15 @@ def log():
 
 @pytest.fixture(scope='module')
 def graph_handler(log):
-    yield GraphHandler(log, subset=True)
+    patch_env_test_mode = patch('env.test_mode', True)
+    patch_env_graph_file = patch('env.graph_file', r'graphs/kumpula.graphml')
+    with patch_env_test_mode, patch_env_graph_file:
+        yield GraphHandler(log, env.graph_file)
 
 
 @pytest.fixture(scope='module')
 def aqi_updater(graph_handler, log):
-    yield GraphAqiUpdater(log, graph_handler, aqi_dir='tests/aqi_cache/')
+    yield GraphAqiUpdater(log, graph_handler)
 
 
 def test_initial_aqi_updater_status(aqi_updater):

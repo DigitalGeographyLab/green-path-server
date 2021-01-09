@@ -36,10 +36,10 @@ class PathSet:
         """Aggregates edge level path attributes to paths.
         """
         if self.shortest_path:
-            self.shortest_path.aggregate_path_attrs()
+            self.shortest_path.aggregate_path_attrs(self.log)
         if self.green_paths:
             for gp in self.green_paths:
-                gp.aggregate_path_attrs()
+                gp.aggregate_path_attrs(self.log)
     
     def filter_out_green_paths_missing_exp_data(self) -> None:
         path_count = len(self.green_paths)
@@ -91,9 +91,11 @@ class PathSet:
     def set_path_exp_attrs(self, db_costs) -> None:
         self.shortest_path.set_noise_attrs(db_costs)
         self.shortest_path.set_aqi_attrs()
+        self.shortest_path.set_gvi_attrs()
         for path in self.green_paths:
             path.set_noise_attrs(db_costs)
             path.set_aqi_attrs()
+            path.set_gvi_attrs()
 
     def set_green_path_diff_attrs(self) -> None:
         for path in self.green_paths:
