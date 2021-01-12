@@ -2,6 +2,7 @@ import time
 from typing import List, Set, Dict, Tuple
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
+import env
 from app.types import PathEdge 
 from utils.igraph import Edge as E, Node as N
 import utils.igraph as ig_utils
@@ -44,7 +45,7 @@ class GraphHandler:
         self.__node_gdf = ig_utils.get_node_gdf(self.graph)
         self.__nodes_sind = self.__node_gdf.sindex
         self.db_costs = noise_exps.get_db_costs(version=3)
-        self.__set_noise_costs_to_edges()
+        if env.quiet_paths_enabled: self.__set_noise_costs_to_edges()
         self.log.info('Noise costs set')
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
@@ -64,6 +65,10 @@ class GraphHandler:
     def __set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
         """
+
+        has_geom = lambda edge_attrs: isinstance(edge_attrs[E.geometry.value], LineString)
+        has_noises = lambda edge_attrs: edge_attrs[E.noises.value] is not None
+
         sens = noise_exps.get_noise_sensitivities()
         for edge in self.graph.es:
             # first add estimated exposure to 40 dB noise level to edge attrs
@@ -77,19 +82,22 @@ class GraphHandler:
             # then calculate and update noise costs to edges
             updates = {}
             for sen, cost_attr in [(sen, 'nc_'+ str(sen)) for sen in sens]: # iterate dict of noise sensitivities and respective cost attribute names
-                if (not noises and isinstance(edge_attrs[E.geometry.value], LineString)):
-                    # these are edges outside the extent of the noise data (having valid geometry)
+                if has_geom(edge_attrs) and not has_noises(edge_attrs):
+                    # these are street edges outside the extent of the noise data
                     # -> set high noise costs to avoid them in finding quiet paths
                     noise_cost = edge_attrs[E.length.value] * 20
-                elif (not isinstance(edge_attrs[E.geometry.value], LineString)):
+                elif not has_geom(edge_attrs):
                     # set noise cost 0 to all edges without geometry
                     noise_cost = 0.0
                 else:
                     # else calculate normal noise exposure based noise cost coefficient
-                    noise_cost = noise_exps.get_noise_cost(noises=noises, db_costs=self.db_costs, sen=sen)
-                updates[cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
-                bike_length = edge_attrs[E.length_b.value] if edge_attrs[E.length_b.value] else edge_attrs[E.length.value]
-                updates['b'+ cost_attr] = round(bike_length + noise_cost, 2) # biking costs
+                    noise_cost = noise_exps.get_noise_cost(noises, self.db_costs, sen=sen)
+                if env.walking_enabled:
+                    updates[cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
+                if env.cycling_enabled:
+                    biking_length = edge_attrs[E.length_b.value] if edge_attrs[E.length_b.value] else edge_attrs[E.length.value]
+                    updates['b'+ cost_attr] = round(biking_length + noise_cost, 2) # biking costs
+            
             self.graph.es[edge.index].update_attributes(updates)
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):

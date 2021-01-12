@@ -58,8 +58,7 @@ def get_aqi_costs(
     length: float, 
     sens: List[float], 
     length_b: float = None, 
-    prefix: str = '', 
-    log: Logger = None
+    prefix: str = ''
 ) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
     If AQI value is missing of invalid, high AQI costs are returned in order to avoid using the edge in AQI based routing.

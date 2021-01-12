@@ -27,4 +27,5 @@ class ErrorKeys(Enum):
     NO_REAL_TIME_AQI_AVAILABLE = 'no_real_time_aqi_available'
     INVALID_TRAVEL_MODE_PARAM = 'invalid_travel_mode_in_request_params'
     INVALID_EXPOSURE_MODE_PARAM = 'invalid_exposure_mode_in_request_params'
+    AQI_ROUTING_NOT_AVAILABLE = 'air_quality_routing_not_available'
     UNKNOWN_ERROR = 'unknown_error'

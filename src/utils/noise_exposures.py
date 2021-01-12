@@ -135,8 +135,8 @@ def get_mean_noise_level(noises: dict, length: float) -> float:
 
 
 def get_noise_cost(
-    noises: Dict[int, float] = {}, 
-    db_costs: Dict[int, float] = {}, 
+    noises: Dict[int, float], 
+    db_costs: Dict[int, float], 
     sen: float = 1
 ) -> float:
     """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
@@ -174,7 +174,7 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     cost_attrs[E.noises.value] = interpolate_link_noises(link_len_ratio, link_geom, edge_dict[E.geometry.value], edge_dict[E.noises.value])
     # calculate noise sensitivity specific noise costs
     for sen in sens:
-        noise_cost = get_noise_cost(noises=cost_attrs[E.noises.value], db_costs=db_costs, sen=sen)
+        noise_cost = get_noise_cost(cost_attrs[E.noises.value], db_costs, sen=sen)
         cost_attrs['nc_'+str(sen)] = round(link_geom.length + noise_cost, 2)
         cost_attrs['bnc_'+str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
     return cost_attrs

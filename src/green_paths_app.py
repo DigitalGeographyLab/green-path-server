@@ -28,7 +28,9 @@ log = Logger(app_logger=app.logger, b_printing=False)
 
 # initialize graph
 G = GraphHandler(log, env.graph_file)
-aqi_updater = GraphAqiUpdater(log, G)
+
+if env.clean_paths_enabled:
+    aqi_updater = GraphAqiUpdater(log, G)
 
 # start AQI map data service
 aqi_map_data_api = get_aqi_map_data_api(log, 'aqi_updates/')
@@ -41,7 +43,10 @@ def hello_world():
 
 @app.route('/aqistatus')
 def aqi_status():
-    return jsonify(aqi_updater.get_aqi_update_status_response())
+    if env.clean_paths_enabled:
+        return jsonify(aqi_updater.get_aqi_update_status_response())
+    else:
+        return jsonify({'error_key': ErrorKeys.AQI_ROUTING_NOT_AVAILABLE.value})
 
 @app.route('/aqi-map-data-status')
 def aqi_map_data_status():
@@ -71,7 +76,8 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
         return jsonify({'error_key': ErrorKeys.INVALID_EXPOSURE_MODE_PARAM.value})
 
     if routing_mode == RoutingMode.CLEAN:
-        if not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']:
+        if (not env.clean_paths_enabled 
+                or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']):
             return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
 
     path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)

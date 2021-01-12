@@ -1,6 +1,5 @@
 import time
 import gc
-import os
 import random
 import traceback
 import pandas as pd
@@ -138,10 +137,20 @@ class GraphAqiUpdater:
             self.__aqi_update_status = aqi_update_status
         return new_aqi_csv
 
-    def __get_aq_update_attrs(self, aqi: float, length: float, length_b: float):
-        aq_costs = aq_exps.get_aqi_costs(aqi, length, self.__sens)
-        aq_costs_b = aq_exps.get_aqi_costs(aqi, length, self.__sens, length_b=length_b, prefix='b')
-        return { 'aqi': aqi, **aq_costs, **aq_costs_b }
+    def __get_aq_update_attrs(self, aqi: float, length: float, length_b: float):        
+        aq_costs = aq_exps.get_aqi_costs(
+            aqi, length, self.__sens
+        ) if env.walking_enabled else {}
+        
+        aq_costs_b = aq_exps.get_aqi_costs(
+            aqi, length, self.__sens, length_b=length_b, prefix='b'
+        ) if env.cycling_enabled else {}
+
+        return {
+            'aqi': aqi,
+            **aq_costs,
+            **aq_costs_b
+        }
 
     def __get_missing_aq_update_attrs(self, length: float):
         """Set AQI to None to all edges that did not receive AQI update. Set high AQ costs to edges with geometry and 0 to 
@@ -156,6 +165,10 @@ class GraphAqiUpdater:
             # set high AQ costs to edges outside the AQI data extent (aqi_coeff=40)
             aq_costs = { 'aqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.__sens }
             aq_costs_b = { 'baqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.__sens }
+        
+        aq_costs = aq_costs if env.walking_enabled else {}
+        aq_costs_b = aq_costs_b if env.cycling_enabled else {}
+        
         return { 'aqi': None, **aq_costs, **aq_costs_b }
     
     def __read_update_aqi_to_graph(self, aqi_updates_csv: str):

@@ -32,13 +32,13 @@ def client(initial_client):
         response = initial_client.get('/aqistatus')
         assert response.status_code == 200
         data = json.loads(response.data)
-        if not data['aqi_data_updated']:
+        if not data.get('aqi_data_updated', None):
             time.sleep(1)
             continue
         response = initial_client.get('/aqi-map-data-status')
         assert response.status_code == 200
         status = json.loads(response.data)
-        if not status['aqi_map_data_available']:
+        if not status.get('aqi_map_data_available', None):
             time.sleep(1)
             continue
         break
