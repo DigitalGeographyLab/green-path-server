@@ -5,7 +5,7 @@ between paths.
 
 """
 
-from typing import List, Set, Dict, Tuple
+from typing import List, Set, Dict, Tuple, Union
 from collections import defaultdict
 from shapely.geometry import LineString
 from utils.igraph import Edge as E
@@ -142,11 +142,33 @@ def get_noise_cost(
 ) -> float:
     """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
     """
-    if (not noises):
+    if not noises:
         return 0.0
     else:
         noise_cost = sum([db_costs[db] * length * sen for db, length in noises.items()])
         return round(noise_cost, 2)
+
+
+def get_noise_adjusted_edge_cost(
+    sensitivity: float,
+    db_costs: Dict[int, float],
+    noises: Union[dict, None], 
+    edge_has_geom: bool, 
+    length: float,
+    biking_length: float = None
+):
+    noise_cost = 0.0
+
+    if noises is not None:
+        noise_cost = get_noise_cost(noises, db_costs, sensitivity)
+    elif edge_has_geom and noises is None:
+        # set high noise costs for edges outside data coverage
+        noise_cost = 20 * length
+
+    if biking_length:
+        return round(biking_length + noise_cost, 2) 
+    
+    return round(length + noise_cost, 2) 
 
 
 def interpolate_link_noises(
@@ -184,7 +206,13 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     return cost_attrs
 
 
-def estimate_db_40_exp(noises: dict, length: float) -> float:
-    if (length == 0.0): return 0.0
+def add_db_40_exp_to_noises(noises: Union[dict, None], length: float) -> Dict[int, float]:
+    if not noises or not length or 40 in noises:
+        return noises
+
     total_db_length = get_total_noises_len(noises) if noises else 0.0
-    return round(length - total_db_length, 2)
+    db_40_len = round(length - total_db_length, 2)
+    if db_40_len:
+        return { 40: db_40_len, **noises }
+    
+    return noises

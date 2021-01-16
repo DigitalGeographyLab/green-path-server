@@ -68,43 +68,47 @@ class GraphHandler:
     def __set_noise_costs_to_edges(self):
         """Updates all noise cost attributes to a graph.
         """
-
-        has_geom = lambda edge_attrs: isinstance(edge_attrs[E.geometry.value], LineString)
-        has_noises = lambda edge_attrs: edge_attrs[E.noises.value] is not None
-
         cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.QUIET]
         cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.QUIET]
 
-        sens = noise_exps.get_noise_sensitivities()
-        for edge in self.graph.es:
-            # first add estimated exposure to 40 dB noise level to edge attrs
-            edge_attrs = edge.attributes()
-            noises = edge_attrs[E.noises.value]
-            db_40_exp = noise_exps.estimate_db_40_exp(edge_attrs[E.noises.value], edge_attrs[E.length.value])
-            if db_40_exp > 0.0:
-                noises[40] = db_40_exp
-            self.graph.es[edge.index][E.noises.value] = noises
-            
-            # then calculate and update noise costs to edges
-            updates = {}
-            for sen in sens:
-                if has_geom(edge_attrs) and not has_noises(edge_attrs):
-                    # these are street edges outside the extent of the noise data
-                    # -> set high noise costs to avoid them in finding quiet paths
-                    noise_cost = edge_attrs[E.length.value] * 20
-                elif not has_geom(edge_attrs):
-                    # set noise cost 0 to all edges without geometry
-                    noise_cost = 0.0
-                else:
-                    # else calculate normal noise exposure based noise cost coefficient
-                    noise_cost = noise_exps.get_noise_cost(noises, self.db_costs, sen=sen)
-                if env.walking_enabled:
-                    updates[cost_prefix + str(sen)] = round(edge_attrs[E.length.value] + noise_cost, 2)
-                if env.cycling_enabled:
-                    biking_length = edge_attrs[E.length_b.value] if edge_attrs[E.length_b.value] else edge_attrs[E.length.value]
-                    updates[cost_prefix_bike + str(sen)] = round(biking_length + noise_cost, 2) # biking costs
-            
-            self.graph.es[edge.index].update_attributes(updates)
+        noises_list = self.graph.es[E.noises.value]
+        length_list = self.graph.es[E.length.value]
+        biking_length_list = self.graph.es[E.length_b.value]
+        has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
+
+        # update dB 40 lengths to graph (the lowest level in noise data is 45)
+        noises_lengths = zip(noises_list, length_list)
+        self.graph.es[E.noises.value] = [
+            noise_exps.add_db_40_exp_to_noises(noises, length)
+            for noises, length
+            in noises_lengths
+        ]
+
+        for sen in noise_exps.get_noise_sensitivities():
+
+            if env.walking_enabled:
+                lengths_noises_b_geoms = zip(length_list, noises_list, has_geom_list)
+                cost_attr = cost_prefix + str(sen)
+
+                self.graph.es[cost_attr] = [
+                    noise_exps.get_noise_adjusted_edge_cost(
+                        sen, self.db_costs, noises, has_geom, length
+                    )
+                    for length, noises, has_geom
+                    in lengths_noises_b_geoms
+                ]
+
+            if env.cycling_enabled:
+                lengths_noises_b_geoms = zip(length_list, biking_length_list, noises_list, has_geom_list)
+                cost_attr = cost_prefix_bike + str(sen)
+
+                self.graph.es[cost_attr] = [
+                    noise_exps.get_noise_adjusted_edge_cost(
+                        sen, self.db_costs, noises, has_geom, length, b_length
+                    )
+                    for length, b_length, noises, has_geom
+                    in lengths_noises_b_geoms
+                ]
 
     def __set_gvi_costs_to_graph(self):
         cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]

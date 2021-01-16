@@ -3,6 +3,7 @@ import env
 from shapely.geometry import LineString
 from utils.igraph import Edge as E
 import utils.greenery_exposures as gvi_exps
+import utils.noise_exposures as noise_exps
 from app.logger import Logger
 from app.logger import Logger
 from app.graph_handler import GraphHandler
@@ -59,7 +60,23 @@ def test_aqi_graph_update(aqi_updater, graph_handler):
     assert aqi_status['aqi_data_utc_time_secs'] > 1000000000
 
 
-def test_gvi_cost_update(graph_handler):
+def test_noise_cost_edge_attributes(graph_handler):
+    cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.QUIET]
+
+    for e in graph_handler.graph.es:
+        attrs = e.attributes()
+        eg_noise_cost = f'{cost_prefix}{noise_exps.get_noise_sensitivities()[1]}'
+        assert eg_noise_cost in attrs
+
+        if isinstance(attrs[E.geometry.value], LineString) and isinstance(attrs[E.noises.value], dict):
+            assert attrs[eg_noise_cost] >= round(attrs[E.length.value], 2)
+        elif attrs[E.noises.value] is None and isinstance(attrs[E.geometry.value], LineString):
+            assert attrs[eg_noise_cost] > attrs[E.length.value] * 10
+        else:
+            assert attrs[eg_noise_cost] == 0.0
+
+
+def test_gvi_cost_edge_attributes(graph_handler):
     cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]
     for e in graph_handler.graph.es:
         attrs = e.attributes()
