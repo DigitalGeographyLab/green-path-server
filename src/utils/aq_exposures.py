@@ -5,6 +5,7 @@ exposures to air pollution between paths.
 
 """
 
+from app.constants import RoutingMode, TravelMode, cost_prefix_dict
 from typing import List, Set, Dict, Tuple
 from app.logger import Logger
 
@@ -58,7 +59,7 @@ def get_aqi_costs(
     length: float, 
     sens: List[float], 
     length_b: float = None, 
-    prefix: str = ''
+    travel_mode: TravelMode = TravelMode.WALK
 ) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
     If AQI value is missing of invalid, high AQI costs are returned in order to avoid using the edge in AQI based routing.
@@ -73,7 +74,9 @@ def get_aqi_costs(
     except InvalidAqiException:
         # assign high aq costs to edges without aqi data
         aqi_coeff = 10
-    aq_costs = { prefix +'aqc_'+ str(sen) : calc_aqi_cost(length, aqi_coeff, length_b=length_b, sen=sen) for sen in sens }
+
+    cost_prefix = cost_prefix_dict[travel_mode][RoutingMode.CLEAN]
+    aq_costs = { cost_prefix + str(sen) : calc_aqi_cost(length, aqi_coeff, length_b=length_b, sen=sen) for sen in sens }
     return aq_costs
 
 

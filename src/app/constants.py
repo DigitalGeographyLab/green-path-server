@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 
 
 class TravelMode(Enum):
@@ -6,13 +7,29 @@ class TravelMode(Enum):
     BIKE = 'bike'
 
 class RoutingMode(Enum):
-    CLEAN = 'clean'
+    CLEAN = 'clean' # i.e. "fresh air"
     QUIET = 'quiet'
+    GREEN = 'green'
 
 class PathType(Enum):
     SHORT = 'short'
     CLEAN = RoutingMode.CLEAN.value
     QUIET = RoutingMode.QUIET.value
+    GREEN = RoutingMode.GREEN.value
+
+
+cost_prefix_dict: Dict[TravelMode, Dict[RoutingMode, str]] = {
+    TravelMode.WALK: {
+        RoutingMode.CLEAN: 'c_aq_',
+        RoutingMode.QUIET: 'c_n_',
+        RoutingMode.GREEN: 'c_g_'
+    },
+    TravelMode.BIKE: {
+        RoutingMode.CLEAN: 'c_aq_b_',
+        RoutingMode.QUIET: 'c_n_b_',
+        RoutingMode.GREEN: 'c_g_b_'
+    }
+}
 
 class RoutingException(Exception):
     pass

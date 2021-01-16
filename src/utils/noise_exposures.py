@@ -9,6 +9,7 @@ from typing import List, Set, Dict, Tuple
 from collections import defaultdict
 from shapely.geometry import LineString
 from utils.igraph import Edge as E
+from app.constants import cost_prefix_dict, TravelMode, RoutingMode
 
 
 def calc_db_cost_v2(db) -> float:
@@ -168,6 +169,9 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
     (from which the edge was split). 
     """
+    cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.QUIET]
+    cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.QUIET]
+
     cost_attrs = {}
     # estimate link costs based on link length - edge length -ratio and edge noises
     link_len_ratio = link_geom.length / edge_dict[E.geometry.value].length
@@ -175,8 +179,8 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     # calculate noise sensitivity specific noise costs
     for sen in sens:
         noise_cost = get_noise_cost(cost_attrs[E.noises.value], db_costs, sen=sen)
-        cost_attrs['nc_'+str(sen)] = round(link_geom.length + noise_cost, 2)
-        cost_attrs['bnc_'+str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
+        cost_attrs[cost_prefix + str(sen)] = round(link_geom.length + noise_cost, 2)
+        cost_attrs[cost_prefix_bike + str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
     return cost_attrs
 
 

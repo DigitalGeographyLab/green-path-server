@@ -3,6 +3,18 @@ from math import ceil
 from collections import defaultdict
 
 
+def get_gvi_sensitivities() -> List[float]:
+    return [0.25, 0.5, 1, 1.5]
+
+
+def get_gvi_adjusted_cost(length, gvi, sen: int = 1) -> float:
+    cost_reduction = length * gvi * sen    
+    if cost_reduction >= length:
+        return 0.0
+    
+    return round(length - cost_reduction, 2)
+    
+
 def get_mean_gvi(gvi_exps: List[Tuple[float, float]]) -> float:
     """Returns mean GVI by the list of GVI + length pairs (tuples).
     """

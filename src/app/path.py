@@ -85,15 +85,16 @@ class Path:
         if self.gvi_attrs and shortest_path.gvi_attrs:
             self.gvi_attrs.set_gvi_diff_attrs(shortest_path.gvi_attrs)
     
-    def aggregate_edge_groups_by_attr(self, aq: bool, noise: bool) -> None:
-        if aq == noise or (not aq and not noise):
-            raise ValueError('Group edges by either aq or noise, not both or neither')
+    def aggregate_edge_groups_by_attr(self, grouping_attr: str) -> None:
+        """Create groups of edges by PathEdge attribute values. Groups are formed by
+        aggregating all adjacent edges with same attribute value (grouping_attr). 
+        """
 
         cur_group = []
         cur_group_id: int = 0
         for edge in self.edges:
             # get either aqi class or noise range value
-            value = edge.aqi_cl if aq else edge.db_range
+            value = getattr(edge, grouping_attr)
             # add edge to current or new group based on group_attr
             if value == cur_group_id:
                 cur_group.append(edge)

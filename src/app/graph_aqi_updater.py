@@ -12,7 +12,8 @@ import utils.aq_exposures as aq_exps
 from app.logger import Logger
 import utils.igraph as ig_utils
 from utils.igraph import Edge as E
-from typing import List, Set, Dict, Tuple, Optional, Union
+from typing import Union
+from app.constants import cost_prefix_dict, RoutingMode, TravelMode
 
 
 class GraphAqiUpdater:
@@ -143,7 +144,7 @@ class GraphAqiUpdater:
         ) if env.walking_enabled else {}
         
         aq_costs_b = aq_exps.get_aqi_costs(
-            aqi, length, self.__sens, length_b=length_b, prefix='b'
+            aqi, length, self.__sens, length_b=length_b, travel_mode=TravelMode.BIKE
         ) if env.cycling_enabled else {}
 
         return {
@@ -157,19 +158,22 @@ class GraphAqiUpdater:
         edges without.
         """
         aq_costs = {}
+        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.CLEAN]
+        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.CLEAN]
+
         if (length == 0.0):
             # set zero costs to edges with null geometry
-            aq_costs = { 'aqc_'+ str(sen) : 0.0 for sen in self.__sens }
-            aq_costs_b = { 'baqc_'+ str(sen) : 0.0 for sen in self.__sens }
+            aq_costs = { cost_prefix + str(sen) : 0.0 for sen in self.__sens }
+            aq_costs_b = { cost_prefix_bike + str(sen) : 0.0 for sen in self.__sens }
         else:
             # set high AQ costs to edges outside the AQI data extent (aqi_coeff=40)
-            aq_costs = { 'aqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.__sens }
-            aq_costs_b = { 'baqc_'+ str(sen) : round(length + length * 40, 2) for sen in self.__sens }
+            aq_costs = { cost_prefix + str(sen) : round(length + length * 40, 2) for sen in self.__sens }
+            aq_costs_b = { cost_prefix_bike + str(sen) : round(length + length * 40, 2) for sen in self.__sens }
         
         aq_costs = aq_costs if env.walking_enabled else {}
         aq_costs_b = aq_costs_b if env.cycling_enabled else {}
         
-        return { 'aqi': None, **aq_costs, **aq_costs_b }
+        return { E.aqi.value: None, **aq_costs, **aq_costs_b }
     
     def __read_update_aqi_to_graph(self, aqi_updates_csv: str):
         """Updates new AQI values and AQ costs to edges and AQI=None to edges that do not get AQI update. 

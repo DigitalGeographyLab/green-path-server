@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Union, List, Tuple
+from typing import Dict, Union, List, Tuple
 import utils.noise_exposures as noise_exps
 import utils.geometry as geom_utils
+from app.constants import RoutingMode
 
 
 @dataclass
@@ -14,6 +15,7 @@ class PathEdge:
     aqi_cl: Union[float, None]
     noises: Union[dict, None]
     gvi: Union[float, None]
+    gvi_cl: Union[int, None]
     coords: List[Tuple[float]]
     coords_wgs: List[Tuple[float]]
     db_range: int = field(init=False)
@@ -31,6 +33,14 @@ class PathEdge:
             'aqi': self.aqi,
             'noises': self.noises,
             'gvi': self.gvi,
+            'gvi_cl': self.gvi_cl,
             'coords': geom_utils.round_coordinates(self.coords),
             'coords_wgs': geom_utils.round_coordinates(self.coords_wgs)
         }
+
+
+edge_group_attr_by_routing_mode: Dict[RoutingMode, str] = {
+    RoutingMode.CLEAN: 'aqi_cl',
+    RoutingMode.QUIET: 'db_range',
+    RoutingMode.GREEN: 'gvi_cl'
+}

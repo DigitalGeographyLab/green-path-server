@@ -3,6 +3,7 @@ import json
 import pytest
 from shapely.geometry import LineString
 from utils.geometry import project_geom
+from app.constants import cost_prefix_dict, TravelMode, RoutingMode
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['aqi_cl_exps'])
         assert isinstance(props['aqi_m'], (float, int))
         assert props['aqi_m_diff'] is None
-        test_exposure_prop_types(props['aqi_pcts'])
+        test_exposure_prop_types(props['aqi_pcts'], 100.0)
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
         assert props['id'] == 'short'
@@ -46,7 +47,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert props['nei_diff'] is None
         assert props['nei_diff_rat'] is None
         assert isinstance(props['nei_norm'], (float, int))
-        test_exposure_prop_types(props['noise_pcts'])
+        test_exposure_prop_types(props['noise_pcts'], 100.0)
         test_exposure_prop_types(props['noise_range_exps'])
         test_exposure_prop_types(props['noises'])
         assert props['path_score'] is None
@@ -66,7 +67,7 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['aqi_cl_exps'])
         assert isinstance(props['aqi_m'], (float, int))
         assert isinstance(props['aqi_m_diff'], (float, int))
-        test_exposure_prop_types(props['aqi_pcts'])
+        test_exposure_prop_types(props['aqi_pcts'], 100.0)
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
         assert isinstance(props['len_diff'], (float, int))
@@ -81,7 +82,7 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['nei_diff'], (float, int))
         assert isinstance(props['nei_diff_rat'], (float, int))
         assert isinstance(props['nei_norm'], (float, int))
-        test_exposure_prop_types(props['noise_pcts'])
+        test_exposure_prop_types(props['noise_pcts'], 100.0)
         test_exposure_prop_types(props['noise_range_exps'])
         test_exposure_prop_types(props['noises'])
         assert isinstance(props['path_score'], (float, int))
@@ -151,9 +152,13 @@ def test_path_set_1_shortest_path_props(path_set_1):
     assert props['type'] == 'short'
 
 
+path_id_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.CLEAN]
+path_id = path_id_prefix + '15'
+
+
 def test_path_set_1_clean_path_geom(path_set_1):
     _, path_fc = path_set_1
-    c_path = [feat for feat in path_fc['features'] if feat['properties']['id'] == 'aq_15'][0]
+    c_path = [feat for feat in path_fc['features'] if feat['properties']['id'] == path_id][0]
     geom = c_path['geometry']
     line = LineString(geom['coordinates'])
     proj_line = project_geom(line)
@@ -162,7 +167,7 @@ def test_path_set_1_clean_path_geom(path_set_1):
 
 def test_path_set_1_clean_path_props(path_set_1):
     _, path_fc = path_set_1
-    c_path = [feat for feat in path_fc['features'] if feat['properties']['id'] == 'aq_15'][0]
+    c_path = [feat for feat in path_fc['features'] if feat['properties']['id'] == path_id][0]
     props = c_path['properties']
     assert props['aqc'] == 174.64
     assert props['aqc_diff'] == -3.22
@@ -174,7 +179,7 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['aqi_m_diff'] == -0.02
     assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"1": 100.0}'
     assert props['cost_coeff'] == 15
-    assert props['id'] == 'aq_15'
+    assert props['id'] == path_id
     assert props['len_diff'] == 32.8
     assert props['len_diff_rat'] == 2.4
     assert props['length'] == 1372.87

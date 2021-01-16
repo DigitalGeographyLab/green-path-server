@@ -62,11 +62,18 @@ def test_line_geometry() -> Callable[[dict], None]:
 
 
 @pytest.fixture
-def test_exposure_prop_types() -> Callable[[dict], None]:
-    def test_func(exp_dict: Dict[str, Union[int, float]]):
+def test_exposure_prop_types() -> Callable[[dict, Union[float, None]], None]:
+    def test_func(
+        exp_dict: Dict[str, Union[int, float]], 
+        expected_sum: Union[float, None] = None
+    ):
         assert isinstance(exp_dict, dict)
         for key, val in exp_dict.items():
             num_key = int(key)
             assert isinstance(num_key, int)
             assert isinstance(val, (float, int))
+        if expected_sum:
+            val_sum = sum(exp_dict.values())
+            diff = val_sum - expected_sum
+            assert abs(diff) <= 0.11
     return test_func

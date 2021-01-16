@@ -1,10 +1,13 @@
 import pytest
 import env
+from shapely.geometry import LineString
 from utils.igraph import Edge as E
+import utils.greenery_exposures as gvi_exps
 from app.logger import Logger
 from app.logger import Logger
 from app.graph_handler import GraphHandler
 from app.graph_aqi_updater import GraphAqiUpdater
+from app.constants import cost_prefix_dict, TravelMode, RoutingMode
 from unittest.mock import patch
 
 
@@ -23,7 +26,9 @@ def graph_handler(log):
 
 @pytest.fixture(scope='module')
 def aqi_updater(graph_handler, log):
-    yield GraphAqiUpdater(log, graph_handler)
+    patch_env_test_mode = patch('env.test_mode', True)
+    with patch_env_test_mode:
+        return GraphAqiUpdater(log, graph_handler)
 
 
 def test_initial_aqi_updater_status(aqi_updater):
@@ -51,4 +56,18 @@ def test_aqi_graph_update(aqi_updater, graph_handler):
     # aqi updater status response
     aqi_status = aqi_updater.get_aqi_update_status_response()
     assert aqi_status['aqi_data_updated'] == True
-    assert aqi_status['aqi_data_utc_time_secs'] ==  1573221600
+    assert aqi_status['aqi_data_utc_time_secs'] > 1000000000
+
+
+def test_gvi_cost_update(graph_handler):
+    cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]
+    for e in graph_handler.graph.es:
+        attrs = e.attributes()
+        eg_gvi_cost = f'{cost_prefix}{gvi_exps.get_gvi_sensitivities()[1]}'
+        assert eg_gvi_cost in attrs
+
+        if not isinstance(attrs[E.geometry.value], LineString):
+            assert attrs[eg_gvi_cost] == 0.0
+        else:
+            assert attrs[eg_gvi_cost] > 0.0
+            assert round(attrs[eg_gvi_cost], 2) <= round(attrs[E.length.value], 2)

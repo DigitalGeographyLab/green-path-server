@@ -3,6 +3,7 @@ import utils.paths_overlay_filter as path_overlay_filter
 from app.constants import RoutingMode, PathType
 from app.logger import Logger
 from app.path import Path
+from app.types import edge_group_attr_by_routing_mode
 
 
 class PathSet:
@@ -105,12 +106,10 @@ class PathSet:
         feats = [path.get_as_geojson_feature() for path in [self.shortest_path] + self.green_paths]
         return self.__as_geojson_feature_collection(feats)
 
-    def get_edges_as_feature_collection(self) -> dict:        
+    def get_edges_as_feature_collection(self) -> dict:
+        edge_grouping_attr = edge_group_attr_by_routing_mode[self.routing_mode]
         for path in [self.shortest_path] + self.green_paths:
-            path.aggregate_edge_groups_by_attr(
-                aq = self.routing_mode == RoutingMode.CLEAN,
-                noise = self.routing_mode == RoutingMode.QUIET
-            )
+            path.aggregate_edge_groups_by_attr(edge_grouping_attr)
         
         feat_lists = [path.get_edge_groups_as_features() for path in [self.shortest_path] + self.green_paths]
 

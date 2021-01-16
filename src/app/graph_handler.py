@@ -1,5 +1,5 @@
 import time
-from typing import List, Set, Dict, Tuple
+from typing import List, Dict, Tuple
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 import env
@@ -8,9 +8,10 @@ from utils.igraph import Edge as E, Node as N
 import utils.igraph as ig_utils
 import utils.noise_exposures as noise_exps
 import utils.aq_exposures as aq_exps
+import utils.greenery_exposures as gvi_exps
 import utils.geometry as geom_utils
 from app.logger import Logger
-from app.constants import RoutingException, ErrorKeys
+from app.constants import RoutingException, ErrorKeys, cost_prefix_dict, TravelMode, RoutingMode
 
 
 class GraphHandler:
@@ -47,6 +48,8 @@ class GraphHandler:
         self.db_costs = noise_exps.get_db_costs(version=3)
         if env.quiet_paths_enabled: self.__set_noise_costs_to_edges()
         self.log.info('Noise costs set')
+        if env.gvi_paths_enabled: self.__set_gvi_costs_to_graph()
+        self.log.info('GVI costs set')
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
         self.__new_edges: Dict[Tuple[int, int], Dict] = {}
@@ -69,6 +72,9 @@ class GraphHandler:
         has_geom = lambda edge_attrs: isinstance(edge_attrs[E.geometry.value], LineString)
         has_noises = lambda edge_attrs: edge_attrs[E.noises.value] is not None
 
+        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.QUIET]
+        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.QUIET]
+
         sens = noise_exps.get_noise_sensitivities()
         for edge in self.graph.es:
             # first add estimated exposure to 40 dB noise level to edge attrs
@@ -81,7 +87,7 @@ class GraphHandler:
             
             # then calculate and update noise costs to edges
             updates = {}
-            for sen, cost_attr in [(sen, 'nc_'+ str(sen)) for sen in sens]: # iterate dict of noise sensitivities and respective cost attribute names
+            for sen in sens:
                 if has_geom(edge_attrs) and not has_noises(edge_attrs):
                     # these are street edges outside the extent of the noise data
                     # -> set high noise costs to avoid them in finding quiet paths
@@ -93,12 +99,46 @@ class GraphHandler:
                     # else calculate normal noise exposure based noise cost coefficient
                     noise_cost = noise_exps.get_noise_cost(noises, self.db_costs, sen=sen)
                 if env.walking_enabled:
-                    updates[cost_attr] = round(edge_attrs[E.length.value] + noise_cost, 2)
+                    updates[cost_prefix + str(sen)] = round(edge_attrs[E.length.value] + noise_cost, 2)
                 if env.cycling_enabled:
                     biking_length = edge_attrs[E.length_b.value] if edge_attrs[E.length_b.value] else edge_attrs[E.length.value]
-                    updates['b'+ cost_attr] = round(biking_length + noise_cost, 2) # biking costs
+                    updates[cost_prefix_bike + str(sen)] = round(biking_length + noise_cost, 2) # biking costs
             
             self.graph.es[edge.index].update_attributes(updates)
+
+    def __set_gvi_costs_to_graph(self):
+        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]
+        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.GREEN]
+
+        lengths = self.graph.es[E.length.value]
+        biking_lengths = self.graph.es[E.length_b.value]
+        gvi_list = self.graph.es[E.gvi.value]
+        has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
+        select_biking_length = lambda length, b_length: b_length if b_length else length
+
+        for sen in gvi_exps.get_gvi_sensitivities():
+            
+            if env.walking_enabled:
+                length_gvi_b_geom = zip(lengths, gvi_list, has_geom_list)
+                cost_attr = cost_prefix + str(sen)
+                self.graph.es[cost_attr] = [
+                    gvi_exps.get_gvi_adjusted_cost(length, gvi, sen) 
+                    if has_geom else 0.0
+                    for length, gvi, has_geom 
+                    in length_gvi_b_geom
+                ]
+
+            if env.cycling_enabled:
+                length_gvi_b_geom = zip(lengths, biking_lengths, gvi_list, has_geom_list)
+                cost_attr = cost_prefix_bike + str(sen)
+                self.graph.es[cost_attr] = [
+                    gvi_exps.get_gvi_adjusted_cost(
+                        select_biking_length(length, b_length), gvi, sen
+                    ) 
+                    if has_geom else 0.0
+                    for length, b_length, gvi, has_geom 
+                    in length_gvi_b_geom
+                ]
 
     def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
         """Updates the given edge attribute(s) from a DataFrame to a graph. The attribute(s) to update
@@ -202,6 +242,9 @@ class GraphHandler:
                 aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
                 noises = edge[E.noises.value],
                 gvi = edge[E.gvi.value],
+                gvi_cl = gvi_exps.get_gvi_class(
+                    edge[E.gvi.value]
+                ) if edge[E.gvi.value] is not None else None,
                 coords = edge[E.geometry.value].coords,
                 coords_wgs = edge[E.geom_wgs.value].coords
             )
@@ -233,21 +276,34 @@ class GraphHandler:
         self.graph.add_edges(edge_uvs)
         return [new_edge_id + edge_number for edge_number in range(0, len(edge_uvs))]
 
-    def __get_link_edge_aqi_cost_estimates(self, edge_dict: dict, link_geom: 'LineString', sens) -> dict:
+    def __get_link_edge_aqi_cost_estimates(self, edge_dict: dict, link_geom: LineString, sens) -> dict:
         """Returns aqi exposures and costs for a split edge based on aqi exposures on the original edge
         (from which the edge was split). 
         """
-        if (edge_dict['aqi'] is None):
+        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.CLEAN]
+        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.CLEAN]
+
+        if (edge_dict[E.aqi.value] is None):
             # the path may start from an edge without AQI, but cost attributes need to be set anyway
             return { 
                 E.aqi.value: None, 
-                **{'aqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens },
-                **{'baqc_'+ str(sen) : round(link_geom.length * 2, 2) for sen in sens }
+                **{cost_prefix + str(sen) : round(link_geom.length * 2, 2) for sen in sens },
+                **{cost_prefix_bike + str(sen) : round(link_geom.length * 2, 2) for sen in sens }
                 }
         else:
-            aqi_costs = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens)
-            aqi_costs_b = aq_exps.get_aqi_costs(edge_dict['aqi'], link_geom.length, sens, prefix='b')
-            return { E.aqi.value: edge_dict['aqi'], **aqi_costs, **aqi_costs_b }
+            aqi_costs = aq_exps.get_aqi_costs(edge_dict[E.aqi.value], link_geom.length, sens)
+            aqi_costs_b = aq_exps.get_aqi_costs(edge_dict[E.aqi.value], link_geom.length, sens, travel_mode=TravelMode.BIKE)
+            return { E.aqi.value: edge_dict[E.aqi.value], **aqi_costs, **aqi_costs_b }
+
+    def __get_link_edge_gvi_costs(self, edge_dict: dict, link_geom: LineString, sens: List[float]):
+        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]
+        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.GREEN]
+        gvi = edge_dict[E.gvi.value] if edge_dict[E.gvi.value] is not None else 0.0
+        return {
+            E.gvi.value: gvi,
+            **{ cost_prefix + str(sen) : gvi_exps.get_gvi_adjusted_cost(link_geom.length, gvi, sen) for sen in sens },
+            **{ cost_prefix_bike + str(sen) : gvi_exps.get_gvi_adjusted_cost(link_geom.length, gvi, sen) for sen in sens }
+        }
 
     def create_linking_edges_for_new_node(self, 
         new_node: int,
@@ -302,10 +358,11 @@ class GraphHandler:
         link1_aqi_cost_attrs = self.__get_link_edge_aqi_cost_estimates(edge_dict=edge, link_geom=link1, sens=aq_sens)
         link2_aqi_cost_attrs = self.__get_link_edge_aqi_cost_estimates(edge_dict=edge, link_geom=link2, sens=aq_sens)
         # set GVI attributes for linking edges TODO add GVI costs when needed
-        link_gvi_attrs = { E.gvi.value: edge[E.gvi.value] }
+        link1_gvi_attrs = self.__get_link_edge_gvi_costs(edge, link1, gvi_exps.get_gvi_sensitivities())
+        link2_gvi_attrs = self.__get_link_edge_gvi_costs(edge, link2, gvi_exps.get_gvi_sensitivities())
         # combine attributes for linking edges to one dictionary per new edge
-        link1_attrs = { **link1_noise_cost_attrs, **link1_aqi_cost_attrs, **link_gvi_attrs }
-        link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs, **link_gvi_attrs }
+        link1_attrs = { **link1_noise_cost_attrs, **link1_aqi_cost_attrs, **link1_gvi_attrs }
+        link2_attrs = { **link2_noise_cost_attrs, **link2_aqi_cost_attrs, **link2_gvi_attrs }
 
         # add linking edges with noise cost attributes to graph (save for loading them to graph later)
         if origin:

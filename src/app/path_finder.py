@@ -1,17 +1,24 @@
-from typing import List, Set, Dict, Tuple
+from typing import List, Dict
 import time
 import json
 import utils.noise_exposures as noise_exps 
 import utils.aq_exposures as aq_exps 
+import utils.greenery_exposures as gvi_exps 
 import utils.geometry as geom_utils
 import app.od_handler as od_handler
 from app.path import Path
 from app.path_set import PathSet
 from app.graph_handler import GraphHandler
-from app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKeys
+from app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKeys, cost_prefix_dict
 from app.logger import Logger
 from utils.igraph import Edge as E
 
+
+sensitivities_by_routing_mode: Dict[RoutingMode, List[float]] = {
+    RoutingMode.QUIET: noise_exps.get_noise_sensitivities(),
+    RoutingMode.CLEAN: aq_exps.get_aq_sensitivities(),
+    RoutingMode.GREEN: gvi_exps.get_gvi_sensitivities()
+}
 
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
@@ -68,7 +75,8 @@ class PathFinder:
         Raises:
             Only meaningful exception strings that can be shown in UI.
         """
-        sens = self.aq_sens if (self.routing_mode == RoutingMode.CLEAN) else self.noise_sens
+        sens = sensitivities_by_routing_mode[self.routing_mode]
+        cost_prefix = cost_prefix_dict[self.travel_mode][self.routing_mode]
         try:
             start_time = time.time()
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=E.length.value)
@@ -78,15 +86,12 @@ class PathFinder:
                 name='short',
                 path_type=PathType.SHORT))
             for sen in sens:
-                # use aqi costs if optimizing fresh air (clean) paths - else use noise costs
-                cost_attr = 'aqc_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'nc_'+ str(sen)
-                cost_attr = 'b'+ cost_attr if (self.travel_mode == TravelMode.BIKE) else cost_attr
-                path_name = 'aq_'+ str(sen) if (self.routing_mode == RoutingMode.CLEAN) else 'q_'+ str(sen)
+                cost_attr = cost_prefix + str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
                 self.path_set.add_green_path(Path(
                     orig_node=self.orig_node['node'],
                     edge_ids=least_cost_path,
-                    name=path_name,
+                    name=cost_attr,
                     path_type=PathType[self.routing_mode.name],
                     cost_coeff=sen))
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
@@ -97,7 +102,7 @@ class PathFinder:
         except Exception as e:
             raise RoutingException(ErrorKeys.PATHFINDING_ERROR.value)
 
-    def process_paths_to_FC(self, edges: bool = True, FCs_to_files: bool = False) -> dict:
+    def process_paths_to_FC(self) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
         paths based on geometries and length. 
 
@@ -119,19 +124,10 @@ class PathFinder:
             
             start_time = time.time()
             path_FC = self.path_set.get_paths_as_feature_collection()
-            if (edges == True): 
-                edge_FC = self.path_set.get_edges_as_feature_collection()
-            
+            edge_FC = self.path_set.get_edges_as_feature_collection()
             self.log.duration(start_time, 'processed paths & edges to FC', unit='ms', log_level='info')
-
-            if (FCs_to_files == True):
-                with open('debug/path_fc.geojson', 'w') as outfile:
-                    json.dump(path_FC, outfile, indent=3, sort_keys=True)
-                if (edges == True):
-                    with open('debug/edge_fc.geojson', 'w') as outfile:
-                        json.dump(edge_FC, outfile, indent=3, sort_keys=True)
             
-            return (path_FC, edge_FC) if (edges == True) else path_FC
+            return (path_FC, edge_FC)
         
         except Exception:
             raise RoutingException(ErrorKeys.PATH_PROCESSING_ERROR.value)
