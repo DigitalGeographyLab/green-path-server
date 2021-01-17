@@ -35,6 +35,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert props['mdB_diff'] is None
         assert isinstance(props['missing_aqi'], bool)
         assert isinstance(props['missing_noises'], bool)
+        assert isinstance(props['missing_gvi'], bool)
         assert isinstance(props['nei'], (float, int))
         assert props['nei_diff'] is None
         assert props['nei_diff_rat'] is None
@@ -65,6 +66,7 @@ def test_gvi_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]
         assert isinstance(props['mdB_diff'], (float, int))
         assert isinstance(props['missing_aqi'], bool)
         assert isinstance(props['missing_noises'], bool)
+        assert isinstance(props['missing_gvi'], bool)
         assert isinstance(props['nei'], (float, int))
         assert isinstance(props['nei_diff'], (float, int))
         assert isinstance(props['nei_diff_rat'], (float, int))

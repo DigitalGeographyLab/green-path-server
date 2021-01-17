@@ -136,7 +136,7 @@ def aggregate_aqi_class_exps(aqi_exp_list: List[Tuple[float, float]]) -> Dict[in
             aqi_cl_exps[aqi_cl] = aqi_exp
     # round aqi class exposures
     for aqi_cl in aqi_cl_exps.keys():
-        aqi_cl_exps[aqi_cl] = round(aqi_cl_exps[aqi_cl], 2)
+        aqi_cl_exps[aqi_cl] = round(aqi_cl_exps[aqi_cl], 3)
     return aqi_cl_exps
 
 
@@ -149,7 +149,7 @@ def get_aqi_class_pcts(aqi_cl_exps: Dict[int, float], length: float) -> dict:
     """
     aqi_cl_pcts = {}
     for aqi_cl in aqi_cl_exps.keys():
-        aqi_cl_pcts[aqi_cl] = round(aqi_cl_exps[aqi_cl]*100/length, 2)
+        aqi_cl_pcts[aqi_cl] = round(aqi_cl_exps[aqi_cl]*100/length, 3)
     return aqi_cl_pcts
 
 

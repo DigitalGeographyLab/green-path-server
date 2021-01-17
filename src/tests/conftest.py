@@ -75,5 +75,5 @@ def test_exposure_prop_types() -> Callable[[dict, Union[float, None]], None]:
         if expected_sum:
             val_sum = sum(exp_dict.values())
             diff = val_sum - expected_sum
-            assert abs(diff) <= 0.11
+            assert abs(diff) <= 0.015 # consider rounding
     return test_func

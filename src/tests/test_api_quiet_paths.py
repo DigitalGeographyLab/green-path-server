@@ -38,6 +38,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert props['mdB_diff'] is None
         assert isinstance(props['missing_aqi'], bool)
         assert isinstance(props['missing_noises'], bool)
+        assert isinstance(props['missing_gvi'], bool)
         assert isinstance(props['nei'], (float, int))
         assert props['nei_diff'] is None
         assert props['nei_diff_rat'] is None
@@ -68,6 +69,7 @@ def test_quiet_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['mdB_diff'], (float, int))
         assert isinstance(props['missing_aqi'], bool)
         assert isinstance(props['missing_noises'], bool)
+        assert isinstance(props['missing_gvi'], bool)
         assert isinstance(props['nei'], (float, int))
         assert isinstance(props['nei_diff'], (float, int))
         assert isinstance(props['nei_diff_rat'], (float, int))
@@ -137,13 +139,14 @@ def test_path_set_1_shortest_path_props(path_set_1):
     assert props['mdB_diff'] == None
     assert props['missing_aqi'] == False
     assert props['missing_noises'] == False
+    assert props['missing_gvi'] == False
     assert props['nei'] == 1955.2
     assert props['nei_diff'] == None
     assert props['nei_diff_rat'] == None # used in UI
     assert props['nei_norm'] == 0.62 # used in UI
-    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.7, "60": 12.0, "65": 4.5, "70": 82.9}'
-    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.01, "60": 160.5, "65": 60.3, "70": 1110.23}'
-    assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.01, "60": 160.5, "65": 60.3, "70": 342.65, "75": 767.58}'
+    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.672, "60": 11.977, "65": 4.5, "70": 82.851}'
+    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.008, "60": 160.5, "65": 60.298, "70": 1110.231}'
+    assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.008, "60": 160.5, "65": 60.298, "70": 342.653, "75": 767.578}'
     assert props['path_score'] is None
     assert props['type'] == 'short'
 
@@ -177,13 +180,14 @@ def test_path_set_1_quiet_path_props(path_set_1):
     assert props['mdB_diff'] == -18.7
     assert props['missing_aqi'] == False
     assert props['missing_noises'] == False
+    assert props['missing_gvi'] == False
     assert props['nei'] == 603.4
     assert props['nei_diff'] == -1351.8
     assert props['nei_diff_rat'] == -69.1
     assert props['nei_norm'] == 0.17
-    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"40": 29.0, "50": 16.1, "55": 26.3, "60": 28.4, "65": 0.2}'
-    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"40": 428.52, "50": 237.59, "55": 387.69, "60": 418.35, "65": 3.01}'
-    assert json.dumps(props['noises'], sort_keys=True) == '{"40": 33.96, "45": 394.56, "50": 237.59, "55": 387.69, "60": 418.35, "65": 3.01}'
+    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"40": 29.049, "50": 16.106, "55": 26.281, "60": 28.359, "65": 0.204}'
+    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"40": 428.525, "50": 237.586, "55": 387.688, "60": 418.346, "65": 3.011}'
+    assert json.dumps(props['noises'], sort_keys=True) == '{"40": 33.96, "45": 394.565, "50": 237.586, "55": 387.688, "60": 418.346, "65": 3.011}'
     assert props['path_score'] == 10.0
     assert props['type'] == 'quiet'
 

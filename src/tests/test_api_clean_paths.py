@@ -43,6 +43,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert props['mdB_diff'] is None
         assert isinstance(props['missing_aqi'], bool)
         assert isinstance(props['missing_noises'], bool)
+        assert isinstance(props['missing_gvi'], bool)
         assert isinstance(props['nei'], (float, int))
         assert props['nei_diff'] is None
         assert props['nei_diff_rat'] is None
@@ -78,6 +79,7 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['mdB_diff'], (float, int))
         assert isinstance(props['missing_aqi'], bool)
         assert isinstance(props['missing_noises'], bool)
+        assert isinstance(props['missing_gvi'], bool)
         assert isinstance(props['nei'], (float, int))
         assert isinstance(props['nei_diff'], (float, int))
         assert isinstance(props['nei_diff_rat'], (float, int))
@@ -133,7 +135,7 @@ def test_path_set_1_shortest_path_props(path_set_1):
     props = s_path['properties']
     assert props['aqc'] == 177.86
     assert props['aqc_norm'] == 0.133
-    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 1340.04}'
+    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 1340.037}'
     assert props['aqi_m'] == 1.53
     assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"1": 100.0}'
     assert props['cost_coeff'] == 0
@@ -144,11 +146,12 @@ def test_path_set_1_shortest_path_props(path_set_1):
     assert props['mdB'] == 73.8
     assert not props['missing_aqi']
     assert not props['missing_noises']
+    assert not props['missing_gvi']
     assert props['nei'] == 1955.2
     assert props['nei_norm'] == 0.62
-    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.7, "60": 12.0, "65": 4.5, "70": 82.9}'
-    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.01, "60": 160.5, "65": 60.3, "70": 1110.23}'
-    assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.01, "60": 160.5, "65": 60.3, "70": 342.65, "75": 767.58}'
+    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.672, "60": 11.977, "65": 4.5, "70": 82.851}'
+    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.008, "60": 160.5, "65": 60.298, "70": 1110.231}'
+    assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.008, "60": 160.5, "65": 60.298, "70": 342.653, "75": 767.578}'
     assert props['type'] == 'short'
 
 
@@ -174,7 +177,7 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['aqc_diff_rat'] == -1.8
     assert props['aqc_diff_score'] == 0.1
     assert props['aqc_norm'] == 0.127
-    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 1372.87}'
+    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 1372.873}'
     assert props['aqi_m'] == 1.51
     assert props['aqi_m_diff'] == -0.02
     assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"1": 100.0}'
@@ -188,13 +191,14 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['mdB_diff'] == -4.6
     assert not props['missing_aqi']
     assert not props['missing_noises']
+    assert not props['missing_gvi']
     assert props['nei'] == 1540.3
     assert props['nei_diff'] == -414.9
     assert props['nei_diff_rat'] == -21.2
     assert props['nei_norm'] == 0.48
-    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.7, "60": 47.1, "65": 5.3, "70": 46.9}'
-    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.01, "60": 646.81, "65": 73.09, "70": 643.96}'
-    assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.01, "60": 646.81, "65": 73.09, "70": 157.94, "75": 486.02}'
+    assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.656, "60": 47.114, "65": 5.324, "70": 46.906}'
+    assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.008, "60": 646.815, "65": 73.09, "70": 643.961}'
+    assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.008, "60": 646.815, "65": 73.09, "70": 157.939, "75": 486.022}'
     assert props['path_score'] == 12.6
     assert props['type'] == 'clean'
 

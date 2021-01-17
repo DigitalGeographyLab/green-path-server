@@ -134,6 +134,7 @@ class Path:
             'cost_coeff': self.cost_coeff,
             'missing_aqi': self.missing_aqi,
             'missing_noises': self.missing_noises,
+            'missing_gvi': self.missing_gvi,
         }
         noise_props = self.noise_attrs.get_noise_props_dict() if self.noise_attrs else {}
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs else {}

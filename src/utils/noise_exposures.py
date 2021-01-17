@@ -83,7 +83,7 @@ def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
     
     # round exposures
     for k, v in db_range_lens.items():
-        db_range_lens[k] = round(v, 2)
+        db_range_lens[k] = round(v, 3)
 
     return db_range_lens
 
@@ -95,12 +95,12 @@ def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]
         Noise levels exceeding 70 dB are aggregated and as well as noise levels lower than 50 dB. 
     Returns:
         A dictionary containing noise level values with respective percentages.
-        (e.g. { 50: 35, 60: 65 })
+        (e.g. { 50: 35.00, 60: 65.00 })
     """
     # calculate ratio (%) of each range's length to total length
     range_pcts = {}
     for dB_range in dB_range_exps.keys():
-        range_pcts[dB_range] = round(dB_range_exps[dB_range]*100/length, 1)
+        range_pcts[dB_range] = round(dB_range_exps[dB_range]*100/length, 3)
 
     return range_pcts
 
@@ -113,7 +113,7 @@ def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
         for db, exp in db_exps.items():
             exps[db] += exp
     for k, v in exps.items():
-        exps[k] = round(v, 2)
+        exps[k] = round(v, 3)
     return exps
 
 
@@ -153,22 +153,22 @@ def get_noise_adjusted_edge_cost(
     sensitivity: float,
     db_costs: Dict[int, float],
     noises: Union[dict, None], 
-    edge_has_geom: bool, 
     length: float,
-    biking_length: float = None
+    biking_length: Union[float, None] = None
 ):
-    noise_cost = 0.0
+    """Returns composite edge cost as 'base_cost' + 'noise_cost', i.e.
+    length + noise exposure based cost. 
+    """
 
-    if noises is not None:
-        noise_cost = get_noise_cost(noises, db_costs, sensitivity)
-    elif edge_has_geom and noises is None:
+    if noises is None:
         # set high noise costs for edges outside data coverage
         noise_cost = 20 * length
+    else:
+        noise_cost = get_noise_cost(noises, db_costs, sensitivity)
 
-    if biking_length:
-        return round(biking_length + noise_cost, 2) 
-    
-    return round(length + noise_cost, 2) 
+    base_cost = biking_length if biking_length else length
+
+    return round(base_cost + noise_cost, 2) 
 
 
 def interpolate_link_noises(
@@ -201,13 +201,13 @@ def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom
     # calculate noise sensitivity specific noise costs
     for sen in sens:
         noise_cost = get_noise_cost(cost_attrs[E.noises.value], db_costs, sen=sen)
-        cost_attrs[cost_prefix + str(sen)] = round(link_geom.length + noise_cost, 2)
-        cost_attrs[cost_prefix_bike + str(sen)] = round(link_geom.length + noise_cost, 2) # biking costs
+        cost_attrs[cost_prefix + str(sen)] = round(link_geom.length + noise_cost, 3)
+        cost_attrs[cost_prefix_bike + str(sen)] = round(link_geom.length + noise_cost, 3) # biking costs
     return cost_attrs
 
 
 def add_db_40_exp_to_noises(noises: Union[dict, None], length: float) -> Dict[int, float]:
-    if not noises or not length or 40 in noises:
+    if noises is None or not length or 40 in noises:
         return noises
 
     total_db_length = get_total_noises_len(noises) if noises else 0.0

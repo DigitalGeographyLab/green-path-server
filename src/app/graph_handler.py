@@ -92,8 +92,8 @@ class GraphHandler:
 
                 self.graph.es[cost_attr] = [
                     noise_exps.get_noise_adjusted_edge_cost(
-                        sen, self.db_costs, noises, has_geom, length
-                    )
+                        sen, self.db_costs, noises, length
+                    ) if has_geom else 0.0
                     for length, noises, has_geom
                     in lengths_noises_b_geoms
                 ]
@@ -104,8 +104,8 @@ class GraphHandler:
 
                 self.graph.es[cost_attr] = [
                     noise_exps.get_noise_adjusted_edge_cost(
-                        sen, self.db_costs, noises, has_geom, length, b_length
-                    )
+                        sen, self.db_costs, noises, length, b_length
+                    ) if has_geom else 0.0
                     for length, b_length, noises, has_geom
                     in lengths_noises_b_geoms
                 ]
