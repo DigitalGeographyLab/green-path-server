@@ -138,8 +138,8 @@ def get_aqi_class_pcts(aqi_cl_exps: Dict[int, float], length: float) -> dict:
     """
 
     return {
-        aqi_class: round(aqi_aqi_class_length * 100 / length, 3)
-        for aqi_class, aqi_aqi_class_length 
+        aqi_class: round(aqi_class_length * 100 / length, 3)
+        for aqi_class, aqi_class_length 
         in aqi_cl_exps.items()
     }
 

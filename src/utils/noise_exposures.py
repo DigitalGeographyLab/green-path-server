@@ -5,7 +5,7 @@ between paths.
 
 """
 
-from typing import List, Set, Dict, Tuple, Union
+from typing import List, Dict, Union
 from collections import defaultdict
 from shapely.geometry import LineString
 from utils.igraph import Edge as E
@@ -78,17 +78,17 @@ def get_noise_range_exps(noises: dict, total_length: float) -> Dict[int, float]:
     # aggregate noise exposures to pre-defined dB-ranges
     db_range_lens = defaultdict(float)
     for db, exp in noises.items():
-        dB_range = get_noise_range(db)
-        db_range_lens[dB_range] += exp
+        db_range_lens[get_noise_range(db)] += exp
     
     # round exposures
-    for k, v in db_range_lens.items():
-        db_range_lens[k] = round(v, 3)
+    return {
+        k: round(v, 3)
+        for k, v
+        in db_range_lens.items()
+    }
 
-    return db_range_lens
 
-
-def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]:
+def get_noise_range_pcts(db_range_exps: dict, length: float) -> Dict[int, float]:
     """Calculates percentages of aggregated exposures to different noise levels of total length.
 
     Note:
@@ -97,12 +97,11 @@ def get_noise_range_pcts(dB_range_exps: dict, length: float) -> Dict[int, float]
         A dictionary containing noise level values with respective percentages.
         (e.g. { 50: 35.00, 60: 65.00 })
     """
-    # calculate ratio (%) of each range's length to total length
-    range_pcts = {}
-    for dB_range in dB_range_exps.keys():
-        range_pcts[dB_range] = round(dB_range_exps[dB_range]*100/length, 3)
-
-    return range_pcts
+    return {
+        db_range: round(db_range_length * 100 / length, 3)
+        for db_range, db_range_length
+        in db_range_exps.items()
+    }
 
 
 def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
@@ -112,9 +111,12 @@ def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
     for db_exps in exp_list:
         for db, exp in db_exps.items():
             exps[db] += exp
-    for k, v in exps.items():
-        exps[k] = round(v, 3)
-    return exps
+
+    return {
+        k: round(v, 3)
+        for k, v
+        in exps.items()
+    }
 
 
 def get_total_noises_len(noises: Dict[int, float]) -> float:
