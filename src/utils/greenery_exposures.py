@@ -44,7 +44,7 @@ def aggregate_gvi_class_exps(gvi_exps: List[Tuple[float, float]]) -> Dict[int, f
         gvi_class_exps[get_gvi_class(gvi)] += exp
     
     return { 
-        gvi_class: round(exp, 2) 
+        gvi_class: round(exp, 3) 
         for gvi_class, exp 
         in gvi_class_exps.items()
     }
@@ -55,7 +55,7 @@ def get_gvi_class_pcts(gvi_class_exps: Dict[int, float]) -> Dict[int, float]:
     length = sum(gvi_class_exps.values())
 
     return { 
-        gvi_class: round(exp * 100 / length, 2) 
+        gvi_class: round(exp * 100 / length, 3)
         for gvi_class, exp 
         in gvi_class_exps.items() 
     }

@@ -5,9 +5,11 @@ exposures to air pollution between paths.
 
 """
 
+from collections import defaultdict
 from app.constants import RoutingMode, TravelMode, cost_prefix_dict
-from typing import List, Set, Dict, Tuple
-from app.logger import Logger
+from typing import List, Dict, Tuple
+from math import floor
+import numpy as np
 
 
 class InvalidAqiException(Exception):
@@ -102,21 +104,10 @@ def get_total_aqi_cost_from_exps(
 
 
 def get_aqi_class(aqi: float) -> int:
-    """Classifies a given aqi value, returns the lower limit of the class (e.g. 2.45 -> 2).
+    """Returns AQI class identifier, that is in the range from 2 to 10. Returns 0 if the given AQI is invalid.
+    AQI classes represent (9 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0.
     """
-    if aqi < 2.0: return 1
-    elif aqi < 3.0: return 2
-    elif aqi < 4.0: return 3
-    elif aqi < 5.0: return 4
-    elif aqi >= 5.0: return 5
-    else: return 0
-
-
-def get_aqi_class_exp_list(aqi_exp_list: List[Tuple[float, float]]) -> List[Tuple[int, float]]:
-    """Turns a list of AQI exposures to a list of AQI class exposures.
-    E.g.[ (1.5, 42.4), (1.1, 13.4), (2.7, 52.3) ] -> [ (1, 42.4), (1, 13.4), (2, 52.3) ]
-    """
-    return [(get_aqi_class(aqi_exp[0]), aqi_exp[1]) for aqi_exp in aqi_exp_list]
+    return floor(aqi * 2) if np.isfinite(aqi) else 0
 
 
 def aggregate_aqi_class_exps(aqi_exp_list: List[Tuple[float, float]]) -> Dict[int, float]:
@@ -125,19 +116,17 @@ def aggregate_aqi_class_exps(aqi_exp_list: List[Tuple[float, float]]) -> Dict[in
     Args:
         aqi_exp_list: A list of AQI exposures (e.g. [ (1.5, 42.4), (1.1, 13.4), (1.7, 52.3) ])
     """
-    aqi_cl_exp_list = get_aqi_class_exp_list(aqi_exp_list)
-    aqi_cl_exps = {}
-    for aqi_cl_exp in aqi_cl_exp_list:
-        aqi_cl = aqi_cl_exp[0]
-        aqi_exp = aqi_cl_exp[1]
-        if aqi_cl in aqi_cl_exps:
-            aqi_cl_exps[aqi_cl] += aqi_exp
-        else:
-            aqi_cl_exps[aqi_cl] = aqi_exp
+    aqi_cl_exps = defaultdict(float)
+    
+    for aqi, length in aqi_exp_list:
+        aqi_cl_exps[get_aqi_class(aqi)] += length
+    
     # round aqi class exposures
-    for aqi_cl in aqi_cl_exps.keys():
-        aqi_cl_exps[aqi_cl] = round(aqi_cl_exps[aqi_cl], 3)
-    return aqi_cl_exps
+    return { 
+        aqi_class: round(length, 3) 
+        for aqi_class, length 
+        in aqi_cl_exps.items()
+    }
 
 
 def get_aqi_class_pcts(aqi_cl_exps: Dict[int, float], length: float) -> dict:
@@ -147,10 +136,12 @@ def get_aqi_class_pcts(aqi_cl_exps: Dict[int, float], length: float) -> dict:
         aqi_cl_exps: A dictionary of exposures to different AQI classes (1, 2, 3...) as distances (m).
         length: The length of the path.
     """
-    aqi_cl_pcts = {}
-    for aqi_cl in aqi_cl_exps.keys():
-        aqi_cl_pcts[aqi_cl] = round(aqi_cl_exps[aqi_cl]*100/length, 3)
-    return aqi_cl_pcts
+
+    return {
+        aqi_class: round(aqi_aqi_class_length * 100 / length, 3)
+        for aqi_class, aqi_aqi_class_length 
+        in aqi_cl_exps.items()
+    }
 
 
 def get_mean_aqi(aqi_exp_list: List[Tuple[float, float]]) -> float:

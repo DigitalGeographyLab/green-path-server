@@ -135,9 +135,9 @@ def test_path_set_1_shortest_path_props(path_set_1):
     props = s_path['properties']
     assert props['aqc'] == 177.86
     assert props['aqc_norm'] == 0.133
-    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 1340.037}'
+    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"2": 81.004, "3": 1259.033}'
     assert props['aqi_m'] == 1.53
-    assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"1": 100.0}'
+    assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"2": 6.045, "3": 93.955}'
     assert props['cost_coeff'] == 0
     assert props['id'] == 'short'
     assert props['len_diff'] == 0
@@ -177,10 +177,10 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['aqc_diff_rat'] == -1.8
     assert props['aqc_diff_score'] == 0.1
     assert props['aqc_norm'] == 0.127
-    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 1372.873}'
+    assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"2": 290.019, "3": 1082.854}'
     assert props['aqi_m'] == 1.51
     assert props['aqi_m_diff'] == -0.02
-    assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"1": 100.0}'
+    assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"2": 21.125, "3": 78.875}'
     assert props['cost_coeff'] == 15
     assert props['id'] == path_id
     assert props['len_diff'] == 32.8
@@ -224,7 +224,7 @@ def test_path_set_1_edge_fc(
     edge_fc, path_fc = path_set_1
     assert edge_fc['type'] == 'FeatureCollection'
     assert isinstance(edge_fc['features'], list)
-    assert len(edge_fc['features']) == 2
+    assert len(edge_fc['features']) == 14
     for feat in edge_fc['features']:
         assert feat['type'] == 'Feature'
         test_line_geometry(feat['geometry'])
