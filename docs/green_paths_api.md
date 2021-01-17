@@ -10,11 +10,11 @@ When exploring the API and the source codes, please bear in mind that the word "
 - www.greenpaths.fi/
 - www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
 - e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
-- e.g. www.greenpaths.fi/paths/walk/clean/60.20772,24.96716/60.2037,24.9653
+- e.g. www.greenpaths.fi/paths/walk/green/60.20772,24.96716/60.2037,24.9653
 
 ## Path variables
 - travel_mode: either `walk` or `bike` 
-- exposure_mode: either `quiet` or `clean` (for fresh air paths) 
+- exposure_mode: either `quiet`, `green` or `clean` (for fresh air paths) 
 - orig/dest_coords: <latitude,longitude>, e.g. 60.20772,24.96716
 
 ## Response
@@ -22,7 +22,7 @@ When exploring the API and the source codes, please bear in mind that the word "
 - Edge_FC & Path_FC
 
 ```
-  const response = await axios.get(https://www.greenpaths.fi/paths/bike/clean/60.20772,24.96716/60.2037,24.9653)
+  const response = await axios.get(https://www.greenpaths.fi/paths/bike/green/60.20772,24.96716/60.2037,24.9653)
   const Path_FC = response.data.path_FC
 ```
 
@@ -69,8 +69,9 @@ When exploring the API and the source codes, please bear in mind that the word "
 | gvi_m_diff | number | yes | Difference in mean GVI compared to the shortest path. |
 | gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1 (e.g. 2 -> 0.1-0.2).  |
 | gvi_cl_pcts | object | no | Exposures (%) to different GVI ranges (classes). Same as above but object values are relative shares as percentages. |
-| missing_aqi | boolean | no | A boolean variable indicating whether AQI data was available for all of the edges of the path. |
-| missing_noises | boolean | no | A boolean variable indicating whether noise data was available for all of the edges of the path. |
+| missing_aqi | boolean | no | A boolean variable indicating whether AQI data was available for all edges of the path. |
+| missing_gvi | boolean | no | A boolean variable indicating whether GVI data was available for all edges of the path. |
+| missing_noises | boolean | no | A boolean variable indicating whether noise data was available for all edges of the path. |
 | mdB | number | no | dBmean |
 | mdB_diff | number | yes | Difference in dBmean compared to the shortest path. |
 | nei | number | no | Noise exposure index (EI). See the method: utils.noise_exposures.get_noise_cost() |
@@ -126,9 +127,20 @@ Path_FC: {
       aqi_pcts: {
         2: 100
       },
+      gvi_m: 0.67,
+      gvi_m_diff: null,
+      gvi_cl_exps: {
+        2: 375.2,
+        3: 117.74
+      },
+      gvi_cl_pcts: {
+        2: 76.11,
+        3: 23.89
+      },
       mdB: 67.5,
       mdB_diff: null,
       missing_aqi: false,
+      missing_gvi: false,
       missing_noises: false,
       nei: 286.1,
       nei_diff: null,
@@ -184,9 +196,20 @@ Path_FC: {
       aqi_pcts: {
         2: 100
       },
+      gvi_m: 0.75,
+      gvi_m_diff: 0.08,
+      gvi_cl_exps: {
+        2: 273.8,
+        3: 355.49
+      },
+      gvi_cl_pcts: {
+        2: 43.51,
+        3: 56.49
+      },
       mdB: 55.4,
       mdB_diff: -12.1,
       missing_aqi: false,
+      missing_gvi: false,
       missing_noises: false,
       nei: 158.3,
       nei_diff: -127.8,
