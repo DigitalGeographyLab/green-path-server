@@ -11,7 +11,7 @@ class PathAqiAttrs:
     aqc: float
     aqc_norm: float
     aqi_cl_exps: Dict[int, float]
-    aqi_pcts: dict
+    aqi_cl_pcts: dict
     aqi_m_diff: float = None
     aqc_diff: float = None
     aqc_diff_rat: float = None
@@ -29,7 +29,7 @@ class PathAqiAttrs:
             'aqc': round(self.aqc, 2),
             'aqc_norm': self.aqc_norm,
             'aqi_cl_exps': self.aqi_cl_exps,
-            'aqi_pcts': self.aqi_pcts,
+            'aqi_cl_pcts': self.aqi_cl_pcts,
             'aqi_m_diff': self.aqi_m_diff,
             'aqc_diff': self.aqc_diff,
             'aqc_diff_rat': self.aqc_diff_rat,
@@ -50,5 +50,5 @@ def create_aqi_attrs(
         aqc = aqc,
         aqc_norm = round(aqc / length, 3),
         aqi_cl_exps = aqi_cl_exps,
-        aqi_pcts = aq_exps.get_aqi_class_pcts(aqi_cl_exps, length),
+        aqi_cl_pcts = aq_exps.get_aqi_class_pcts(aqi_cl_exps, length),
     )

@@ -61,13 +61,13 @@ When exploring the API and the source codes, please bear in mind that the word "
 | aqc_diff_rat | number | yes | Difference in the air pollution exposure index compared to the shortest path (%). |
 | aqc_diff_score | number | yes | Ratio between the difference in the air pollution exposure index and the length (compared to the shortest path) - i.e. reduction in air pollution exposure index per each additional meter walked. |
 | aqc_norm | number | no | Distance normalized air pollution exposure index. |
-| aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys are class names and values exposures as meters. |
+| aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys are class names and values exposures as meters. AQI classes are calculated as `floor(aqi * 2)`. |
 | aqi_m | number | no | Mean AQI. |
 | aqi_m_diff | number | yes | Difference in mean AQI compared to the shortest path. |
-| aqi_pcts | object | no | Exposures (%) to different AQI classes. Keys are class names and values exposures as shares. |
+| aqi_cl_pcts | object | no | Exposures (%) to different AQI classes. Keys are class names and values exposures as shares. |
 | gvi_m | number | no | Mean green view index (GVI) on the path. |
 | gvi_m_diff | number | yes | Difference in mean GVI compared to the shortest path. |
-| gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1 (e.g. 2 -> 0.1-0.2).  |
+| gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1, e.g. 2 -> 0.1-0.2 (`GVI class = ceil(gvi * 10)`).  |
 | gvi_cl_pcts | object | no | Exposures (%) to different GVI ranges (classes). Same as above but object values are relative shares as percentages. |
 | missing_aqi | boolean | no | A boolean variable indicating whether AQI data was available for all edges of the path. |
 | missing_gvi | boolean | no | A boolean variable indicating whether GVI data was available for all edges of the path. |
@@ -122,11 +122,11 @@ Path_FC: {
       aqi_cl_exps: {
         2: 492.94
       },
-      aqi_m: 2.3,
-      aqi_m_diff: null,
-      aqi_pcts: {
+      aqi_cl_pcts: {
         2: 100
       },
+      aqi_m: 2.3,
+      aqi_m_diff: null,
       gvi_m: 0.67,
       gvi_m_diff: null,
       gvi_cl_exps: {
@@ -191,11 +191,11 @@ Path_FC: {
       aqi_cl_exps: {
         2: 629.31
       },
-      aqi_m: 2.31,
-      aqi_m_diff: 0.01,
-      aqi_pcts: {
+      aqi_cl_pcts: {
         2: 100
       },
+      aqi_m: 2.31,
+      aqi_m_diff: 0.01,
       gvi_m: 0.75,
       gvi_m_diff: 0.08,
       gvi_cl_exps: {

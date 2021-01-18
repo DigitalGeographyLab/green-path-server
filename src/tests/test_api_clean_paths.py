@@ -31,7 +31,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['aqi_cl_exps'])
         assert isinstance(props['aqi_m'], (float, int))
         assert props['aqi_m_diff'] is None
-        test_exposure_prop_types(props['aqi_pcts'], 100.0)
+        test_exposure_prop_types(props['aqi_cl_pcts'], 100.0)
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
         assert props['id'] == 'short'
@@ -68,7 +68,7 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['aqi_cl_exps'])
         assert isinstance(props['aqi_m'], (float, int))
         assert isinstance(props['aqi_m_diff'], (float, int))
-        test_exposure_prop_types(props['aqi_pcts'], 100.0)
+        test_exposure_prop_types(props['aqi_cl_pcts'], 100.0)
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
         assert isinstance(props['len_diff'], (float, int))
@@ -137,7 +137,7 @@ def test_path_set_1_shortest_path_props(path_set_1):
     assert props['aqc_norm'] == 0.133
     assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"2": 81.004, "3": 1259.033}'
     assert props['aqi_m'] == 1.53
-    assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"2": 6.045, "3": 93.955}'
+    assert json.dumps(props['aqi_cl_pcts'], sort_keys=True) == '{"2": 6.045, "3": 93.955}'
     assert props['cost_coeff'] == 0
     assert props['id'] == 'short'
     assert props['len_diff'] == 0
@@ -180,7 +180,7 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"2": 290.019, "3": 1082.854}'
     assert props['aqi_m'] == 1.51
     assert props['aqi_m_diff'] == -0.02
-    assert json.dumps(props['aqi_pcts'], sort_keys=True) == '{"2": 21.125, "3": 78.875}'
+    assert json.dumps(props['aqi_cl_pcts'], sort_keys=True) == '{"2": 21.125, "3": 78.875}'
     assert props['cost_coeff'] == 15
     assert props['id'] == path_id
     assert props['len_diff'] == 32.8
