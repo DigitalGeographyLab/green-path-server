@@ -120,7 +120,7 @@ def aggregate_exposures(exp_list: List[dict]) -> Dict[int, float]:
 
 
 def get_total_noises_len(noises: Dict[int, float]) -> float:
-    """Returns a total length of exposures to all noise levels.
+    """Returns the total length of exposures to any noise levels.
     """
     if (not noises):
         return 0.0
@@ -129,7 +129,7 @@ def get_total_noises_len(noises: Dict[int, float]) -> float:
 
 
 def get_mean_noise_level(noises: dict, length: float) -> float:
-    """Returns a mean noise level based on noise exposures weighted by the contaminated distances to different noise levels.
+    """Returns the mean noise level based on noise exposures weighted by the contaminated distances to different noise levels.
     """
     # estimate mean dB of 5 dB range to be min dB + 2.5 dB
     sum_db = sum([(db + 2.5) * length for db, length in noises.items()])
@@ -142,7 +142,7 @@ def get_noise_cost(
     db_costs: Dict[int, float], 
     sen: float = 1
 ) -> float:
-    """Returns a total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
+    """Returns the total noise cost based on contaminated distances to different noise levels, db_costs and noise sensitivity. 
     """
     if not noises:
         return 0.0

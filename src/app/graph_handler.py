@@ -1,5 +1,5 @@
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 import env
@@ -153,7 +153,7 @@ class GraphHandler:
             updates: dict = getattr(edge, df_attr)
             self.graph.es[getattr(edge, E.id_ig.name)].update_attributes(updates)
 
-    def find_nearest_node(self, point: Point) -> int:
+    def find_nearest_node(self, point: Point) -> Union[int, None]:
         """Finds the nearest node to a given point from the graph.
 
         Args:
@@ -178,14 +178,14 @@ class GraphHandler:
         nearest_node_id = nearest_point.index.tolist()[0]
         return nearest_node_id
 
-    def __get_node_by_id(self, node_id: int) -> dict:
+    def __get_node_by_id(self, node_id: int) -> Union[dict, None]:
         try:
             return self.graph.vs[node_id].attributes()
         except Exception:
             self.log.warning('Could not find node by id: '+ str(node_id))
             return None
 
-    def get_edge_by_id(self, edge_id: int) -> dict:
+    def get_edge_by_id(self, edge_id: int) -> Union[dict, None]:
         """Returns edge by given id as dictionary of attribute names and values."""
         try:
             return self.graph.es[edge_id].attributes()
@@ -193,10 +193,11 @@ class GraphHandler:
             self.log.warning('Could not find edge by id: '+ str(edge_id))
             return None
 
-    def get_node_point_geom(self, node_id: int) -> Point:
-        return self.__get_node_by_id(node_id)[N.geometry.value]
+    def get_node_point_geom(self, node_id: int) -> Union[Point, None]:
+        node = self.__get_node_by_id(node_id)
+        return node[N.geometry.value] if node else None
 
-    def find_nearest_edge(self, point: Point) -> dict:
+    def find_nearest_edge(self, point: Point) -> Union[dict, None]:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
         for radius in [35, 150, 400, 650]:
@@ -234,6 +235,11 @@ class GraphHandler:
                 continue
 
             edge = self.get_edge_by_id(edge_id)
+            
+            if not edge:
+                self.log.warning(f'Tried to fetch nonexisting edge from the graph: {edge_id}')
+                continue
+
             # omit edges with null geometry
             if (edge[E.length.value] == 0.0 or not isinstance(edge[E.geometry.value], LineString)):
                 continue
@@ -309,7 +315,8 @@ class GraphHandler:
             **{ cost_prefix_bike + str(sen) : gvi_exps.get_gvi_adjusted_cost(link_geom.length, gvi, sen) for sen in sens }
         }
 
-    def create_linking_edges_for_new_node(self, 
+    def create_linking_edges_for_new_node(
+        self, 
         new_node: int,
         split_point: Point,
         edge: dict,

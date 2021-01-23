@@ -30,12 +30,15 @@ class PathEdge:
         return {
             'id': self.id,
             'length': self.length,
+            'length_b': self.length_b,
             'aqi': self.aqi,
+            'aqi_cl': self.aqi_cl,
             'noises': self.noises,
             'gvi': self.gvi,
             'gvi_cl': self.gvi_cl,
             'coords': geom_utils.round_coordinates(self.coords),
-            'coords_wgs': geom_utils.round_coordinates(self.coords_wgs)
+            'coords_wgs': geom_utils.round_coordinates(self.coords_wgs),
+            'db_range': self.db_range
         }
 
 
