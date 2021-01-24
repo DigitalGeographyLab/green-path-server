@@ -185,13 +185,38 @@ class GraphHandler:
             self.log.warning('Could not find node by id: '+ str(node_id))
             return None
 
-    def get_edge_by_id(self, edge_id: int) -> Union[dict, None]:
-        """Returns edge by given id as dictionary of attribute names and values."""
+    def get_edge_attrs_by_id(self, edge_id: int) -> Union[dict, None]:
+        """Returns edge by given ID as dictionary of attribute names and values."""
         try:
             return self.graph.es[edge_id].attributes()
         except Exception:
             self.log.warning('Could not find edge by id: '+ str(edge_id))
             return None
+
+    def get_edge_object_by_id(self, edge_id: int) -> Union[PathEdge, None]:
+        """Returns PathEdge object by the given edge ID. Returns None if the edge is
+        not found or it lacks geometry.
+        """
+        edge = self.get_edge_attrs_by_id(edge_id)
+        
+        if (not edge or edge[E.length.value] == 0.0 
+                or not isinstance(edge[E.geometry.value], LineString)):
+            return None
+
+        return PathEdge(
+            id = edge[E.id_ig.value],
+            length = edge[E.length.value],
+            length_b = edge[E.length_b.value] if edge[E.length_b.value] else 0,
+            aqi = edge[E.aqi.value],
+            aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
+            noises = edge[E.noises.value],
+            gvi = edge[E.gvi.value],
+            gvi_cl = gvi_exps.get_gvi_class(
+                edge[E.gvi.value]
+            ) if edge[E.gvi.value] is not None else None,
+            coords = edge[E.geometry.value].coords,
+            coords_wgs = edge[E.geom_wgs.value].coords
+        )
 
     def get_node_point_geom(self, node_id: int) -> Union[Point, None]:
         node = self.__get_node_by_id(node_id)
@@ -213,7 +238,7 @@ class GraphHandler:
             return None
         nearest = possible_matches['distance'] == shortest_dist
         edge_id = possible_matches.loc[nearest].index[0]
-        edge = self.get_edge_by_id(edge_id)
+        edge = self.get_edge_attrs_by_id(edge_id)
         edge['dist'] = round(shortest_dist, 2)
         return edge
 
@@ -228,39 +253,18 @@ class GraphHandler:
         """Loads edge attributes from graph by ordered list of edges representing a path.
         """
         path_edges: List[PathEdge] = []
+        
         for edge_id in edge_ids:
             edge_d = self.__edge_cache.get(edge_id)
             if edge_d:
                 path_edges.append(edge_d)
                 continue
 
-            edge = self.get_edge_by_id(edge_id)
+            path_edge = self.get_edge_object_by_id(edge_id)
             
-            if not edge:
-                self.log.warning(f'Tried to fetch nonexisting edge from the graph: {edge_id}')
-                continue
-
-            # omit edges with null geometry
-            if (edge[E.length.value] == 0.0 or not isinstance(edge[E.geometry.value], LineString)):
-                continue
-            
-            path_edge = PathEdge(
-                id = edge[E.id_ig.value],
-                length = edge[E.length.value],
-                length_b = edge[E.length_b.value] if edge[E.length_b.value] else 0,
-                aqi = edge[E.aqi.value],
-                aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
-                noises = edge[E.noises.value],
-                gvi = edge[E.gvi.value],
-                gvi_cl = gvi_exps.get_gvi_class(
-                    edge[E.gvi.value]
-                ) if edge[E.gvi.value] is not None else None,
-                coords = edge[E.geometry.value].coords,
-                coords_wgs = edge[E.geom_wgs.value].coords
-            )
-
-            self.__edge_cache[edge_id] = path_edge
-            path_edges.append(path_edge)
+            if path_edge:
+                self.__edge_cache[edge_id] = path_edge
+                path_edges.append(path_edge)
 
         return path_edges
 

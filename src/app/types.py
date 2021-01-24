@@ -37,8 +37,7 @@ class PathEdge:
             'gvi': self.gvi,
             'gvi_cl': self.gvi_cl,
             'coords': geom_utils.round_coordinates(self.coords),
-            'coords_wgs': geom_utils.round_coordinates(self.coords_wgs),
-            'db_range': self.db_range
+            'coords_wgs': geom_utils.round_coordinates(self.coords_wgs)
         }
 
 
