@@ -13,11 +13,10 @@ def get_gvi_sensitivities() -> List[float]:
 
 
 def get_gvi_adjusted_cost(length, gvi, sen: int = 1) -> float:
-    cost_reduction = length * gvi * sen    
-    if cost_reduction >= length:
-        return 0.0
+    """TODO implement this. 
+    """
     
-    return round(length - cost_reduction, 2)
+    return length
     
 
 def get_mean_gvi(gvi_exps: List[Tuple[float, float]]) -> float:

@@ -80,6 +80,7 @@ def test_gvi_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]
     return test_func
 
 
+@pytest.mark.skip(reason='WIP')
 def test_path_set_1_shortest_path_prop_types(
     path_set_1, 
     test_line_geometry, 
@@ -95,6 +96,7 @@ def test_path_set_1_shortest_path_prop_types(
     test_short_path_prop_types(props)
 
 
+@pytest.mark.skip(reason='WIP')
 def test_path_set_1_gvi_path_prop_types(
     path_set_1, 
     test_line_geometry,
@@ -122,6 +124,7 @@ def test_edge_props() -> Callable[[dict], None]:
     return test_func
 
 
+@pytest.mark.skip(reason='WIP')
 def test_path_set_1_edge_fc(
     path_set_1, 
     test_line_geometry, 
