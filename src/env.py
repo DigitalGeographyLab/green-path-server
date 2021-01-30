@@ -8,13 +8,21 @@ features (walking_enabled, quiet_paths_enabled etc.) to allow smaller memory usa
 """
 
 import os
+from typing import List
 
 graph_subset: bool = os.getenv('GRAPH_SUBSET', 'False') == 'True'
 graph_file: str = r'graphs/kumpula.graphml' if graph_subset else r'graphs/hma.graphml'
+
 test_mode: bool = False             # only used by pytest
+
 research_mode: bool = False         # set to True for additional path properties
 walking_enabled: bool = True        # enables/disables walk cost calculation
 cycling_enabled: bool = True        # enables/disables bike cost calculation
 quiet_paths_enabled: bool = True    # enables/disables noise cost calculation
 clean_paths_enabled: bool = True    # enables/disables air quality cost calculation
 gvi_paths_enabled: bool = True      # enables/disables green view cost calculation
+
+# the default sensitivities for exposure optimized routing can be overridden with these:
+noise_sensitivities: List[float] = []
+aq_sensitivities: List[float] = []
+gvi_sensitivities: List[float] = []

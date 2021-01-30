@@ -1,9 +1,14 @@
 from typing import Dict, List, Tuple
 from math import ceil
 from collections import defaultdict
+import env
 
 
 def get_gvi_sensitivities() -> List[float]:
+
+    if env.gvi_sensitivities:
+        return env.gvi_sensitivities
+    
     return [0.25, 0.5, 1, 1.5]
 
 
