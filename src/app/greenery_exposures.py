@@ -9,14 +9,37 @@ def get_gvi_sensitivities() -> List[float]:
     if env.gvi_sensitivities:
         return env.gvi_sensitivities
     
-    return [0.25, 0.5, 1, 1.5]
+    return [2, 4, 8]
 
 
-def get_gvi_adjusted_cost(length, gvi, sen: int = 1) -> float:
-    """TODO implement this. 
+def get_gvi_adjusted_cost(
+    length: float,
+    gvi: float,
+    length_b: float = None,
+    sen: float = 1.0
+) -> float:
+    """Calculates GVI adjusted edge cost for GVI optimized routing.
+    To find high GVI paths, we have to assign lower costs for edges with high GVI and
+    higher costs for edges with low GVI. Negative costs cannot be used (with Dijkstra's),
+    so a temporarily inverted concept (of GVI) "greyness index" is needed. 
+    Higher sensitivity coefficient will give paths of higher GVI (i.e. lower "greyness"). 
+
+    Args:
+        length (float): Length of the edge.
+        gvi (float): GVI of the edge (0-1).
+        length_b (float): Biking cost ("adjusted length") of the edge (optional, for biking).
+        sen (float): Sensitivity coefficient (optional, default = 1)
+
+    The function employs the following four assumptions: 
+        1) "greyness index" = 1 - gvi
+        2) "greyness cost" = (1 - gvi) * length
+        3) base cost = either length or length_b (if the latter is given)
+        4) GVI adjusted cost = base cost (length) + greyness cost * sensitivity
     """
+
+    base_cost = length_b if length_b else length
     
-    return length
+    return round(base_cost + (1 - gvi) * length * sen, 2)
     
 
 def get_mean_gvi(gvi_exps: List[Tuple[float, float]]) -> float:

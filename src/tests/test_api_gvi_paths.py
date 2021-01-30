@@ -5,7 +5,7 @@ import pytest
 
 @pytest.fixture
 def path_set_1(client) -> dict:
-    response = client.get('/paths/bike/green/60.212031,24.968584/60.201520,24.961191')
+    response = client.get('/paths/bike/green/60.215175,24.980636/60.200423,24.961936')
     assert response.status_code == 200
     data = json.loads(response.data)
     assert len(data) == 2
@@ -80,7 +80,6 @@ def test_gvi_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]
     return test_func
 
 
-@pytest.mark.skip(reason='WIP')
 def test_path_set_1_shortest_path_prop_types(
     path_set_1, 
     test_line_geometry, 
@@ -96,7 +95,6 @@ def test_path_set_1_shortest_path_prop_types(
     test_short_path_prop_types(props)
 
 
-@pytest.mark.skip(reason='WIP')
 def test_path_set_1_gvi_path_prop_types(
     path_set_1, 
     test_line_geometry,
@@ -105,7 +103,7 @@ def test_path_set_1_gvi_path_prop_types(
     data = path_set_1
     path_fc = data['path_FC']
     gvi_paths = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'green']
-    assert len(gvi_paths) == 2
+    assert len(gvi_paths) == 3
     for gp in gvi_paths:
         test_line_geometry(gp['geometry'])
         test_gvi_path_prop_types(gp['properties'])
@@ -124,7 +122,6 @@ def test_edge_props() -> Callable[[dict], None]:
     return test_func
 
 
-@pytest.mark.skip(reason='WIP')
 def test_path_set_1_edge_fc(
     path_set_1, 
     test_line_geometry, 
