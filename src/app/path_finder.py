@@ -1,9 +1,9 @@
 from typing import List, Dict
 import time
 import json
-import utils.noise_exposures as noise_exps 
-import utils.aq_exposures as aq_exps 
-import utils.greenery_exposures as gvi_exps 
+import app.noise_exposures as noise_exps 
+import app.aq_exposures as aq_exps 
+import app.greenery_exposures as gvi_exps 
 import utils.geometry as geom_utils
 import app.od_handler as od_handler
 from app.path import Path

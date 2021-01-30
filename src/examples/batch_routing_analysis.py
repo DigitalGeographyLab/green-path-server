@@ -15,7 +15,7 @@ Before running the script:
 from app.graph_handler import GraphHandler
 from app.types import PathEdge
 from app.logger import Logger
-import utils.noise_exposures as noise_exps
+import app.noise_exposures as noise_exps
 from typing import List, Tuple, Union
 import requests
 import traceback

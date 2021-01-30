@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 import env
 from app.graph_handler import GraphHandler
-import utils.aq_exposures as aq_exps
+import app.aq_exposures as aq_exps
 from app.logger import Logger
 import utils.igraph as ig_utils
 from utils.igraph import Edge as E

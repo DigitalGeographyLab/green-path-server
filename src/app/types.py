@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, Union, List, Tuple
-import utils.noise_exposures as noise_exps
+import app.noise_exposures as noise_exps
 import utils.geometry as geom_utils
 from app.constants import RoutingMode
 

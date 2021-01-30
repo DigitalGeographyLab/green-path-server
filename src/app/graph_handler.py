@@ -6,9 +6,9 @@ import env
 from app.types import PathEdge 
 from utils.igraph import Edge as E, Node as N
 import utils.igraph as ig_utils
-import utils.noise_exposures as noise_exps
-import utils.aq_exposures as aq_exps
-import utils.greenery_exposures as gvi_exps
+import app.noise_exposures as noise_exps
+import app.aq_exposures as aq_exps
+import app.greenery_exposures as gvi_exps
 import utils.geometry as geom_utils
 from app.logger import Logger
 from app.constants import RoutingException, ErrorKeys, cost_prefix_dict, TravelMode, RoutingMode

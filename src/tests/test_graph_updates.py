@@ -2,8 +2,8 @@ import pytest
 import env
 from shapely.geometry import LineString
 from utils.igraph import Edge as E
-import utils.greenery_exposures as gvi_exps
-import utils.noise_exposures as noise_exps
+import app.greenery_exposures as gvi_exps
+import app.noise_exposures as noise_exps
 from app.logger import Logger
 from app.logger import Logger
 from app.graph_handler import GraphHandler

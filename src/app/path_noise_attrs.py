@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Set, Dict, Tuple, Optional
-import utils.noise_exposures as noise_exps
+import app.noise_exposures as noise_exps
 
 
 @dataclass

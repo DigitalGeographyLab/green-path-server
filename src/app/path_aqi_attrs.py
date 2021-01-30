@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Set, Dict, Tuple, Optional
-import utils.aq_exposures as aq_exps
+import app.aq_exposures as aq_exps
 
 
 @dataclass

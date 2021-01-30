@@ -16,8 +16,8 @@ def initial_client():
     patch_env_test_mode = patch('env.test_mode', True)
     patch_env_graph_file = patch('env.graph_file', r'graphs/kumpula.graphml')
     
-    patch_noise_sens = patch('utils.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
-    patch_aq_sens = patch('utils.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
+    patch_noise_sens = patch('app.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
+    patch_aq_sens = patch('app.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
     
     with patch_env_test_mode, patch_env_graph_file, patch_noise_sens, patch_aq_sens:
         from green_paths_app import app
