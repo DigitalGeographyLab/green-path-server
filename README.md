@@ -6,7 +6,7 @@ This project is used as a backend for the web map application of the Green Paths
 
 Green Paths is an open source route planner being developed by Digital Geography Lab, University of Helsinki, for the project [UIA HOPE](https://ilmanlaatu.eu/briefly-in-english/) – Healthy Outdoor Premises for Everyone funded by [Urban Innovative Action](https://www.uia-initiative.eu/en/uia-cities/helsinki). Its goal is to inform people on fresh air and quiet routes for walking and cycling in Helsinki region. It utilizes Air Quality Index (AQI) data from the [FMI-ENFUSER](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service) modelling system (by the Finnish Meteorological Institute) and modelled [traffic noise data](www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E) from the Helsinki capital region. AQI is based on real-time hourly data as a composite measure of NO2, PM2.5, PM10, SO2 and O3. 
 
-Currently implemented features include calculation of unpolluted and quiet paths for walking or cycling (separately) with respect to real-time air quality and typical (day-evening-night time) noise levels from road and rail traffic. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
+Currently implemented features include calculation of unpolluted, green and quiet paths for walking or cycling (separately) with respect to real-time air quality, street level green view index and typical (day-evening-night time) noise levels from road and rail traffic. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
 
 ## Green paths routing API
 See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentation of the green paths routing API. 
@@ -55,7 +55,7 @@ $ conda env create -f conda-env.yml
 
 [Download graph data](https://drive.google.com/file/d/1jM-CPjBZdIXjKnPMwB7k8NV3hGC63VkI/view?usp=sharing) and place the downloaded file (`hma.graphml`) in the directory `src/graphs`. 
 
-The `hma.graphml` street network graph covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen). The other graph file (`kumpula.graphml`) is a small subset of the full graph and can be used for development and testing purposes (with environment variable `GRAPH_SUBSET=True`). 
+The `hma.graphml` street network graph covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen). The other graph file (`kumpula.graphml`) is a small subset of the full graph and can be used for development and testing purposes. 
 
 ## Running the server locally (linux/osx)
 ```
@@ -72,9 +72,9 @@ $ sh start-application.sh
 ## Running the server locally (win)
 In order to run the app on Windows, you must serve it with Flask as instructed in this chapter (Gunicorn cannot be installed on Windows).
 
-For testing and development purposes, set the environment variable `GRAPH_SUBSET=True` or edit the [affected line](https://github.com/DigitalGeographyLab/hope-green-path-server/blob/8ed6caa2ab2eeadf5107cdafede22bc2d2487e70/src/green_paths_app.py#L28) directly in the code. 
+For testing and development purposes, you can set the graph file as `kumpula.graphml` in [env.py](src/env.py)
 
-Printing log messages to command prompt is disabled by default. If you want to print log messages (to command prompt), you can enable it [here](https://github.com/DigitalGeographyLab/hope-green-path-server/blob/8ed6caa2ab2eeadf5107cdafede22bc2d2487e70/src/green_paths_app.py#L25) (by setting `b_printing=True`). 
+Printing log messages to command prompt is disabled by default. If you want to print log messages (to command prompt), you can enable it [here](https://github.com/DigitalGeographyLab/hope-green-path-server/blob/d8de5b30653cc5325baa46a9cb2ddc33376865cc/src/green_paths_app.py#L26) (by setting `b_printing=True`). 
 
 Start the application:
 ```
