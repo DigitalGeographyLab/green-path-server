@@ -61,10 +61,10 @@ When exploring the API and the source codes, please bear in mind that the word "
 | aqc_diff_rat | number | yes | Difference in the air pollution exposure index compared to the shortest path (%). |
 | aqc_diff_score | number | yes | Ratio between the difference in the air pollution exposure index and the length (compared to the shortest path) - i.e. reduction in air pollution exposure index per each additional meter walked. |
 | aqc_norm | number | no | Distance normalized air pollution exposure index. |
-| aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys are class names and values exposures as meters. AQI classes are calculated as `floor(aqi * 2)`. |
 | aqi_m | number | no | Mean AQI. |
 | aqi_m_diff | number | yes | Difference in mean AQI compared to the shortest path. |
-| aqi_cl_pcts | object | no | Exposures (%) to different AQI classes. Keys are class names and values exposures as shares. |
+| aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys represent class names and values exposures as meters. AQI classes are calculated as `floor(aqi * 2)` (e.g. 1.0-1.49 -> 2, 1.5-1.99 -> 3, 2.0-2.49 -> 4 ...) |
+| aqi_cl_pcts | object | no | Exposures (%) to different AQI classes. Keys represent class names and values exposures as percentages. |
 | gvi_m | number | no | Mean green view index (GVI) on the path. |
 | gvi_m_diff | number | yes | Difference in mean GVI compared to the shortest path. |
 | gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1, e.g. 2 -> 0.1-0.2 (`GVI class = ceil(gvi * 10)`).  |
@@ -78,8 +78,8 @@ When exploring the API and the source codes, please bear in mind that the word "
 | nei_diff | number | yes | Difference in noise exposure index (EIdiff) compared to the shortest path. |
 | nei_diff_rat | number | yes | Difference in noise exposure index (EIdiff) as percentages compared to the shortest path. |
 | nei_norm | number | no | Distance-normalized noise exposure index (EIn). |
-| noise_pcts | object | no | Exposures (%) to different noise levels. Keys represent noise levels and values shares. |
 | noise_range_exps | object | no | Exposures (m) to different 10 dB noise level ranges. Keys represent noise levels and values distances (m). |
+| noise_pcts | object | no | Exposures (%) to different noise level ranges. Keys represent noise levels and values percentages. |
 | noises | object | no | Exposures to different noise levels. Keys represent noise levels and values distances (m). |
 | path_score | number | yes | Ratio between difference in noise exposure index and length compared to the shortest path - i.e. reduction in noise exposure index per each additional meter walked. |
 
