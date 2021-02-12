@@ -104,9 +104,9 @@ class GraphHandler:
 
                 self.graph.es[cost_attr] = [
                     noise_exps.get_noise_adjusted_edge_cost(
-                        sen, self.db_costs, noises, length, b_length
+                        sen, self.db_costs, noises, length, length_b
                     ) if has_geom else 0.0
-                    for length, b_length, noises, has_geom
+                    for length, length_b, noises, has_geom
                     in lengths_noises_b_geoms
                 ]
 
@@ -118,7 +118,6 @@ class GraphHandler:
         biking_lengths = self.graph.es[E.length_b.value]
         gvi_list = self.graph.es[E.gvi.value]
         has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
-        select_biking_length = lambda length, b_length: b_length if b_length else length
 
         for sen in gvi_exps.get_gvi_sensitivities():
             
@@ -126,7 +125,7 @@ class GraphHandler:
                 length_gvi_b_geom = zip(lengths, gvi_list, has_geom_list)
                 cost_attr = cost_prefix + str(sen)
                 self.graph.es[cost_attr] = [
-                    gvi_exps.get_gvi_adjusted_cost(length, gvi, sen) 
+                    gvi_exps.get_gvi_adjusted_cost(length, gvi, sen=sen) 
                     if has_geom else 0.0
                     for length, gvi, has_geom 
                     in length_gvi_b_geom
@@ -137,10 +136,10 @@ class GraphHandler:
                 cost_attr = cost_prefix_bike + str(sen)
                 self.graph.es[cost_attr] = [
                     gvi_exps.get_gvi_adjusted_cost(
-                        select_biking_length(length, b_length), gvi, sen
-                    ) 
+                        length, gvi, length_b=length_b, sen=sen
+                    )
                     if has_geom else 0.0
-                    for length, b_length, gvi, has_geom 
+                    for length, length_b, gvi, has_geom 
                     in length_gvi_b_geom
                 ]
 

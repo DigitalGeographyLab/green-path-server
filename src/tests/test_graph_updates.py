@@ -87,4 +87,4 @@ def test_gvi_cost_edge_attributes(graph_handler):
             assert attrs[eg_gvi_cost] == 0.0
         else:
             assert attrs[eg_gvi_cost] > 0.0
-            assert round(attrs[eg_gvi_cost], 2) <= round(attrs[E.length.value], 2)
+            assert round(attrs[eg_gvi_cost], 2) >= round(attrs[E.length.value], 2)
