@@ -63,11 +63,11 @@ When exploring the API and the source codes, please bear in mind that the word "
 | aqc_norm | number | no | Distance normalized air pollution exposure index. |
 | aqi_m | number | no | Mean AQI. |
 | aqi_m_diff | number | yes | Difference in mean AQI compared to the shortest path. |
-| aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys represent class names and values exposures as meters. AQI classes are calculated as `floor(aqi * 2)` (e.g. 1.0-1.49 -> 2, 1.5-1.99 -> 3, 2.0-2.49 -> 4 ...) |
+| aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys represent class names and values exposures as meters. AQI classes are calculated as `floor(aqi * 2) - 1` and they represent (8 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0, class 9 represents the highest possible AQI (5). Class ranges are 1: 1.0-1.5, 2: 1.5-2.0, 3: 2.0-2.5 etc. |
 | aqi_cl_pcts | object | no | Exposures (%) to different AQI classes. Keys represent class names and values exposures as percentages. |
 | gvi_m | number | no | Mean green view index (GVI) on the path. |
 | gvi_m_diff | number | yes | Difference in mean GVI compared to the shortest path. |
-| gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1, e.g. 2 -> 0.1-0.2 (`GVI class = ceil(gvi * 10)`).  |
+| gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1, e.g. 1: 0.0-0.1, 2: 0.1-0.2, 3: 0.2-0.3 etc. (`GVI class = ceil(gvi * 10)`). |
 | gvi_cl_pcts | object | no | Exposures (%) to different GVI ranges (classes). Same as above but object values are relative shares as percentages. |
 | missing_aqi | boolean | no | A boolean variable indicating whether AQI data was available for all edges of the path. |
 | missing_gvi | boolean | no | A boolean variable indicating whether GVI data was available for all edges of the path. |

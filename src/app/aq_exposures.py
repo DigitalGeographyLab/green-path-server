@@ -108,10 +108,11 @@ def get_total_aqi_cost_from_exps(
 
 
 def get_aqi_class(aqi: float) -> int:
-    """Returns AQI class identifier, that is in the range from 2 to 10. Returns 0 if the given AQI is invalid.
-    AQI classes represent (9 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0.
+    """Returns AQI class identifier, that is in the range from 1 to 9. Returns 0 if the given AQI is invalid.
+    AQI classes represent (9 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0. Class ranges are 
+    1: 1.0-1.5, 2: 1.5-2.0, 3: 2.0-2.5 etc.
     """
-    return floor(aqi * 2) if np.isfinite(aqi) else 0
+    return floor(aqi * 2) - 1 if np.isfinite(aqi) else 0
 
 
 def aggregate_aqi_class_exps(aqi_exp_list: List[Tuple[float, float]]) -> Dict[int, float]:
