@@ -1,0 +1,11 @@
+FROM continuumio/miniconda3
+
+COPY src/env/gp-env.yml /tmp/
+RUN conda env create -f /tmp/gp-env.yml && conda clean -afy
+
+COPY src /src
+WORKDIR /src
+ENV PATH /opt/conda/envs/gp-env/bin:$PATH
+
+RUN chmod +x start-aqi-updater.sh
+CMD ./start-aqi-updater.sh
