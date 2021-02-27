@@ -10,7 +10,7 @@ from gp_server.app.constants import RoutingMode, TravelMode, cost_prefix_dict
 from typing import List, Dict, Tuple
 from math import floor
 import numpy as np
-import gp_server.env as env
+import gp_server.conf as conf
 
 
 class InvalidAqiException(Exception):
@@ -29,8 +29,8 @@ def get_aq_sensitivities() -> List[float]:
     Returns:
         A list of AQ sensitivity coefficients.
     """
-    if env.aq_sensitivities:
-        return env.aq_sensitivities
+    if conf.aq_sensitivities:
+        return conf.aq_sensitivities
     
     return [ 5, 15, 30 ]
 

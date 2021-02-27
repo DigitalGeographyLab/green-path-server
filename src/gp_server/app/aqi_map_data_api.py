@@ -1,7 +1,7 @@
 from typing import List, Dict, Union, Callable
 from dataclasses import dataclass
 import os
-import gp_server.env as env
+import gp_server.conf as conf
 import random
 from functools import partial
 from datetime import datetime, timezone
@@ -26,7 +26,7 @@ class AqiMapDataState:
 def __get_expected_aqi_data_name() -> str:
     """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
     """
-    if env.test_mode:
+    if conf.test_mode:
         return 'aqi_2020-10-25T14.csv'
     curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
     return 'aqi_'+ curdt +'.csv'
@@ -94,7 +94,7 @@ def __get_aqi_map_data_status(state: AqiMapDataState):
 
 
 def get_aqi_map_data_api(log: Logger, aqi_dir: str='aqi_updates/') -> AqiMapDataApi:
-    use_aqi_dir = aqi_dir if not env.test_mode else 'aqi_updates/test_data/'
+    use_aqi_dir = aqi_dir if not conf.test_mode else 'aqi_updates/test_data/'
     
     state = AqiMapDataState()
     aqi_data_loader = partial(__maybe_load_updated_aqi_data, log, use_aqi_dir, state)

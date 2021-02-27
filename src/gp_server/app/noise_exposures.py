@@ -10,7 +10,7 @@ from collections import defaultdict
 from shapely.geometry import LineString
 from common.igraph import Edge as E
 from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
-import gp_server.env as env
+import gp_server.conf as conf
 
 
 def calc_db_cost_v2(db) -> float:
@@ -52,8 +52,8 @@ def get_noise_sensitivities() -> List[float]:
     """Returns a set of noise sensitivity coefficients that can be used in adding alternative noise-based costs to edges and
     subsequently calculating alternative quiet paths (using different weights for noise cost in routing).
     """
-    if env.noise_sensitivities:
-        return env.noise_sensitivities
+    if conf.noise_sensitivities:
+        return conf.noise_sensitivities
 
     return [ 0.1, 0.4, 1.3, 3.5, 6 ]
 

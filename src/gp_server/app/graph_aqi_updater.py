@@ -6,7 +6,7 @@ import pandas as pd
 from os import listdir
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
-import gp_server.env as env
+import gp_server.conf as conf
 from gp_server.app.graph_handler import GraphHandler
 import gp_server.app.aq_exposures as aq_exps
 from gp_server.app.logger import Logger
@@ -41,7 +41,7 @@ class GraphAqiUpdater:
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
         self.__sens = aq_exps.get_aq_sensitivities()
-        self.__aqi_dir = aqi_dir if not env.test_mode else 'aqi_updates/test_data/'
+        self.__aqi_dir = aqi_dir if not conf.test_mode else 'aqi_updates/test_data/'
         self.__scheduler = BackgroundScheduler()
         self.__check_interval = 5 + random.randint(1, 15)
         self.__scheduler.add_job(
@@ -107,7 +107,7 @@ class GraphAqiUpdater:
     def __get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
         """
-        if env.test_mode:
+        if conf.test_mode:
             return 'aqi_2020-10-25T14.csv'
         else:
             curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
@@ -141,11 +141,11 @@ class GraphAqiUpdater:
     def __get_aq_update_attrs(self, aqi: float, length: float, length_b: float):        
         aq_costs = aq_exps.get_aqi_costs(
             aqi, length, self.__sens
-        ) if env.walking_enabled else {}
+        ) if conf.walking_enabled else {}
         
         aq_costs_b = aq_exps.get_aqi_costs(
             aqi, length, self.__sens, length_b=length_b, travel_mode=TravelMode.BIKE
-        ) if env.cycling_enabled else {}
+        ) if conf.cycling_enabled else {}
 
         return {
             'aqi': aqi,
@@ -170,8 +170,8 @@ class GraphAqiUpdater:
             aq_costs = { cost_prefix + str(sen) : round(length + length * 40, 2) for sen in self.__sens }
             aq_costs_b = { cost_prefix_bike + str(sen) : round(length + length * 40, 2) for sen in self.__sens }
         
-        aq_costs = aq_costs if env.walking_enabled else {}
-        aq_costs_b = aq_costs_b if env.cycling_enabled else {}
+        aq_costs = aq_costs if conf.walking_enabled else {}
+        aq_costs_b = aq_costs_b if conf.cycling_enabled else {}
         
         return { E.aqi.value: None, **aq_costs, **aq_costs_b }
     

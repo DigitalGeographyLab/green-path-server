@@ -13,8 +13,8 @@ __aq_sensitivities = [ 5, 15, 30 ]
 
 @pytest.fixture(scope='module')
 def initial_client():
-    patch_env_test_mode = patch('gp_server.env.test_mode', True)
-    patch_env_graph_file = patch('gp_server.env.graph_file', r'graphs/kumpula.graphml')
+    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
+    patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
     
     patch_noise_sens = patch('gp_server.app.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
     patch_aq_sens = patch('gp_server.app.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)

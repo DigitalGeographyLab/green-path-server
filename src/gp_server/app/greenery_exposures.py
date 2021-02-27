@@ -1,13 +1,13 @@
 from typing import Dict, List, Tuple
 from math import ceil
 from collections import defaultdict
-import gp_server.env as env
+import gp_server.conf as conf
 
 
 def get_gvi_sensitivities() -> List[float]:
 
-    if env.gvi_sensitivities:
-        return env.gvi_sensitivities
+    if conf.gvi_sensitivities:
+        return conf.gvi_sensitivities
     
     return [2, 4, 8]
 

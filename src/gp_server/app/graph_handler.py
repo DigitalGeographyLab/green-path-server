@@ -2,7 +2,7 @@ import time
 from typing import List, Dict, Tuple, Union
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
-import gp_server.env as env
+import gp_server.conf as conf
 from gp_server.app.types import PathEdge 
 from common.igraph import Edge as E, Node as N
 import common.igraph as ig_utils
@@ -46,9 +46,9 @@ class GraphHandler:
         self.__node_gdf = ig_utils.get_node_gdf(self.graph)
         self.__nodes_sind = self.__node_gdf.sindex
         self.db_costs = noise_exps.get_db_costs(version=3)
-        if env.quiet_paths_enabled: self.__set_noise_costs_to_edges()
+        if conf.quiet_paths_enabled: self.__set_noise_costs_to_edges()
         self.log.info('Noise costs set')
-        if env.gvi_paths_enabled: self.__set_gvi_costs_to_graph()
+        if conf.gvi_paths_enabled: self.__set_gvi_costs_to_graph()
         self.log.info('GVI costs set')
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
@@ -86,7 +86,7 @@ class GraphHandler:
 
         for sen in noise_exps.get_noise_sensitivities():
 
-            if env.walking_enabled:
+            if conf.walking_enabled:
                 lengths_noises_b_geoms = zip(length_list, noises_list, has_geom_list)
                 cost_attr = cost_prefix + str(sen)
 
@@ -98,7 +98,7 @@ class GraphHandler:
                     in lengths_noises_b_geoms
                 ]
 
-            if env.cycling_enabled:
+            if conf.cycling_enabled:
                 lengths_noises_b_geoms = zip(length_list, biking_length_list, noises_list, has_geom_list)
                 cost_attr = cost_prefix_bike + str(sen)
 
@@ -121,7 +121,7 @@ class GraphHandler:
 
         for sen in gvi_exps.get_gvi_sensitivities():
             
-            if env.walking_enabled:
+            if conf.walking_enabled:
                 length_gvi_b_geom = zip(lengths, gvi_list, has_geom_list)
                 cost_attr = cost_prefix + str(sen)
                 self.graph.es[cost_attr] = [
@@ -131,7 +131,7 @@ class GraphHandler:
                     in length_gvi_b_geom
                 ]
 
-            if env.cycling_enabled:
+            if conf.cycling_enabled:
                 length_gvi_b_geom = zip(lengths, biking_lengths, gvi_list, has_geom_list)
                 cost_attr = cost_prefix_bike + str(sen)
                 self.graph.es[cost_attr] = [

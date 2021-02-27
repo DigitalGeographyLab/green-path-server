@@ -1,6 +1,6 @@
 from shapely.geometry import LineString
 from typing import List, Tuple
-import gp_server.env as env
+import gp_server.conf as conf
 import common.geometry as geom_utils
 from gp_server.app.logger import Logger
 from gp_server.app.types import PathEdge
@@ -144,7 +144,7 @@ class Path:
             'edge_ids': self.edge_ids,
             'edge_first_props': self.edges[0].as_props(),
             'edge_last_props': self.edges[len(self.edges)-1].as_props(),
-        } if env.research_mode else {}
+        } if conf.research_mode else {}
 
         feature_d['properties'] = { 
             **props, 

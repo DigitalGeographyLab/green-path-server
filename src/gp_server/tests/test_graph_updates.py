@@ -1,5 +1,5 @@
 import pytest
-import gp_server.env as env
+import gp_server.conf as conf
 from shapely.geometry import LineString
 from common.igraph import Edge as E
 import gp_server.app.greenery_exposures as gvi_exps
@@ -18,15 +18,15 @@ def log():
 
 @pytest.fixture(scope='module')
 def graph_handler(log):
-    patch_env_test_mode = patch('gp_server.env.test_mode', True)
-    patch_env_graph_file = patch('gp_server.env.graph_file', r'graphs/kumpula.graphml')
+    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
+    patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
     with patch_env_test_mode, patch_env_graph_file:
-        yield GraphHandler(log, env.graph_file)
+        yield GraphHandler(log, conf.graph_file)
 
 
 @pytest.fixture(scope='module')
 def aqi_updater(graph_handler, log):
-    patch_env_test_mode = patch('gp_server.env.test_mode', True)
+    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
     with patch_env_test_mode:
         return GraphAqiUpdater(log, graph_handler, r'aqi_updates/test_data/')
 

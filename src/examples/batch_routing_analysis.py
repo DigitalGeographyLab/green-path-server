@@ -6,8 +6,8 @@ This script is intended to be run from the root of the project (src/) with the c
 python -m examples.batch_routing_analysis (running as a module allows the imports to work)
 
 Before running the script:
-    - Set research_mode to True in src/env.py
-    - Set graph_file to 'graphs/kumpula.graphml' in src/env.py
+    - Set research_mode to True in src/conf.py
+    - Set graph_file to 'graphs/kumpula.graphml' in src/conf.py
     - Start Green Paths routing app to handle routing requests at localhost:5000
 
 """

@@ -3,7 +3,7 @@ import traceback
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import gp_server.env as env
+import gp_server.conf as conf
 from gp_server.app.aqi_map_data_api import get_aqi_map_data_api
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
@@ -27,9 +27,9 @@ log = Logger(app_logger=app.logger, b_printing=False)
 
 
 # initialize graph
-G = GraphHandler(log, env.graph_file)
+G = GraphHandler(log, conf.graph_file)
 
-if env.clean_paths_enabled:
+if conf.clean_paths_enabled:
     aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/')
 
 # start AQI map data service
@@ -43,7 +43,7 @@ def hello_world():
 
 @app.route('/aqistatus')
 def aqi_status():
-    if env.clean_paths_enabled:
+    if conf.clean_paths_enabled:
         return jsonify(aqi_updater.get_aqi_update_status_response())
     else:
         return jsonify({'error_key': ErrorKeys.AQI_ROUTING_NOT_AVAILABLE.value})
@@ -76,7 +76,7 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
         return jsonify({'error_key': ErrorKeys.INVALID_EXPOSURE_MODE_PARAM.value})
 
     if routing_mode == RoutingMode.CLEAN:
-        if (not env.clean_paths_enabled 
+        if (not conf.clean_paths_enabled 
                 or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']):
             return jsonify({'error_key': ErrorKeys.NO_REAL_TIME_AQI_AVAILABLE.value})
 
