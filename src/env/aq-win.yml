@@ -1,0 +1,16 @@
+name: aqi-env
+
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pylint
+  - pytest
+  - geopandas
+  - rasterio
+  - rioxarray
+  - xarray
+  - boto3
+  - pip
+  - pip:
+    - python_igraph-0.7.1.post6-cp37-cp37m-win_amd64.whl

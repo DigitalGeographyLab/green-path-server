@@ -17,7 +17,7 @@ from gp_server.app.constants import cost_prefix_dict, RoutingMode, TravelMode
 
 
 class GraphAqiUpdater:
-    """GraphAqiUpdater updates new AQI to graph if new AQI data is available in /aqi_cache.
+    """GraphAqiUpdater updates new AQI to graph if new AQI data is available in aqi_updates/.
 
     Attributes:
         __aqi_update_status (str): A message describing the current state of the AQI updater. 
@@ -32,7 +32,7 @@ class GraphAqiUpdater:
         __check_interval (int): The number of seconds between AQI update attempts.
     """
 
-    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str = 'aqi_updates/'):
+    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str):
         self.log = logger
         self.__aqi_update_status = ''
         self.__aqi_update_error = ''

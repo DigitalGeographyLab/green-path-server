@@ -30,10 +30,10 @@ log = Logger(app_logger=app.logger, b_printing=False)
 G = GraphHandler(log, env.graph_file)
 
 if env.clean_paths_enabled:
-    aqi_updater = GraphAqiUpdater(log, G)
+    aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/')
 
 # start AQI map data service
-aqi_map_data_api = get_aqi_map_data_api(log, 'aqi_updates/')
+aqi_map_data_api = get_aqi_map_data_api(log, r'aqi_updates/')
 aqi_map_data_api.start()
 
 

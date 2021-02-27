@@ -28,7 +28,7 @@ def graph_handler(log):
 def aqi_updater(graph_handler, log):
     patch_env_test_mode = patch('gp_server.env.test_mode', True)
     with patch_env_test_mode:
-        return GraphAqiUpdater(log, graph_handler)
+        return GraphAqiUpdater(log, graph_handler, r'aqi_updates/test_data/')
 
 
 def test_initial_aqi_updater_status(aqi_updater):
