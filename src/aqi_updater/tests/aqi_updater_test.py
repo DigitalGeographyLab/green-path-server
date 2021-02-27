@@ -10,10 +10,18 @@ import pandas as pd
 import json
 
 
-graph = ig_utils.read_graphml(fr'{test_data_dir}kumpula.graphml')
-aqi_updater = AqiUpdater(graph, test_data_dir, aqi_updates_dir)
-aqi_updater.create_aqi_update_csv('aqi_2020-10-10T08.tif')
-aqi_updater.finish_aqi_update()
+@pytest.fixture(scope='module')
+def graph():
+    graph = ig_utils.read_graphml(fr'{test_data_dir}kumpula.graphml')
+    yield graph
+
+
+@pytest.fixture(scope='module', autouse=True)
+def aqi_updater(graph):
+    aqi_updater = AqiUpdater(graph, test_data_dir, aqi_updates_dir)
+    aqi_updater.create_aqi_update_csv('aqi_2020-10-10T08.tif')
+    aqi_updater.finish_aqi_update()
+    yield aqi_updater
 
 
 def test_extract_rt_aqi_from_zip():
@@ -47,7 +55,7 @@ def test_fillna_in_aqi_raster():
     assert nodata_count == 0
 
 
-def test_create_aqi_update_csv():
+def test_create_aqi_update_csv(aqi_updater):
     assert aqi_updater.latest_aqi_csv == 'aqi_2020-10-10T08.csv'
     aqi_update_df = pd.read_csv(fr'{aqi_updates_dir}aqi_2020-10-10T08.csv')
     assert len(aqi_update_df) == 16469

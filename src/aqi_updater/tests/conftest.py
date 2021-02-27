@@ -1,5 +1,6 @@
 import os
 import glob
+import pytest
 from shutil import copyfile
 
 
@@ -8,7 +9,8 @@ test_data_dir = r'aqi_updater/tests/test_data/'
 aqi_updates_dir = r'aqi_updater/tests/test_aqi_updates/'
 
 
-def pytest_sessionstart(session):
+@pytest.fixture(scope='session', autouse=True)
+def reset_test_files():
 
     temp_test_aqi_updates = [
         'aqi_2020-10-10T08.csv',
