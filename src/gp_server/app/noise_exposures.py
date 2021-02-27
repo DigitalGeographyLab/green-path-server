@@ -8,7 +8,7 @@ between paths.
 from typing import List, Dict, Union
 from collections import defaultdict
 from shapely.geometry import LineString
-from gp_server.utils.igraph import Edge as E
+from common.igraph import Edge as E
 from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 import gp_server.env as env
 

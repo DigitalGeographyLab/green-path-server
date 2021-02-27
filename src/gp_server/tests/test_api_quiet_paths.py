@@ -1,6 +1,6 @@
 from typing import Dict, Union, Tuple, Callable
 from shapely.geometry import LineString
-from gp_server.utils.geometry import project_geom
+from common.geometry import project_geom
 from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 import json
 import pytest

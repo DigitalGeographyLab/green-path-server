@@ -10,7 +10,7 @@ from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 from gp_server.app.path_finder import PathFinder
 from gp_server.app.constants import TravelMode, RoutingMode, RoutingException, ErrorKeys
 from gp_server.app.logger import Logger
-import gp_server.utils.geometry as geom_utils
+import common.geometry as geom_utils
 
 
 app = Flask(__name__)

@@ -3,14 +3,14 @@ import time
 import gp_server.app.noise_exposures as noise_exps 
 import gp_server.app.aq_exposures as aq_exps 
 import gp_server.app.greenery_exposures as gvi_exps 
-import gp_server.utils.geometry as geom_utils
+import common.geometry as geom_utils
 import gp_server.app.od_handler as od_handler
 from gp_server.app.path import Path
 from gp_server.app.path_set import PathSet
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKeys, cost_prefix_dict
 from gp_server.app.logger import Logger
-from gp_server.utils.igraph import Edge as E
+from common.igraph import Edge as E
 
 
 sensitivities_by_routing_mode: Dict[RoutingMode, List[float]] = {

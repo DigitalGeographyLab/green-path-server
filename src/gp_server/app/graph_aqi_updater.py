@@ -10,8 +10,8 @@ import gp_server.env as env
 from gp_server.app.graph_handler import GraphHandler
 import gp_server.app.aq_exposures as aq_exps
 from gp_server.app.logger import Logger
-import gp_server.utils.igraph as ig_utils
-from gp_server.utils.igraph import Edge as E
+import common.igraph as ig_utils
+from common.igraph import Edge as E
 from typing import Union
 from gp_server.app.constants import cost_prefix_dict, RoutingMode, TravelMode
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 import json
 import time
-from gp_server.utils.geometry import project_geom
+from common.geometry import project_geom
 from shapely.geometry import LineString
 
 

@@ -4,12 +4,12 @@ from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 import gp_server.env as env
 from gp_server.app.types import PathEdge 
-from gp_server.utils.igraph import Edge as E, Node as N
-import gp_server.utils.igraph as ig_utils
+from common.igraph import Edge as E, Node as N
+import common.igraph as ig_utils
 import gp_server.app.noise_exposures as noise_exps
 import gp_server.app.aq_exposures as aq_exps
 import gp_server.app.greenery_exposures as gvi_exps
-import gp_server.utils.geometry as geom_utils
+import common.geometry as geom_utils
 from gp_server.app.logger import Logger
 from gp_server.app.constants import RoutingException, ErrorKeys, cost_prefix_dict, TravelMode, RoutingMode
 

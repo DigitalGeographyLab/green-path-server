@@ -1,7 +1,7 @@
 import pytest
 import gp_server.env as env
 from shapely.geometry import LineString
-from gp_server.utils.igraph import Edge as E
+from common.igraph import Edge as E
 import gp_server.app.greenery_exposures as gvi_exps
 import gp_server.app.noise_exposures as noise_exps
 from gp_server.app.logger import Logger

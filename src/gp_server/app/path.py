@@ -1,7 +1,7 @@
 from shapely.geometry import LineString
 from typing import List, Tuple
 import gp_server.env as env
-import gp_server.utils.geometry as geom_utils
+import common.geometry as geom_utils
 from gp_server.app.logger import Logger
 from gp_server.app.types import PathEdge
 from gp_server.app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs

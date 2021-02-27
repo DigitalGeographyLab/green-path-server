@@ -3,7 +3,7 @@ import time
 from shapely.geometry import Point, LineString
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.logger import Logger
-from gp_server.utils.igraph import Edge as E, Node as N
+from common.igraph import Edge as E, Node as N
 from gp_server.app.constants import RoutingException, ErrorKeys
 
 
