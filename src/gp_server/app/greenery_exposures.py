@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 from math import ceil
 from collections import defaultdict
-import env
+import gp_server.env as env
 
 
 def get_gvi_sensitivities() -> List[float]:

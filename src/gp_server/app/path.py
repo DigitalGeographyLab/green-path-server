@@ -1,14 +1,14 @@
 from shapely.geometry import LineString
 from typing import List, Tuple
-import env
-import utils.geometry as geom_utils
-from app.logger import Logger
-from app.types import PathEdge
-from app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs
-from app.path_aqi_attrs import PathAqiAttrs, create_aqi_attrs
-from app.path_gvi_attrs import PathGviAttrs, create_gvi_attrs
-from app.graph_handler import GraphHandler
-from app.constants import PathType
+import gp_server.env as env
+import gp_server.utils.geometry as geom_utils
+from gp_server.app.logger import Logger
+from gp_server.app.types import PathEdge
+from gp_server.app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs
+from gp_server.app.path_aqi_attrs import PathAqiAttrs, create_aqi_attrs
+from gp_server.app.path_gvi_attrs import PathGviAttrs, create_gvi_attrs
+from gp_server.app.graph_handler import GraphHandler
+from gp_server.app.constants import PathType
 
 
 class Path:

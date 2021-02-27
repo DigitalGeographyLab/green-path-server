@@ -6,14 +6,14 @@ import pandas as pd
 from os import listdir
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
-import env
-from app.graph_handler import GraphHandler
-import app.aq_exposures as aq_exps
-from app.logger import Logger
-import utils.igraph as ig_utils
-from utils.igraph import Edge as E
+import gp_server.env as env
+from gp_server.app.graph_handler import GraphHandler
+import gp_server.app.aq_exposures as aq_exps
+from gp_server.app.logger import Logger
+import gp_server.utils.igraph as ig_utils
+from gp_server.utils.igraph import Edge as E
 from typing import Union
-from app.constants import cost_prefix_dict, RoutingMode, TravelMode
+from gp_server.app.constants import cost_prefix_dict, RoutingMode, TravelMode
 
 
 class GraphAqiUpdater:

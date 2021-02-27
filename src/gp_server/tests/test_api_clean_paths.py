@@ -2,8 +2,8 @@ from typing import Callable, Tuple
 import json
 import pytest
 from shapely.geometry import LineString
-from utils.geometry import project_geom
-from app.constants import cost_prefix_dict, TravelMode, RoutingMode
+from gp_server.utils.geometry import project_geom
+from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 
 
 @pytest.fixture

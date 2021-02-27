@@ -1,9 +1,9 @@
 from typing import List, Set, Dict, Tuple
-import utils.paths_overlay_filter as path_overlay_filter
-from app.constants import RoutingMode, PathType
-from app.logger import Logger
-from app.path import Path
-from app.types import edge_group_attr_by_routing_mode
+import gp_server.utils.paths_overlay_filter as path_overlay_filter
+from gp_server.app.constants import RoutingMode, PathType
+from gp_server.app.logger import Logger
+from gp_server.app.path import Path
+from gp_server.app.types import edge_group_attr_by_routing_mode
 
 
 class PathSet:

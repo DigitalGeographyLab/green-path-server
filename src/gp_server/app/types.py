@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, Union, List, Tuple
-import app.noise_exposures as noise_exps
-import utils.geometry as geom_utils
-from app.constants import RoutingMode
+import gp_server.app.noise_exposures as noise_exps
+import gp_server.utils.geometry as geom_utils
+from gp_server.app.constants import RoutingMode
 
 
 @dataclass

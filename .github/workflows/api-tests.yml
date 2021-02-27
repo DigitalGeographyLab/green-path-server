@@ -15,7 +15,7 @@ jobs:
     - name: Install dependencies
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
-        $CONDA/bin/conda env update --file src/env/conda-env.yml --name base
+        $CONDA/bin/conda env update --file src/env/gp-server.yml --name base
     - name: Lint with flake8
       run: |
         $CONDA/bin/conda install flake8
@@ -26,4 +26,4 @@ jobs:
     - name: Test with pytest
       run: |
         cd src
-        $CONDA/bin/python -m pytest tests -vv
+        $CONDA/bin/python -m pytest gp_server/tests -vv

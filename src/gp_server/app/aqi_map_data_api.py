@@ -1,12 +1,12 @@
 from typing import List, Dict, Union, Callable
 from dataclasses import dataclass
 import os
-import env
+import gp_server.env as env
 import random
 from functools import partial
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.logger import Logger
+from gp_server.app.logger import Logger
 
 
 @dataclass(frozen=True)

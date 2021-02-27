@@ -9,4 +9,4 @@ if [[ -z "${WORKER_COUNT}" ]]; then
 fi
 
 echo "Starting green path server with ${WORKER_COUNT} workers and log level ${LOG_LEVEL}"
-gunicorn --workers=${WORKER_COUNT} --bind=0.0.0.0:5000 --log-level=${LOG_LEVEL} --timeout 450 green_paths_app:app
+gunicorn --workers=${WORKER_COUNT} --bind=0.0.0.0:5000 --log-level=${LOG_LEVEL} --timeout 450 gp_server_main:app

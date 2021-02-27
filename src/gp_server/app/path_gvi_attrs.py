@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
-import app.greenery_exposures as gvi_exps
+import gp_server.app.greenery_exposures as gvi_exps
 
 
 @dataclass

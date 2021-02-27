@@ -1,15 +1,15 @@
-name: gp-env
+name: gp-server
 
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.7
   - pylint
   - pytest
   - apscheduler
   - geopandas
-  - python-igraph
   - flask
   - flask-cors
-  - flask-testing
-  - gunicorn
+  - pip
+  - pip:
+    - python_igraph-0.7.1.post6-cp37-cp37m-win_amd64.whl

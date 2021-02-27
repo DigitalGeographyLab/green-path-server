@@ -3,14 +3,14 @@ import traceback
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import env
-from app.aqi_map_data_api import get_aqi_map_data_api
-from app.graph_handler import GraphHandler
-from app.graph_aqi_updater import GraphAqiUpdater
-from app.path_finder import PathFinder
-from app.constants import TravelMode, RoutingMode, RoutingException, ErrorKeys
-from app.logger import Logger
-import utils.geometry as geom_utils
+import gp_server.env as env
+from gp_server.app.aqi_map_data_api import get_aqi_map_data_api
+from gp_server.app.graph_handler import GraphHandler
+from gp_server.app.graph_aqi_updater import GraphAqiUpdater
+from gp_server.app.path_finder import PathFinder
+from gp_server.app.constants import TravelMode, RoutingMode, RoutingException, ErrorKeys
+from gp_server.app.logger import Logger
+import gp_server.utils.geometry as geom_utils
 
 
 app = Flask(__name__)

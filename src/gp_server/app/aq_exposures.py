@@ -6,11 +6,11 @@ exposures to air pollution between paths.
 """
 
 from collections import defaultdict
-from app.constants import RoutingMode, TravelMode, cost_prefix_dict
+from gp_server.app.constants import RoutingMode, TravelMode, cost_prefix_dict
 from typing import List, Dict, Tuple
 from math import floor
 import numpy as np
-import env
+import gp_server.env as env
 
 
 class InvalidAqiException(Exception):

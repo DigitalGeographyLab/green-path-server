@@ -1,10 +1,10 @@
 from typing import List, Set, Dict, Tuple
 import time
 from shapely.geometry import Point, LineString
-from app.graph_handler import GraphHandler
-from app.logger import Logger
-from utils.igraph import Edge as E, Node as N
-from app.constants import RoutingException, ErrorKeys
+from gp_server.app.graph_handler import GraphHandler
+from gp_server.app.logger import Logger
+from gp_server.utils.igraph import Edge as E, Node as N
+from gp_server.app.constants import RoutingException, ErrorKeys
 
 
 def __get_closest_point_on_line(line: LineString, point: Point) -> Point:

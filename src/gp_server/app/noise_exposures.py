@@ -8,9 +8,9 @@ between paths.
 from typing import List, Dict, Union
 from collections import defaultdict
 from shapely.geometry import LineString
-from utils.igraph import Edge as E
-from app.constants import cost_prefix_dict, TravelMode, RoutingMode
-import env
+from gp_server.utils.igraph import Edge as E
+from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
+import gp_server.env as env
 
 
 def calc_db_cost_v2(db) -> float:

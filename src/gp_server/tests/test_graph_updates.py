@@ -1,14 +1,13 @@
 import pytest
-import env
+import gp_server.env as env
 from shapely.geometry import LineString
-from utils.igraph import Edge as E
-import app.greenery_exposures as gvi_exps
-import app.noise_exposures as noise_exps
-from app.logger import Logger
-from app.logger import Logger
-from app.graph_handler import GraphHandler
-from app.graph_aqi_updater import GraphAqiUpdater
-from app.constants import cost_prefix_dict, TravelMode, RoutingMode
+from gp_server.utils.igraph import Edge as E
+import gp_server.app.greenery_exposures as gvi_exps
+import gp_server.app.noise_exposures as noise_exps
+from gp_server.app.logger import Logger
+from gp_server.app.graph_handler import GraphHandler
+from gp_server.app.graph_aqi_updater import GraphAqiUpdater
+from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 from unittest.mock import patch
 
 
@@ -19,15 +18,15 @@ def log():
 
 @pytest.fixture(scope='module')
 def graph_handler(log):
-    patch_env_test_mode = patch('env.test_mode', True)
-    patch_env_graph_file = patch('env.graph_file', r'graphs/kumpula.graphml')
+    patch_env_test_mode = patch('gp_server.env.test_mode', True)
+    patch_env_graph_file = patch('gp_server.env.graph_file', r'graphs/kumpula.graphml')
     with patch_env_test_mode, patch_env_graph_file:
         yield GraphHandler(log, env.graph_file)
 
 
 @pytest.fixture(scope='module')
 def aqi_updater(graph_handler, log):
-    patch_env_test_mode = patch('env.test_mode', True)
+    patch_env_test_mode = patch('gp_server.env.test_mode', True)
     with patch_env_test_mode:
         return GraphAqiUpdater(log, graph_handler)
 
