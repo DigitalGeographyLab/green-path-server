@@ -6,5 +6,3 @@
 **/*.env
 **/*.csv
 **/*.graphml
-!/src/graphs/kumpula.graphml
-!/src/graphs/hma.graphml
