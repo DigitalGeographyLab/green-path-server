@@ -44,7 +44,7 @@ clean_paths_enabled: bool = True
 gvi_paths_enabled: bool = True
 
 mean_aqi_file: str = fr'yearly_2019_aqi_avg_sum_{graph_id}.csv'
-use_mean_aqi: bool = True
+use_mean_aqi: bool = False
 
 # the default sensitivities for exposure optimized routing can be overridden with these:
 noise_sensitivities: List[float] = []
