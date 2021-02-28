@@ -6,16 +6,16 @@ This script is intended to be run from the root of the project (src/) with the c
 python -m examples.batch_routing_analysis (running as a module allows the imports to work)
 
 Before running the script:
-    - Set research_mode to True in src/env.py
-    - Set graph_file to 'graphs/kumpula.graphml' in src/env.py
+    - Set research_mode to True in src/conf.py
+    - Set graph_file to 'graphs/kumpula.graphml' in src/conf.py
     - Start Green Paths routing app to handle routing requests at localhost:5000
 
 """
 
-from app.graph_handler import GraphHandler
-from app.types import PathEdge
-from app.logger import Logger
-import app.noise_exposures as noise_exps
+from gp_server.app.graph_handler import GraphHandler
+from gp_server.app.types import PathEdge
+from gp_server.app.logger import Logger
+import gp_server.app.noise_exposures as noise_exps
 from typing import List, Tuple, Union
 import requests
 import traceback

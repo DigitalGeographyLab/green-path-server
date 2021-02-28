@@ -1,0 +1,14 @@
+FROM continuumio/miniconda3
+
+COPY src/env/conda-env.yml /tmp/
+RUN conda env create -f /tmp/conda-env.yml && conda clean -afy
+
+COPY src /src
+ADD https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/kumpula.graphml /src/graphs/
+ADD https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma.graphml /src/graphs/
+
+WORKDIR /src
+ENV PATH /opt/conda/envs/gp-env/bin:$PATH
+
+RUN chmod +x start-gp-server.sh
+CMD ./start-gp-server.sh

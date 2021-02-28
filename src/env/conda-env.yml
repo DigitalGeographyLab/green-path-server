@@ -6,6 +6,10 @@ dependencies:
   - python=3.8
   - pylint
   - pytest
+  - rasterio
+  - rioxarray
+  - xarray
+  - boto3
   - apscheduler
   - geopandas
   - python-igraph
