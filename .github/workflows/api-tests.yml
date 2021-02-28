@@ -55,9 +55,7 @@ jobs:
           tags: >
             ${{ secrets.DOCKERHUB_USERNAME }}/hope-graph-updater:latest,
             ${{ secrets.DOCKERHUB_USERNAME }}/hope-graph-updater:dev
-          cache-from: >
-            type=registry,
-            ref=${{ secrets.DOCKERHUB_USERNAME }}/hope-graph-updater:latest
+          cache-from: type=registry,ref=hellej/hope-graph-updater:latest
           cache-to: type=inline
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
@@ -86,9 +84,7 @@ jobs:
           tags: >
             ${{ secrets.DOCKERHUB_USERNAME }}/hope-green-path-server:latest,
             ${{ secrets.DOCKERHUB_USERNAME }}/hope-green-path-server:dev
-          cache-from: >
-            type=registry,
-            ref=${{ secrets.DOCKERHUB_USERNAME }}/hope-green-path-server:latest
+          cache-from: type=registry,ref=hellej/hope-green-path-server:latest
           cache-to: type=inline
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
