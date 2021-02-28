@@ -1,4 +1,4 @@
-name: gp-server
+name: gp-env
 
 channels:
   - conda-forge
@@ -6,6 +6,10 @@ dependencies:
   - python=3.7
   - pylint
   - pytest
+  - rasterio
+  - rioxarray
+  - xarray
+  - boto3
   - apscheduler
   - geopandas
   - flask

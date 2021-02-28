@@ -8,11 +8,13 @@ option_labels=("green paths server" "graph updater")
 select opt in "${option_labels[@]}"; do
   case $opt in
   "green paths server")
+    echo "green paths server"
     DOCKER_SUFFIX='.gp-server'
     DOCKER_IMAGE=${USER}/hope-green-path-server
     break
     ;;
   "graph updater")
+    echo "aqi updater"
     DOCKER_SUFFIX='.aqi-updater'
     DOCKER_IMAGE=${USER}/hope-graph-updater
     break
@@ -28,7 +30,7 @@ if [[ -z "${DOCKER_SUFFIX}" ]]; then
   exit 0
 fi
 
-echo "Building image from: ${DOCKER_SUFFIX}"
+echo "Building image from: Dockerfile${DOCKER_SUFFIX}"
 
 PS3='Select image to build: '
 option_labels=("dev" "prod" "all")
@@ -74,5 +76,7 @@ fi
 if [[ $WHICH_IMAGE == "prod" || $WHICH_IMAGE == "all" ]] ; then
   echo "Tag & push prod (1)"
   docker tag ${DOCKER_IMAGE}:latest ${DOCKER_IMAGE}:1
-  docker push ${DOCKER_IMAGE}:1
+  for TAG in latest 1; do
+    docker push ${DOCKER_IMAGE}:${TAG}
+  done
 fi

@@ -63,24 +63,22 @@ $ cd src
 $ conda activate gp-env
 
 $ export GRAPH_SUBSET=True
-$ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 450 green_paths_app:app
+$ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 450 gp_server_main:app
 
 # or
-$ sh start-application.sh
+$ sh start-gp-server.sh
 ```
 
 ## Running the server locally (win)
 In order to run the app on Windows, you must serve it with Flask as instructed in this chapter (Gunicorn cannot be installed on Windows).
 
-For testing and development purposes, you can set the graph file as `kumpula.graphml` in [env.py](src/env.py)
-
-Printing log messages to command prompt is disabled by default. If you want to print log messages (to command prompt), you can enable it [here](https://github.com/DigitalGeographyLab/hope-green-path-server/blob/d8de5b30653cc5325baa46a9cb2ddc33376865cc/src/green_paths_app.py#L26) (by setting `b_printing=True`). 
+For testing and development purposes, you can set the graph file as `kumpula.graphml` in [conf.py](src/gp_server_conf.py)
 
 Start the application:
 ```
 > cd src
 > conda activate gp-env-win
-> python green_paths_app.py
+> python gp_server_main.py
 ```
 
 Now for example the following request should return some (quiet) paths as GeoJSON:
@@ -91,5 +89,6 @@ Learn how to use the API by reading [the documentation](docs/green_paths_api.md)
 ## Running the tests
 ```
 $ cd src
-$ python -m pytest tests -v
+$ python -m pytest gp_server/tests -v
+$ python -m pytest aqi_updater/tests -v
 ```
