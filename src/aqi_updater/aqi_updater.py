@@ -59,7 +59,7 @@ class AqiUpdater():
             aqi_tif_file,
             'aqi'
         )
-        aqi_sample_df = aq_sampling.validate_aqi_sample_df(aqi_sample_df, self.log)
+        aqi_sample_df = aq_sampling.validate_aqi_sample_df(aqi_sample_df, 'aqi', self.log)
         # export sampled AQI values to json for AQI map
         self.__export_aqi_map_json(aqi_sample_df)
         # export sampled AQI values to csv

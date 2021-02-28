@@ -12,10 +12,10 @@ Before running the script:
 
 """
 
-from app.graph_handler import GraphHandler
-from app.types import PathEdge
-from app.logger import Logger
-import app.noise_exposures as noise_exps
+from gp_server.app.graph_handler import GraphHandler
+from gp_server.app.types import PathEdge
+from gp_server.app.logger import Logger
+import gp_server.app.noise_exposures as noise_exps
 from typing import List, Tuple, Union
 import requests
 import traceback

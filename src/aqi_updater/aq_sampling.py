@@ -62,14 +62,23 @@ def sample_aq_to_point_gdf(
     return gdf
 
 
-def validate_aqi_sample_df(df: DataFrame, log: Logger = None) -> DataFrame:
+def validate_aqi_sample_df(
+    df: DataFrame, 
+    aqi_attr: str, 
+    log: Logger = None
+) -> DataFrame:
     """Validates sampled AQI values. Prints error if invalid values are found
     and returns the dataframe where invalid AQI values are replaced with np.nan. 
     """
-    if not validate_aqi_samples(list(df['aqi']), log):
+    if not validate_aqi_samples(list(df[aqi_attr]), log):
         if log: log.error('AQI sampling failed')
 
-    df['aqi'] = [get_valid_aqi_or_nan(aqi) for aqi in df['aqi']]
+    df[aqi_attr] = [get_valid_aqi_or_nan(aqi) for aqi in df[aqi_attr]]
+
+    sample_count = len(df[aqi_attr])
+    count_valid = len([aqi for aqi in list(df[aqi_attr]) if np.isfinite(aqi)])
+    log.info(f'Found {count_valid} AQI values for {sample_count} points')
+
     return df
 
 
@@ -80,7 +89,7 @@ def merge_edge_aq_samples(
     log: Logger = None
 ) -> GeoDataFrame:
     """Merges sampled AQI values to all edges (GDF). Merging is needed as the sample GDF consists
-    of only unique edge geometries. 
+    of only unique edge geometries. Retruns a DataFrame with columns [E.id_ig.name, aq_attr]. 
     """
     edge_gdf_copy = edge_gdf[[E.id_ig.name, E.id_way.name]].copy()
     final_sample_df = pd.merge(

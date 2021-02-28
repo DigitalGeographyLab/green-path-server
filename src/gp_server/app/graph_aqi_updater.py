@@ -107,7 +107,9 @@ class GraphAqiUpdater:
     def __get_expected_aqi_data_name(self) -> str:
         """Returns the name of the expected latest aqi data csv file based on the current time, e.g. aqi_2019-11-11T17.csv.
         """
-        if conf.test_mode:
+        if conf.use_mean_aqi and conf.mean_aqi_file:
+            return conf.mean_aqi_file
+        elif conf.test_mode:
             return 'aqi_2020-10-25T14.csv'
         else:
             curdt = datetime.utcnow().strftime('%Y-%m-%dT%H')
@@ -123,17 +125,17 @@ class GraphAqiUpdater:
         aqi_data_expected = self.__get_expected_aqi_data_name()
         if self.__aqi_update_error:
             aqi_update_status = self.__aqi_update_error
-        elif (aqi_data_expected == self.__aqi_data_latest):
+        elif aqi_data_expected == self.__aqi_data_latest:
             aqi_update_status = 'Latest AQI was updated to graph'
-        elif (aqi_data_expected == self.__aqi_data_wip):
+        elif aqi_data_expected == self.__aqi_data_wip:
             aqi_update_status = 'AQI update already in progress'
-        elif (aqi_data_expected in listdir(self.__aqi_dir)):
+        elif aqi_data_expected in listdir(self.__aqi_dir):
             aqi_update_status = 'AQI update will be done from: '+ aqi_data_expected
             new_aqi_csv = aqi_data_expected
         else:
             aqi_update_status = 'Expected AQI data is not available ('+ aqi_data_expected +')'
         
-        if (aqi_update_status != self.__aqi_update_status):
+        if aqi_update_status != self.__aqi_update_status:
             self.log.info(aqi_update_status)
             self.__aqi_update_status = aqi_update_status
         return new_aqi_csv
@@ -167,8 +169,8 @@ class GraphAqiUpdater:
             aq_costs_b = { cost_prefix_bike + str(sen) : 0.0 for sen in self.__sens }
         else:
             # set high AQ costs to edges outside the AQI data extent (aqi_coeff=40)
-            aq_costs = { cost_prefix + str(sen) : round(length + length * 40, 2) for sen in self.__sens }
-            aq_costs_b = { cost_prefix_bike + str(sen) : round(length + length * 40, 2) for sen in self.__sens }
+            aq_costs = { cost_prefix + str(sen) : round(length + length * 200, 2) for sen in self.__sens }
+            aq_costs_b = { cost_prefix_bike + str(sen) : round(length + length * 200, 2) for sen in self.__sens }
         
         aq_costs = aq_costs if conf.walking_enabled else {}
         aq_costs_b = aq_costs_b if conf.cycling_enabled else {}
@@ -186,13 +188,13 @@ class GraphAqiUpdater:
 
         # inspect how many edges will get AQI
         aqi_update_count = len(edge_aqi_updates)
-        if (len(self.__edge_df) != aqi_update_count):
+        if len(self.__edge_df) != aqi_update_count:
             missing_ratio = round(100 * (len(self.__edge_df)-len(edge_aqi_updates)) / len(self.__edge_df), 1)
             self.log.info(f'AQI updates missing for {missing_ratio} % edges')
 
         # update AQI and AQ costs to graph
         aqi_update_df = pd.merge(self.__edge_df, edge_aqi_updates, on=E.id_ig.name, how='inner')
-        if (len(aqi_update_df) != aqi_update_count):
+        if len(aqi_update_df) != aqi_update_count:
             self.log.info(f'Failed to merge AQI updates to edge gdf, missing {aqi_update_count - len(aqi_update_df)} edges')  
         
         aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.__get_aq_update_attrs(x['aqi'], x[E.length.name], x[E.length_b.name]), axis=1)
@@ -205,8 +207,11 @@ class GraphAqiUpdater:
         self.__G.update_edge_attr_to_graph(missing_aqi_update_df, df_attr='aq_updates')
 
         # check that all edges got either AQI value or AQI=None
-        if (len(self.__edge_df) != (len(missing_aqi_update_df) + len(aqi_update_df))):
-            self.log.error(f'Edge count: {len(self.__edge_df)} != all AQI updates: {len(missing_aqi_update_df) + len(aqi_update_df)}')
+        if len(self.__edge_df) != (len(missing_aqi_update_df) + len(aqi_update_df)):
+            self.log.error(
+                f'Edge count: {len(self.__edge_df)} != all AQI updates:' 
+                f'{len(missing_aqi_update_df) + len(aqi_update_df)}'
+            )
         else:
             self.log.info('AQI update done')
 
@@ -231,6 +236,12 @@ class GraphAqiUpdater:
         missing_ratio = missing_aqi_count/edge_count
 
         if aqi_ok_ratio < 0.7 or missing_ratio > 0.3:
-            raise Exception(f'Graph got incomplete AQI update (aqi_ok_ratio: {round(aqi_ok_ratio, 4)}, missing_ratio: {round(missing_ratio, 4)})')
+            raise Exception(
+                f'Graph got incomplete AQI update (aqi_ok_ratio: {round(aqi_ok_ratio, 4)},'
+                f'missing_ratio: {round(missing_ratio, 4)})'
+            )
         else:
-            self.log.info(f'Graph AQI update resulted aqi_ok_ratio: {round(aqi_ok_ratio, 4)} & missing_ratio: {round(missing_ratio, 4)}')
+            self.log.info(
+                f'Graph AQI update resulted aqi_ok_ratio: {round(aqi_ok_ratio, 4)} '
+                f'& missing_ratio: {round(missing_ratio, 4)}'
+            )

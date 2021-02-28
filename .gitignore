@@ -101,9 +101,14 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# aqi_updater
+# AQI data
 src/aqi_cache/*
 src/aqi_updates/*
+!src/aqi_updates/test_data
+!src/aqi_updates/yearly_2019_aqi_avg_sum_kumpula.csv
+!src/aqi_updates/yearly_2019_aqi_avg_sum_hma.csv
+
+# aqi_updater
 src/aqi_updater/tests/test_aqi_updates/*
 src/aqi_updater/tests/test_data/*
 
@@ -111,5 +116,4 @@ src/aqi_updater/tests/test_data/*
 .DS_Store
 .vscode/
 src/.vscode/
-!src/aqi_updates/test_data
 src/graphs/hma.graphml
