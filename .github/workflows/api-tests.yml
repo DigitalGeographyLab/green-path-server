@@ -1,7 +1,5 @@
-name: API tests
-
+name: Tests & Build
 on: [push]
-
 jobs:
 
   linux-conda-pytest:

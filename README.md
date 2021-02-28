@@ -1,4 +1,4 @@
-[![API tests status](https://github.com/DigitalGeographyLab/hope-green-path-server/workflows/API%20tests/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions)
+[![tests & build status](https://github.com/DigitalGeographyLab/hope-green-path-server/workflows/Tests%20%26%20Build/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions)
 
 # hope-green-path-server
 
