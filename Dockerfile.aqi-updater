@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 
-COPY src/env/gp-env.yml /tmp/
-RUN conda env create -f /tmp/gp-env.yml && conda clean -afy
+COPY src/env/conda-env.yml /tmp/
+RUN conda env create -f /tmp/conda-env.yml && conda clean -afy
 
 COPY src /src
 WORKDIR /src

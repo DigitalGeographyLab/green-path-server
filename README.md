@@ -77,7 +77,7 @@ For testing and development purposes, you can set the graph file as `kumpula.gra
 Start the application:
 ```
 > cd src
-> conda activate gp-env-win
+> conda activate gp-env
 > python gp_server_main.py
 ```
 
