@@ -58,7 +58,7 @@ To run the server, download one or more of the following graph files to the fold
 - [hma_r.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma_r.graphml) (for research)
 - [hma_r_hel-clip.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma_r_hel-clip.graphml) (for research)
 
-The file `hma.graphml` covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas (`kumpula.graphml`) is a small subset of the full graph suitable for development and testing (it is included in the repository). 
+The file `hma.graphml` covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas `kumpula.graphml` is a small subset of the full graph suitable for development and testing (it is included in the repository). 
 
 ## Running the server locally (linux/osx)
 ```

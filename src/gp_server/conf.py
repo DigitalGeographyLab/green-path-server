@@ -18,8 +18,8 @@ Configurations:
     clean_paths_enabled (bool): enables/disables air quality cost calculation
     gvi_paths_enabled (bool): enables/disables green view cost calculation
 
+    use_mean_aqi (bool): set to True to use mean AQI data instead of real-time data
     mean_aqi_file (str): file path to mean AQI data as CSV (edge_id & aqi)
-    use_mean_aqi (bool): set to True to use the mean AQI data instead of real-time data
 
     noise_sensitivities (list): if set, overrides the default sensitivities
     aq_sensitivities (list): if set, overrides the default sensitivities
@@ -43,8 +43,8 @@ quiet_paths_enabled: bool = True
 clean_paths_enabled: bool = True
 gvi_paths_enabled: bool = True
 
-mean_aqi_file: str = fr'yearly_2019_aqi_avg_sum_{graph_id}.csv'
 use_mean_aqi: bool = False
+mean_aqi_file: str = fr'yearly_2019_aqi_avg_sum_{graph_id}.csv'
 
 # the default sensitivities for exposure optimized routing can be overridden with these:
 noise_sensitivities: List[float] = []
