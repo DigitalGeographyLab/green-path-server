@@ -2,14 +2,14 @@
 
 # hope-green-path-server
 
-This project is used as a backend for the web map application of the Green Paths route planner: [green-paths.web.app](https://green-paths.web.app/) / [DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui).
+Green path server is a routing service for the Green Paths route planner: [green-paths.web.app](https://green-paths.web.app/) / [DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui). Also, it provides means for researchers to study citizens travel-time exposure to environmental qualities and to assess presence of healthier routes in different areas. 
 
-Green Paths is an open source route planner being developed by Digital Geography Lab, University of Helsinki, for the project [UIA HOPE](https://ilmanlaatu.eu/briefly-in-english/) – Healthy Outdoor Premises for Everyone funded by [Urban Innovative Action](https://www.uia-initiative.eu/en/uia-cities/helsinki). Its goal is to inform people on fresh air and quiet routes for walking and cycling in Helsinki region. It utilizes Air Quality Index (AQI) data from the [FMI-ENFUSER](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service) modelling system (by the Finnish Meteorological Institute) and modelled [traffic noise data](www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E) from the Helsinki capital region. AQI is based on real-time hourly data as a composite measure of NO2, PM2.5, PM10, SO2 and O3. 
+Green Paths is developed by Digital Geography Lab, University of Helsinki, within the project [UIA HOPE](https://ilmanlaatu.eu/briefly-in-english/) – Healthy Outdoor Premises for Everyone funded by [Urban Innovative Action](https://www.uia-initiative.eu/en/uia-cities/helsinki). Its goal is to help people find routes of fresh air, less noise and more greenery for walking and cycling in Helsinki region. It utilizes air quality index (AQI) data from the [FMI-ENFUSER](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service) modelling system (by the Finnish Meteorological Institute) and modelled [traffic noise data](www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E) from the Helsinki capital region. AQI is based on real-time hourly data as a composite measure of NO2, PM2.5, PM10, SO2 and O3. Green view (i.e. greenery) data is derived from [analyzing Google Street View images](https://www.sciencedirect.com/science/article/pii/S2352340920304959?via%3Dihub) and openly available [land cover data by HRI](https://hri.fi/data/en_GB/dataset/paakaupunkiseudun-maanpeiteaineisto).
 
-Currently implemented features include calculation of unpolluted, green and quiet paths for walking or cycling (separately) with respect to real-time air quality, street level green view index and typical (day-evening-night time) noise levels from road and rail traffic. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
+Currently implemented features include calculation of unpolluted, green and quiet paths for walking or cycling (separately) with respect to real-time air quality, street level green view index and typical (day-evening-night) noise levels from road and rail traffic. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
 
 ## Green paths routing API
-See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentation of the green paths routing API. 
+See [docs/green_paths_api.md](docs/green_paths_api.md) for documentation of the green paths routing API (endpoints and data types). 
 
 ## Related projects
 - [hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui)
@@ -17,12 +17,12 @@ See [docs/green_paths_api.md](docs/green_paths_api.md) for detailed documentatio
 - [hope-graph-builder](https://github.com/DigitalGeographyLab/hope-graph-builder)
 
 ## Materials
-* [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
-* [UIA HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
+* [OpenStreetMap](https://www.openstreetmap.org/about/) 
 * [FMI-Enfuser model](https://en.ilmatieteenlaitos.fi/environmental-information-fusion-service)
 * [SYKE - Traffic noise modelling data from Helsinki urban region](https://www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E)
 * [Traffic noise zones in Helsinki 2017](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017)
-* [OpenStreetMap](https://www.openstreetmap.org/about/) 
+* [Street-level green view index by Google Street View images](https://www.sciencedirect.com/science/article/pii/S2352340920304959?via%3Dihub)
+* [Land cover data (low & high vegetation)](https://hri.fi/data/en_GB/dataset/paakaupunkiseudun-maanpeiteaineisto)
 
 ## Contributing
 * See also [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -52,10 +52,14 @@ $ conda env create -f conda-env.yml
 ```
 > conda env create -f conda-env-win.yml
 ```
+## Graph data
+To run the server, download one or more of the following graph files to the folder `src/graphs`:
+- [kumpula.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/kumpula.graphml)
+- [hma.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma.graphml)
+- [hma_r.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma_r.graphml) (for research)
+- [hma_r_hel-clip.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma_r_hel-clip.graphml) (for research)
 
-[Download graph data](https://drive.google.com/file/d/1jM-CPjBZdIXjKnPMwB7k8NV3hGC63VkI/view?usp=sharing) and place the downloaded file (`hma.graphml`) in the directory `src/graphs`. 
-
-The `hma.graphml` street network graph covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen). The other graph file (`kumpula.graphml`) is a small subset of the full graph and can be used for development and testing purposes. 
+The file `hma.graphml` covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas (`kumpula.graphml`) is a small subset of the full graph and can be used for development and testing purposes. 
 
 ## Running the server locally (linux/osx)
 ```
@@ -72,7 +76,7 @@ $ sh start-gp-server.sh
 ## Running the server locally (win)
 In order to run the app on Windows, you must serve it with Flask as instructed in this chapter (Gunicorn cannot be installed on Windows).
 
-For testing and development purposes, you can set the graph file as `kumpula.graphml` in [conf.py](src/gp_server_conf.py)
+For testing and development purposes, you can set the graph file as `kumpula.graphml` in [conf.py](src/gp_server/conf.py)
 
 Start the application:
 ```
@@ -92,3 +96,6 @@ $ cd src
 $ python -m pytest gp_server/tests -v
 $ python -m pytest aqi_updater/tests -v
 ```
+## Links
+* [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
+* [UIA HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
