@@ -13,7 +13,6 @@ See [docs/green_paths_api.md](docs/green_paths_api.md) for documentation of the 
 
 ## Related projects
 - [hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui)
-- [hope-graph-updater](https://github.com/DigitalGeographyLab/hope-graph-updater)
 - [hope-graph-builder](https://github.com/DigitalGeographyLab/hope-graph-builder)
 
 ## Materials
@@ -98,3 +97,6 @@ $ python -m pytest aqi_updater/tests -v
 ## Links
 * [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
 * [UIA HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
+
+## License
+[MIT](LICENSE)
