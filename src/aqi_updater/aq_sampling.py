@@ -1,5 +1,6 @@
 from typing import Any, List, Union
 from pandas import DataFrame
+from collections import Counter
 from common.igraph import Edge as E
 from geopandas import GeoDataFrame
 from shapely.geometry import LineString
@@ -112,24 +113,8 @@ class AqiValidity(Enum):
     Missing = 1
     UnderOne = 2
     UnderZero = 3
-    WrongType = 4
-
-
-def get_valid_aqi_or_nan(aqi: Union[float, Any]):
-    """Returns np.nan for invalid or missing AQI, else returns the AQI. 
-    """
-    if not isinstance(aqi, float):
-        return np.nan
-    
-    if np.isfinite(aqi):
-        if aqi < 0.95:
-            return np.nan
-        elif aqi < 1:
-            return 1.0
-        else:
-            return aqi
-    else:
-        return np.nan
+    HigherThan5 = 4
+    WrongType = 5
 
 
 def validate_aqi_exp(aqi: Union[float, Any]) -> AqiValidity:
@@ -137,12 +122,23 @@ def validate_aqi_exp(aqi: Union[float, Any]) -> AqiValidity:
         return AqiValidity.WrongType
     elif aqi < 0:
         return AqiValidity.UnderZero
-    elif aqi == 0.0:
+    elif aqi == 0.0 or not np.isfinite(aqi):
         return AqiValidity.Missing
-    elif aqi < 1:
+    elif aqi < 0.95:
         return AqiValidity.UnderOne
+    elif aqi > 5.05:
+        return AqiValidity.HigherThan5
     else:
         return AqiValidity.OK
+
+
+def get_valid_aqi_or_nan(aqi: Union[float, Any]):
+    """Returns np.nan for invalid or missing AQI, else returns the AQI. 
+    """    
+    if validate_aqi_exp(aqi) == AqiValidity.OK:
+        return max(1.0, min(5.0, aqi))
+    else:
+        return np.nan
 
 
 def validate_aqi_samples(
@@ -162,11 +158,13 @@ def validate_aqi_samples(
     invalid_count = sample_count - aqi_ok_count
     if invalid_count:
         invalid_ratio = round(100 * invalid_count/sample_count, 2)
+        error_counts = Counter(aqi_validities)
         if log: 
             log.warning(
                 f'AQI sample count: {sample_count} of which has invvalid AQI: '
                 f'{invalid_count} = {invalid_ratio}  %'
             )
+            log.warning(f'AQI validities: {error_counts}')
         return False
 
     return True

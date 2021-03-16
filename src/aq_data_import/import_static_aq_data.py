@@ -19,7 +19,7 @@ logging.config.dictConfig(logging_conf)
 log = logging.getLogger('main')
 
 
-graph_id = 'kumpula' # 'hma'
+graph_id = 'hma_r_hel-clip' # 'hma'
 mean_aqi_tif = r'aq_data_import/data/yearly_2019_aqi_avg_sum.tiff'
 graph_file = fr'graphs/{graph_id}.graphml'
 aq_update_out_file = fr'aqi_updates/yearly_2019_aqi_avg_sum_{graph_id}.csv'
@@ -48,6 +48,13 @@ final_edge_aqi_samples = aq_sampling.merge_edge_aq_samples(
 )
 
 log.info(f'Combined AQI samples for {len(final_edge_aqi_samples)} edges')
+
+log.info(
+    f'Stats. min: {final_edge_aqi_samples[aq_attr_name].min()}, '
+    f'max: {final_edge_aqi_samples[aq_attr_name].max()}, '
+    f'mean: {round(final_edge_aqi_samples[aq_attr_name].mean(), 3)}, '
+    f'median: {round(final_edge_aqi_samples[aq_attr_name].median(), 3)}'    
+)
 
 final_edge_aqi_samples.to_csv(aq_update_out_file, index=False)
 log.info(f'Exported AQI update file: {aq_update_out_file}')
