@@ -53,7 +53,7 @@ When exploring the API and the source codes, please bear in mind that the word "
 | id | string | no | Unique name of the path within the returned FeatureCollection (e.g. “short” or “qp_0.2”). |
 | cost_coeff | number | no | Noise or AQI sensitivity coefficient with which the green path was optimized. |
 | length | number | no | Length of the path (m). |
-| length_b | number | no | Biking safety adjusted distance of the path, hence longer than the real distance (m). |
+| length_b | number | no | Biking safety adjusted cost of the path, derived from lengths and biking safety factors of its edges. |
 | len_diff | number | no | Difference in path length compared to the shortest path (m). |
 | len_diff_rat | number | yes | Difference in path length compared to the shortest path (%). |
 | aqc | number | no | Air pollution exposure index. |
