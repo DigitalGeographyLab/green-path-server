@@ -90,16 +90,11 @@ When exploring the API and the source codes, please bear in mind that the word "
 | edge_first_props | object | no | Object containing the following properties of the first edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
 | edge_last_props | object | no | Object containing the following properties of the last edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
 
-
 ## Exceptions
-- Possible routing errors are defined as error keys in [src/app/constants.py](../src/app/constants.py)
-- In case of routing error, the respective key is returned in property `error_key` of the response (data)
-- One way of catching these errors is demonstrated below:
-
-```
-  const response = await axios.get(https://www.greenpaths.fi/bike/quiet/60.20772,24.96716/60.2037,24.9653)
-  if (response.data.error_key) throw response.data.error_key
-```
+- Successful routing requests return route data and status code `200`
+- Possible status codes for unsuccessful requests are `400`, `404`, `500` and `503`
+- All routing errors and their status codes are defined in [src/gp_server/app/constants.py](../src/gp_server/app/constants.py)
+- In the case of an routing error, the error message is included in the property `error_key` of the response
 
 ## Example Path_FC
 ```yaml
