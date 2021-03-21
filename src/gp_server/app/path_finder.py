@@ -8,7 +8,7 @@ import gp_server.app.od_handler as od_handler
 from gp_server.app.path import Path
 from gp_server.app.path_set import PathSet
 from gp_server.app.graph_handler import GraphHandler
-from gp_server.app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKeys, cost_prefix_dict
+from gp_server.app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKey, cost_prefix_dict
 from gp_server.app.logger import Logger
 from common.igraph import Edge as E
 
@@ -63,10 +63,10 @@ class PathFinder:
             raise e
 
         except Exception as e:
-            raise RoutingException(ErrorKeys.ORIGIN_OR_DEST_NOT_FOUND.value)
+            raise RoutingException(ErrorKey.ORIGIN_OR_DEST_NOT_FOUND.value)
 
         if (self.orig_node == self.dest_node):
-            raise RoutingException(ErrorKeys.OD_SAME_LOCATION.value)
+            raise RoutingException(ErrorKey.OD_SAME_LOCATION.value)
 
     def find_least_cost_paths(self):
         """Finds both shortest and least cost paths. 
@@ -104,7 +104,7 @@ class PathFinder:
             raise e
 
         except Exception as e:
-            raise RoutingException(ErrorKeys.PATHFINDING_ERROR.value)
+            raise RoutingException(ErrorKey.PATHFINDING_ERROR.value)
 
     def process_paths_to_FC(self) -> dict:
         """Loads & collects path attributes from the graph for all paths. Also aggregates and filters out nearly identical 
@@ -134,7 +134,7 @@ class PathFinder:
             return (path_FC, edge_FC)
         
         except Exception:
-            raise RoutingException(ErrorKeys.PATH_PROCESSING_ERROR.value)
+            raise RoutingException(ErrorKey.PATH_PROCESSING_ERROR.value)
 
     def delete_added_graph_features(self):
         """Keeps a graph clean by removing new nodes & edges created during routing from the graph.

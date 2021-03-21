@@ -51,6 +51,30 @@ def test_aqi_map_data_response(client):
     assert len(data['data']) == 387411 
 
 
+def test_invalid_request_path_error_response(client):
+    response = client.get('/paths/walkASDF/quiet/60.212031,24.968584/60.201520,24.961191')
+    assert response.status_code == 400
+    assert 'error_key' in json.loads(response.data)
+    response = client.get('/paths/walk/quietASDF/60.212031,24.968584/60.201520,24.961191')
+    assert response.status_code == 400
+    assert 'error_key' in json.loads(response.data)
+
+
+def test_same_od_error_response(client):
+    response = client.get('/paths/walk/quiet/60.212031,24.968584/60.212031,24.968584')
+    assert response.status_code == 400
+    assert 'error_key' in json.loads(response.data)
+
+
+def test_od_not_found_error_response(client):
+    response = client.get('/paths/walk/quiet/160.212031,24.968584/60.201520,24.961191')
+    assert response.status_code == 404
+    assert 'error_key' in json.loads(response.data)
+    response = client.get('/paths/walk/quiet/60.212031,24.968584/160.201520,24.961191')
+    assert response.status_code == 404
+    assert 'error_key' in json.loads(response.data)
+
+
 def test_route_only_shortest_path(client):
     response = client.get('/paths/walk/short/60.212031,24.968584/60.201520,24.961191')
     assert response.status_code == 200

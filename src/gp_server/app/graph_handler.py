@@ -11,7 +11,7 @@ import gp_server.app.aq_exposures as aq_exps
 import gp_server.app.greenery_exposures as gvi_exps
 import common.geometry as geom_utils
 from gp_server.app.logger import Logger
-from gp_server.app.constants import RoutingException, ErrorKeys, cost_prefix_dict, TravelMode, RoutingMode
+from gp_server.app.constants import RoutingException, ErrorKey, cost_prefix_dict, TravelMode, RoutingMode
 
 
 class GraphHandler:
@@ -428,7 +428,7 @@ class GraphHandler:
             except:
                 raise Exception(f'Could not find paths by {weight}')
         else:
-            raise RoutingException(ErrorKeys.OD_SAME_LOCATION.value)
+            raise RoutingException(ErrorKey.OD_SAME_LOCATION.value)
 
     def reset_edge_cache(self):
         self.__edge_cache = {}
