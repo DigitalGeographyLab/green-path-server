@@ -140,18 +140,18 @@ class Path:
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs else {}
         gvi_props = self.gvi_attrs.get_gvi_props_dict() if self.gvi_attrs else {}
 
-        research_props = {
-            'edge_ids': self.edge_ids,
-            'edge_first_props': self.edges[0].as_props(),
-            'edge_last_props': self.edges[len(self.edges)-1].as_props(),
-        } if conf.research_mode else {}
+        edge_ids = { 'edge_ids': self.edge_ids } if conf.research_mode else {}
+        edge_data = { 
+            'edge_data': [edge.as_props() for edge in self.edges] 
+        } if conf.edge_data else {}
 
         feature_d['properties'] = { 
             **props, 
             **noise_props, 
             **aqi_props,
             **gvi_props,
-            **research_props 
+            **edge_ids,
+            **edge_data
         }
         return feature_d
 
