@@ -7,6 +7,7 @@ class TravelMode(Enum):
     BIKE = 'bike'
 
 class RoutingMode(Enum):
+    SHORT_ONLY = 'short'
     CLEAN = 'clean' # i.e. "fresh air"
     QUIET = 'quiet'
     GREEN = 'green'

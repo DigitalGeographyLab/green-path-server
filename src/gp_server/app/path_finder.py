@@ -74,8 +74,13 @@ class PathFinder:
         Raises:
             Only meaningful exception strings that can be shown in UI.
         """
-        sens = sensitivities_by_routing_mode[self.routing_mode]
-        cost_prefix = cost_prefix_dict[self.travel_mode][self.routing_mode]
+        if self.routing_mode == RoutingMode.SHORT_ONLY:
+            sens = []
+            cost_prefix = ''
+        else:
+            sens = sensitivities_by_routing_mode[self.routing_mode]
+            cost_prefix = cost_prefix_dict[self.travel_mode][self.routing_mode]
+        
         try:
             start_time = time.time()
             shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=E.length.value)
@@ -139,4 +144,5 @@ class PathFinder:
             orig_edges=self.orig_link_edges,
             orig_node=self.orig_node, 
             dest_edges=self.dest_link_edges,
-            dest_node=self.dest_node)
+            dest_node=self.dest_node
+        )

@@ -49,3 +49,15 @@ def test_aqi_map_data_response(client):
     assert response.status_code == 200
     data = json.loads(response.data)
     assert len(data['data']) == 387411 
+
+
+def test_route_only_shortest_path(client):
+    response = client.get('/paths/walk/short/60.212031,24.968584/60.201520,24.961191')
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert len(data) == 2
+    assert 'edge_FC' in data
+    assert 'path_FC' in data
+    assert data['path_FC']['type'] == 'FeatureCollection'
+    assert len(data['path_FC']['features']) == 1
+    assert len(data['edge_FC']['features']) > 1

@@ -14,7 +14,7 @@ When exploring the API and the source codes, please bear in mind that the word "
 
 ## Path variables
 - travel_mode: either `walk` or `bike` 
-- exposure_mode: either `quiet`, `green` or `clean` (for fresh air paths) 
+- exposure_mode: either `quiet`, `green`, `clean` (for fresh air paths) or `short` (for shortest path only) 
 - orig/dest_coords: <latitude,longitude>, e.g. 60.20772,24.96716
 
 ## Response
