@@ -1,5 +1,6 @@
 from typing import List, Dict
 import time
+import gp_server.conf as conf
 import gp_server.app.noise_exposures as noise_exps 
 import gp_server.app.aq_exposures as aq_exps 
 import gp_server.app.greenery_exposures as gvi_exps 
@@ -123,7 +124,7 @@ class PathFinder:
             
             start_time = time.time()
             path_FC = self.path_set.get_paths_as_feature_collection()
-            edge_FC = self.path_set.get_edges_as_feature_collection()
+            edge_FC = self.path_set.get_edges_as_feature_collection() if not conf.research_mode else None
             self.log.duration(start_time, 'processed paths & edges to FC', unit='ms', log_level='info')
             
             return (path_FC, edge_FC)
