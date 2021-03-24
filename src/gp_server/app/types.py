@@ -42,6 +42,7 @@ class PathEdge:
 
 
 edge_group_attr_by_routing_mode: Dict[RoutingMode, str] = {
+    RoutingMode.SHORT_ONLY: 'gvi_cl',
     RoutingMode.CLEAN: 'aqi_cl',
     RoutingMode.QUIET: 'db_range',
     RoutingMode.GREEN: 'gvi_cl'

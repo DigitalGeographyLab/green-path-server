@@ -2,7 +2,7 @@
 This module provides functionality for filtering out paths with nearly identical geometries. 
 """
 
-from typing import List, Set, Dict, Tuple
+from typing import List, Set, Dict, Tuple, Union
 from gp_server.app.path import Path
 from gp_server.app.logger import Logger
 
@@ -61,7 +61,7 @@ def get_unique_paths_by_geom_overlay(
     all_paths: List[Path], 
     buffer_m: int = None, 
     cost_attr: str = 'nei_norm'
-) -> List[str]:
+) -> Union[List[str], None]:
     """Filters a list of paths by comparing buffered line geometries of the paths and selecting only the unique paths by given buffer_m (m).
 
     Args:
