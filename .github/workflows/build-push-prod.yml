@@ -2,7 +2,7 @@ name: Build & push prod
 on:
   push:
     tags:
-      - "2*-*-*"
+      - '2*-*-*'
 
 jobs:
 
