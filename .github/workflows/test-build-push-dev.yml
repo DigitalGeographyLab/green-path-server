@@ -34,7 +34,6 @@ jobs:
   docker-build-push-aqi-updater:
     name: Build AQI updater
     runs-on: ubuntu-18.04
-    # if: github.ref == 'refs/heads/master'
     needs: linux-conda-pytest
     steps:
       - name: Set up QEMU
@@ -63,8 +62,7 @@ jobs:
   docker-build-push-gp-server:
     name: Build GP server
     runs-on: ubuntu-18.04
-    # if: github.ref == 'refs/heads/master'
-    needs: docker-build-push-aqi-updater
+    needs: linux-conda-pytest
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1

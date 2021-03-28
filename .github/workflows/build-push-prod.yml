@@ -36,6 +36,7 @@ jobs:
   docker-build-push-gp-server:
     name: Build GP server
     runs-on: ubuntu-18.04
+    needs: docker-build-push-aqi-updater
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
