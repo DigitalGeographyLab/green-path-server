@@ -12,6 +12,7 @@ Configurations:
     test_mode (bool): only used by pytest (use static AQI layer as real-time AQI data)
 
     research_mode (bool): set to True for additional path properties
+
     walking_enabled (bool): enables/disables walk cost calculation
     cycling_enabled (bool): enables/disables bike cost calculation
     quiet_paths_enabled (bool): enables/disables noise cost calculation
@@ -20,6 +21,7 @@ Configurations:
 
     use_mean_aqi (bool): set to True to use mean AQI data instead of real-time data
     mean_aqi_file (str): file path to mean AQI data as CSV (edge_id & aqi)
+    edge_data (bool): return exposure properties and coordinates of paths' edges
 
     noise_sensitivities (list): if set, overrides the default sensitivities
     aq_sensitivities (list): if set, overrides the default sensitivities
@@ -37,6 +39,7 @@ graph_file: str = fr'graphs/{graph_id}.graphml'
 test_mode: bool = False
 
 research_mode: bool = False
+
 walking_enabled: bool = True
 cycling_enabled: bool = True
 quiet_paths_enabled: bool = True
@@ -45,6 +48,7 @@ gvi_paths_enabled: bool = True
 
 use_mean_aqi: bool = False
 mean_aqi_file: str = fr'yearly_2019_aqi_avg_sum_{graph_id}.csv'
+edge_data: bool = False
 
 # the default sensitivities for exposure optimized routing can be overridden with these:
 noise_sensitivities: List[float] = []

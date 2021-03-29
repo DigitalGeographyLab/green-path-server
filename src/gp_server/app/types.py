@@ -18,25 +18,21 @@ class PathEdge:
     gvi_cl: Union[int, None]
     coords: List[Tuple[float]]
     coords_wgs: List[Tuple[float]]
+    mdB: float = field(init=False)
     db_range: int = field(init=False)
 
     def __post_init__(self):
-        mean_db = noise_exps.get_mean_noise_level(self.noises, self.length) if self.noises else 0
-        self.db_range = noise_exps.get_noise_range(mean_db)
+        self.mdB = noise_exps.get_mean_noise_level(self.noises, self.length) if self.noises else 0
+        self.db_range = noise_exps.get_noise_range(self.mdB)
 
     def as_props(self) -> dict:
-        """Used in research mode only (?).
+        """Returns length (m), AQI, GVI, mean dB and WGS coordinates of the edge as a dictionary.
         """
         return {
-            'id': self.id,
             'length': self.length,
-            'length_b': self.length_b,
             'aqi': self.aqi,
-            'aqi_cl': self.aqi_cl,
-            'noises': self.noises,
             'gvi': self.gvi,
-            'gvi_cl': self.gvi_cl,
-            'coords': geom_utils.round_coordinates(self.coords),
+            'mdB': self.mdB,
             'coords_wgs': geom_utils.round_coordinates(self.coords_wgs)
         }
 
