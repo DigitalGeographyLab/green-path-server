@@ -1,0 +1,5 @@
+FROM continuumio/miniconda3
+
+COPY src/env/conda-env.yml /tmp/
+RUN conda env create -f /tmp/conda-env.yml && conda clean -afy
+ENV PATH /opt/conda/envs/gp-env/bin:$PATH
