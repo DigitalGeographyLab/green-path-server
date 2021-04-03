@@ -54,7 +54,7 @@ jobs:
     name: Build GP server (dev)
     runs-on: ubuntu-18.04
     needs: linux-conda-pytest
-    if: github.ref == 'refs/heads/master' && startsWith(github.ref, ‘refs/tags/2’) != true
+    if: github.ref == 'refs/heads/master' && startsWith(github.ref, 'refs/tags/2') != true
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -83,7 +83,7 @@ jobs:
     name: Build AQI updater (dev)
     runs-on: ubuntu-18.04
     needs: linux-conda-pytest
-    if: github.ref == 'refs/heads/master' && startsWith(github.ref, ‘refs/tags/2’) != true
+    if: github.ref == 'refs/heads/master' && startsWith(github.ref, 'refs/tags/2') != true
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -112,7 +112,7 @@ jobs:
     name: Build GP server (prod)
     runs-on: ubuntu-18.04
     needs: linux-conda-pytest
-    if: github.ref == 'refs/heads/master' && startsWith(github.ref, ‘refs/tags/2’)
+    if: github.ref == 'refs/heads/master' && startsWith(github.ref, 'refs/tags/2')
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -141,7 +141,7 @@ jobs:
     name: Build AQI updater (prod)
     runs-on: ubuntu-18.04
     needs: linux-conda-pytest
-    if: github.ref == 'refs/heads/master' && startsWith(github.ref, ‘refs/tags/2’)
+    if: github.ref == 'refs/heads/master' && startsWith(github.ref, 'refs/tags/2')
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
