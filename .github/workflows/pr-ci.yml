@@ -1,0 +1,30 @@
+name: Test GP API & AQI updater
+on:
+  push:
+    branches-ignore:
+      - 'master'
+    paths-ignore:
+      - 'src/env/conda-env.yml'
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  linux-conda-pytest:
+    name: Test API & AQI updater
+    runs-on: ubuntu-18.04
+    needs: docker-build-push-gp-base-image
+    container:
+      image: hellej/green-path-server-base:latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Test AQI updater
+      run: |
+          cd src/
+          python -m pytest aqi_updater/tests -vv
+    - name: Test GP server API
+      run: |
+          cd src/
+          python -m pytest gp_server/tests -vv
