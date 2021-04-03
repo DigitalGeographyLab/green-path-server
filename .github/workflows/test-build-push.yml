@@ -1,9 +1,8 @@
 name: Tests & Build
 on: 
   push:
-    branches:
-      - '**'
     paths-ignore:
+      - 'docs/**'
       - '**.md'
 
 jobs:
