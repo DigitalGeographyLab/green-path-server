@@ -1,0 +1,19 @@
+name: Graph build
+on:
+  push:
+    paths:
+      - 'src/common/**'
+      - 'src/graph_build/**'
+
+jobs:
+  linux-conda-pytest:
+    name: Test graph build
+    runs-on: ubuntu-18.04
+    container:
+      image: hellej/green-path-server-base:latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Test graph export
+      run: |
+          cd src/
+          python -m pytest graph_build/tests/ -vv

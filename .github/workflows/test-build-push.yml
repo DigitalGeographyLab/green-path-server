@@ -8,7 +8,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**.md'
-      - 'src/graph_builder/**'
+      - 'src/graph_build/**'
 
 jobs:
 
