@@ -3,6 +3,10 @@ from common.igraph import Edge as E, Node as N
 import graph_builder.graph_export.utils as utils
 from geopandas import GeoDataFrame
 import geopandas as gpd
+import logging
+
+
+log = logging.getLogger('graph_export.main')
 
 
 def set_biking_lengths(graph, edge_gdf):
@@ -44,6 +48,7 @@ def graph_export(
         E.length, E.length_b, E.noises, E.gvi
     ]
 
+    log.info(f'Reading graph file: {in_graph}')
     graph = ig_utils.read_graphml(in_graph)
 
     edge_gdf = ig_utils.get_edge_gdf(

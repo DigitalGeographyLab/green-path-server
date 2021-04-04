@@ -1,5 +1,6 @@
 from typing import List, Union
 
+
 def read_user_input(
     text: str, 
     options: List[Union[str, int]],
@@ -23,7 +24,7 @@ def read_user_input(
                     raise Exception
                 return options[answer_num-1]
             except Exception:
-                print(f'invalid answer ("{answer}"): should be one of {option_idx}')
+                print(f'Invalid answer: "{answer}" - should be one of {option_idx}')
         else:
             print(text)
             print(f'{options}:', end='')
@@ -32,7 +33,7 @@ def read_user_input(
             if answer == '':
                 return None
             if answer not in options:
-                print(f'invalid answer ("{answer}"): should be one of {options}')
+                print(f'Invalid answer: "{answer}" - should be one of {options}')
                 continue
             else:
                 return answer
