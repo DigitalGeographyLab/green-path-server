@@ -7,15 +7,12 @@ on:
       - 'src/env/conda-env.yml'
       - 'docs/**'
       - '**.md'
-  pull_request:
-    branches:
-      - '**'
+      - 'src/graph_build/**'
 
 jobs:
   linux-conda-pytest:
     name: Test API & AQI updater
     runs-on: ubuntu-18.04
-    needs: docker-build-push-gp-base-image
     container:
       image: hellej/green-path-server-base:latest
     steps:

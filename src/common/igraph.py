@@ -19,6 +19,10 @@ import igraph as ig
 from pyproj import CRS
 from shapely import wkt
 from shapely.geometry import LineString
+import logging
+
+
+log = logging.getLogger('common.igraph')
 
 
 # enum names are used as dataframe column names 
@@ -281,3 +285,4 @@ def export_to_graphml(
                 del(Gc.es[edge_attr])
 
     Gc.save(graph_file, format='graphml')
+    log.info(f'Exported graph to file: {graph_file}')
