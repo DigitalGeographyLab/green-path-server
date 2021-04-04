@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/common/**'
       - 'src/graph_build/**'
+      - '.github/workflows/test-graph-building.yml'
 
 jobs:
   linux-conda-pytest:
