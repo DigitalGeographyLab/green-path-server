@@ -8,9 +8,6 @@ on:
       - 'docs/**'
       - '**.md'
       - 'src/graph_builder/**'
-  pull_request:
-    branches:
-      - '**'
 
 jobs:
   linux-conda-pytest:
