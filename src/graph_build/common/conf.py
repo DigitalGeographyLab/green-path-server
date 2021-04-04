@@ -6,3 +6,6 @@ def setup_logging():
     logging.config.dictConfig(logging_conf)
 
 setup_logging()
+
+
+bike_walk_time_ratio = 4.5

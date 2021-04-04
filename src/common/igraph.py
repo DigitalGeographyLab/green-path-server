@@ -53,7 +53,8 @@ class Edge(Enum):
    geometry: LineString = 'geom'
    geom_wgs: LineString = 'geom_wgs'
    length: float = 'l'
-   length_b: float = 'lb'
+   bike_time_cost: float = 'c_bt'
+   bike_safety_cost: float = 'c_bs'
    edge_class: str = 'ec'
    street_class: str = 'sc'
    is_stairs: bool = 'b_st'
@@ -100,7 +101,8 @@ __value_converter_by_edge_attribute = {
     Edge.geometry: to_geom,
     Edge.geom_wgs: to_geom,
     Edge.length: to_float,
-    Edge.length_b: to_float,
+    Edge.bike_time_cost: to_float,
+    Edge.bike_safety_cost: to_float,
     Edge.edge_class: to_str,
     Edge.street_class: to_str,
     Edge.is_stairs: to_bool,

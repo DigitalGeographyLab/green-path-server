@@ -1,19 +1,80 @@
-import common.igraph as ig_utils
-from common.igraph import Edge as E, Node as N
-import graph_build.graph_export.utils as utils
-from geopandas import GeoDataFrame
+from typing import Union
 import geopandas as gpd
+from geopandas import GeoDataFrame
 import logging
+from common.igraph import Edge as E, Node as N
+import common.igraph as ig_utils
+import graph_build.graph_export.utils as utils
+import graph_build.common.conf as conf
 
 
 log = logging.getLogger('graph_export.main')
 
 
-def set_biking_lengths(graph, edge_gdf):
-    for edge in edge_gdf.itertuples():
-        length = getattr(edge, E.length.name)
-        biking_length = length * getattr(edge, E.bike_safety_factor.name) if length != 0.0 else 0.0
-        graph.es[getattr(edge, E.id_ig.name)][E.length_b.value] = round(biking_length, 3)
+def get_bike_cost(
+    length: Union[float, None], 
+    allows_biking: bool, 
+    is_stairs: bool,
+    safety_factor: Union[float, None]
+) -> float:
+    """
+    Returns biking cost that is proportional to travel time and adjusted with
+    biking safety factor (if provided). 
+    """
+    if not length:
+        return 0
+    
+    if is_stairs:
+        return length * conf.bike_walk_time_ratio * 15
+    
+    if not allows_biking:
+        return length * conf.bike_walk_time_ratio
+
+    if safety_factor:
+        return length * safety_factor
+
+    return length
+
+
+def set_biking_costs(graph):
+    # biking time costs
+    lengths_allows_biking_is_stairs = zip(
+        graph.es[E.length.value],
+        graph.es[E.allows_biking.value],
+        graph.es[E.is_stairs.value]
+    )
+    graph.es[E.bike_time_cost.value] = [
+        round(
+            get_bike_cost(
+                length, 
+                allows_biking, 
+                is_stairs,
+                None
+            ), 1
+        )
+        for length, allows_biking, is_stairs
+        in lengths_allows_biking_is_stairs
+    ]
+
+    # biking safety costs
+    lengths_allows_biking_is_stairs_safety_factor = zip(
+        graph.es[E.length.value],
+        graph.es[E.allows_biking.value],
+        graph.es[E.is_stairs.value],
+        graph.es[E.bike_safety_factor.value]
+    )
+    graph.es[E.bike_safety_cost.value] = [
+        round(
+            get_bike_cost(
+                length, 
+                allows_biking, 
+                is_stairs, 
+                safety_factor
+            ), 1
+        )
+        for length, allows_biking, is_stairs, safety_factor
+        in lengths_allows_biking_is_stairs_safety_factor
+    ]
 
 
 def set_uv(graph, edge_gdf):
@@ -45,7 +106,7 @@ def graph_export(
     out_node_attrs = [N.geometry]
     out_edge_attrs = [
         E.id_ig, E.uv, E.id_way, E.geometry, E.geom_wgs, 
-        E.length, E.length_b, E.noises, E.gvi
+        E.length, E.bike_time_cost, E.bike_safety_cost, E.noises, E.gvi
     ]
 
     log.info(f'Reading graph file: {in_graph}')
@@ -57,7 +118,7 @@ def graph_export(
         ig_attrs=['source', 'target']
     )
 
-    set_biking_lengths(graph, edge_gdf)
+    set_biking_costs(graph)
     set_uv(graph, edge_gdf)
     set_way_ids(graph, edge_gdf)
 
