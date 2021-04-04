@@ -7,6 +7,7 @@ on:
       - 'src/env/conda-env.yml'
       - 'docs/**'
       - '**.md'
+      - 'src/graph_builder/**'
   pull_request:
     branches:
       - '**'
