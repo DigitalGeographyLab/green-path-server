@@ -37,7 +37,7 @@ class Path:
     
     def set_path_name(self, path_name: str): self.name = path_name
 
-    def set_path_type(self, path_type: str): self.path_type = path_type
+    def set_path_type(self, path_type: PathType): self.path_type = path_type
 
     def set_path_edges(self, G: GraphHandler) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.

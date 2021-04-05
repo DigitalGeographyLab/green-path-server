@@ -80,6 +80,24 @@ def test_gvi_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]
     return test_func
 
 
+def test_path_set_1_bike_path_types(
+    path_set_1, 
+):
+    data = path_set_1
+    path_fc = data['path_FC']
+
+    for idx, feat in enumerate(path_fc['features']):
+        if idx == 0:
+            assert feat['properties']['type'] == 'fast'
+            assert feat['properties']['id'] == 'fast'
+        if idx == 1:
+            assert feat['properties']['type'] == 'safe'
+            assert feat['properties']['id'] == 'safe'
+        if idx > 1:
+            assert feat['properties']['type'] == 'green'
+            assert 'c_g' in feat['properties']['id'] 
+
+
 def test_path_set_1_fastest_path_prop_types(
     path_set_1, 
     test_line_geometry, 

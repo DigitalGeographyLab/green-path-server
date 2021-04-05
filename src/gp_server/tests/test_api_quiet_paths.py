@@ -214,6 +214,21 @@ def test_edge_props() -> Callable[[dict], None]:
     return test_func
 
 
+def test_path_set_1_walk_path_types(
+    path_set_1, 
+):
+    data = path_set_1
+    path_fc = data['path_FC']
+
+    for idx, feat in enumerate(path_fc['features']):
+        if idx == 0:
+            assert feat['properties']['type'] == 'fast'
+            assert feat['properties']['id'] == 'fast'
+        if idx > 0:
+            assert feat['properties']['type'] == 'quiet'
+            assert 'c_n' in feat['properties']['id']
+
+
 def test_path_set_1_edge_fc(
     path_set_1, 
     test_line_geometry, 

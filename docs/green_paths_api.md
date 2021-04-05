@@ -9,16 +9,16 @@ When exploring the API and the source codes, please bear in mind that the word "
 ## Endpoints
 - www.greenpaths.fi/
 - www.greenpaths.fi/paths/{travel_mode}/{routing_mode}/{orig_coords}/{dest_coords}
-- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
 - e.g. www.greenpaths.fi/paths/walk/green/60.20772,24.96716/60.2037,24.9653
+- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
 
 ## Path variables
 - travel_mode:
   - `walk`
   - `bike`
 - routing_mode:
-  - `quiet`
   - `green`
+  - `quiet`
   - `clean` (i.e. fresh air paths)
   - `fast` (only shortest/fastest route)
   - `safe`  (only safest route, only available for travel mode `bike`)

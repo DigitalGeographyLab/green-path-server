@@ -7,30 +7,38 @@ class TravelMode(Enum):
     BIKE = 'bike'
 
 class RoutingMode(Enum):
-    QUIET = 'quiet'
     GREEN = 'green'
+    QUIET = 'quiet'
     CLEAN = 'clean' # i.e. fresh air
     FAST = 'fast' # i.e. shortest
     SAFE = 'safe' # only for bike
 
 class PathType(Enum):
+    GREEN = RoutingMode.GREEN.value
+    QUIET = RoutingMode.QUIET.value
+    CLEAN = RoutingMode.CLEAN.value
     FASTEST = RoutingMode.FAST.value
     SAFEST = RoutingMode.SAFE.value
-    QUIET = RoutingMode.QUIET.value
-    GREEN = RoutingMode.GREEN.value
-    CLEAN = RoutingMode.CLEAN.value
 
 cost_prefix_dict: Dict[TravelMode, Dict[RoutingMode, str]] = {
     TravelMode.WALK: {
-        RoutingMode.QUIET: 'c_n_',
         RoutingMode.GREEN: 'c_g_',
+        RoutingMode.QUIET: 'c_n_',
         RoutingMode.CLEAN: 'c_aq_'
     },
     TravelMode.BIKE: {
-        RoutingMode.QUIET: 'c_n_b_',
         RoutingMode.GREEN: 'c_g_b_',
+        RoutingMode.QUIET: 'c_n_b_',
         RoutingMode.CLEAN: 'c_aq_b_'
     }
+}
+
+path_type_by_routing_mode: Dict[RoutingMode, PathType] = {
+    RoutingMode.GREEN: PathType.GREEN,
+    RoutingMode.QUIET: PathType.QUIET,
+    RoutingMode.CLEAN: PathType.CLEAN,
+    RoutingMode.FAST: PathType.FASTEST,
+    RoutingMode.SAFE: PathType.SAFEST,
 }
 
 class RoutingException(Exception):

@@ -10,7 +10,7 @@ from gp_server.app.path import Path
 from gp_server.app.path_set import PathSet
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.constants import (TravelMode, RoutingMode, 
-    PathType, RoutingException, ErrorKey, cost_prefix_dict)
+    PathType, RoutingException, ErrorKey, cost_prefix_dict, path_type_by_routing_mode)
 from gp_server.app.logger import Logger
 from common.igraph import Edge as E
 
@@ -24,12 +24,6 @@ sensitivities_by_routing_mode: Dict[RoutingMode, List[float]] = {
 fastest_route_edge_attr_by_travel_mode: Dict[TravelMode, E] = {
     TravelMode.WALK: E.length,
     TravelMode.BIKE: E.bike_time_cost
-}
-
-path_type_by_routing_mode: Dict[RoutingMode, PathType] = {
-    RoutingMode.QUIET: PathType.QUIET,
-    RoutingMode.CLEAN: PathType.CLEAN,
-    RoutingMode.GREEN: PathType.GREEN
 }
 
 class PathFinder:
@@ -120,7 +114,7 @@ class PathFinder:
                     self.dest_node['node'],
                     weight=fastest_route_edge_weight.value
                 )
-                self.path_set.set_fastest_path(
+                self.path_set.add_path(
                     Path(
                         orig_node = self.orig_node['node'],
                         edge_ids = fastest_path,
@@ -130,30 +124,30 @@ class PathFinder:
                 )
 
             # add safest path to path set if biking
-            if self.travel_mode == TravelMode.BIKE:
-                if self.routing_mode == RoutingMode.SAFE:
-                    self.path_set.set_fastest_path(self.find_safest_path())
-                elif not conf.research_mode:
-                    self.path_set.add_exp_optimized_path(self.find_safest_path())
+            if (self.travel_mode == TravelMode.BIKE and
+                (self.routing_mode == RoutingMode.SAFE or not conf.research_mode)):
+                    self.path_set.add_path(self.find_safest_path())
 
-            if self.routing_mode in (RoutingMode.FAST, RoutingMode.SAFE):
-                sens = []
-            else:
+            if self.routing_mode not in (RoutingMode.FAST, RoutingMode.SAFE):
                 sens = sensitivities_by_routing_mode[self.routing_mode]
                 cost_prefix = cost_prefix_dict[self.travel_mode][self.routing_mode]
                 
-            for sen in sens:
-                cost_attr = cost_prefix + str(sen)
-                least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
-                self.path_set.add_exp_optimized_path(
-                    Path(
-                        orig_node = self.orig_node['node'],
-                        edge_ids = least_cost_path,
-                        name = cost_attr,
-                        path_type = path_type_by_routing_mode[self.routing_mode],
-                        cost_coeff = sen
+                for sen in sens:
+                    cost_attr = cost_prefix + str(sen)
+                    least_cost_path = self.G.get_least_cost_path(
+                        self.orig_node['node'], 
+                        self.dest_node['node'], 
+                        weight=cost_attr
                     )
-                )
+                    self.path_set.add_path(
+                        Path(
+                            orig_node = self.orig_node['node'],
+                            edge_ids = least_cost_path,
+                            name = cost_attr,
+                            path_type = path_type_by_routing_mode[self.routing_mode],
+                            cost_coeff = sen
+                        )
+                    )
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
 
         except RoutingException as e:
@@ -179,6 +173,10 @@ class PathFinder:
             self.path_set.filter_out_exp_optimized_paths_missing_exp_data()
             self.path_set.set_path_exp_attrs(self.G.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
+
+            if conf.research_mode:
+                self.path_set.ensure_right_path_order(self.travel_mode)
+
             self.path_set.set_compare_to_fastest_attrs()
             self.log.duration(start_time, 'aggregated paths', unit='ms', log_level='info')
             
