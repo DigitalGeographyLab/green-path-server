@@ -11,7 +11,7 @@ log = logging.getLogger('graph_build.main')
 hel_extent = gpd.read_file(r'graph_build/common/hel.geojson')
 
 graph_name_options = ['kumpula', 'hma']
-graph_name = utils.read_user_input('Which graph?', graph_name_options)
+graph_name = utils.read_user_input('Which graph?', graph_name_options, True)
 
 
 if graph_name:

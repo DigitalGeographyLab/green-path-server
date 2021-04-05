@@ -73,7 +73,7 @@ class GraphHandler:
 
         noises_list = self.graph.es[E.noises.value]
         length_list = self.graph.es[E.length.value]
-        biking_length_list = self.graph.es[E.length_b.value]
+        bike_time_costs = self.graph.es[E.bike_time_cost.value]
         has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
 
         # update dB 40 lengths to graph (the lowest level in noise data is 45)
@@ -99,14 +99,14 @@ class GraphHandler:
                 ]
 
             if conf.cycling_enabled:
-                lengths_noises_b_geoms = zip(length_list, biking_length_list, noises_list, has_geom_list)
+                lengths_noises_b_geoms = zip(length_list, bike_time_costs, noises_list, has_geom_list)
                 cost_attr = cost_prefix_bike + str(sen)
 
                 self.graph.es[cost_attr] = [
                     noise_exps.get_noise_adjusted_edge_cost(
-                        sen, self.db_costs, noises, length, length_b
+                        sen, self.db_costs, noises, length, bike_time_cost
                     ) if has_geom else 0.0
-                    for length, length_b, noises, has_geom
+                    for length, bike_time_cost, noises, has_geom
                     in lengths_noises_b_geoms
                 ]
 
@@ -115,7 +115,7 @@ class GraphHandler:
         cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.GREEN]
 
         lengths = self.graph.es[E.length.value]
-        biking_lengths = self.graph.es[E.length_b.value]
+        bike_time_costs = self.graph.es[E.bike_time_cost.value]
         gvi_list = self.graph.es[E.gvi.value]
         has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
 
@@ -132,14 +132,14 @@ class GraphHandler:
                 ]
 
             if conf.cycling_enabled:
-                length_gvi_b_geom = zip(lengths, biking_lengths, gvi_list, has_geom_list)
+                length_gvi_b_geom = zip(lengths, bike_time_costs, gvi_list, has_geom_list)
                 cost_attr = cost_prefix_bike + str(sen)
                 self.graph.es[cost_attr] = [
                     gvi_exps.get_gvi_adjusted_cost(
-                        length, gvi, length_b=length_b, sen=sen
+                        length, gvi, bike_time_cost=bike_time_cost, sen=sen
                     )
                     if has_geom else 0.0
-                    for length, length_b, gvi, has_geom 
+                    for length, bike_time_cost, gvi, has_geom 
                     in length_gvi_b_geom
                 ]
 
@@ -205,7 +205,7 @@ class GraphHandler:
         return PathEdge(
             id = edge[E.id_ig.value],
             length = edge[E.length.value],
-            length_b = edge[E.length_b.value] if edge[E.length_b.value] else 0,
+            bike_time_cost = edge[E.bike_time_cost.value],
             aqi = edge[E.aqi.value],
             aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
             noises = edge[E.noises.value],
@@ -361,10 +361,36 @@ class GraphHandler:
         self.log.duration(time_projections, 'projected linking edge geoms', unit='ms')
 
         # set geometry attributes for links
-        link1_geom_attrs = { E.geometry.value: link1, E.length.value: round(link1.length, 2), E.geom_wgs.value: link1_wgs }
-        link1_rev_geom_attrs = { E.geometry.value: link1_rev, E.length.value: round(link1.length, 2), E.geom_wgs.value: link1_rev_wgs }
-        link2_geom_attrs = { E.geometry.value: link2, E.length.value: round(link2.length, 2), E.geom_wgs.value: link2_wgs }
-        link2_rev_geom_attrs = { E.geometry.value: link2_rev, E.length.value: round(link2.length, 2), E.geom_wgs.value: link2_rev_wgs }
+        link1_length = round(link1.length, 2)
+        link_1_length_attrs = {
+            E.length.value: link1_length,
+            E.bike_time_cost.value: link1_length,
+        }
+        link1_base_attrs = {
+            E.geometry.value: link1,
+            E.geom_wgs.value: link1_wgs,
+            **link_1_length_attrs
+        }
+        link1_rev_base_attrs = {
+            E.geometry.value: link1_rev,
+            E.geom_wgs.value: link1_rev_wgs,
+            **link_1_length_attrs
+        }
+        link2_length = round(link2.length, 2)
+        link_2_length_attrs = {
+            E.length.value: link2_length,
+            E.bike_time_cost.value: link2_length,
+        }
+        link2_base_attrs = {
+            E.geometry.value: link2,
+            E.geom_wgs.value: link2_wgs,
+            **link_2_length_attrs
+        }
+        link2_rev_base_attrs = {
+            E.geometry.value: link2_rev,
+            E.geom_wgs.value: link2_rev_wgs,
+            **link_2_length_attrs
+        }
         # calculate & add noise cost attributes for new linking edges
         link1_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(noise_sens, db_costs, edge_dict=edge, link_geom=link1)
         link2_noise_cost_attrs = noise_exps.get_link_edge_noise_cost_estimates(noise_sens, db_costs, edge_dict=edge, link_geom=link2)
@@ -382,19 +408,19 @@ class GraphHandler:
         if origin:
             # add linking edges from new node to existing nodes
             self.__new_edges.update({
-                (new_node, node_from): { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs },
-                (new_node, node_to): { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs },
+                (new_node, node_from): { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_base_attrs },
+                (new_node, node_to): { E.uv.value: (new_node, node_to), **link2_attrs, **link2_base_attrs },
             })
-            link1_d = { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_geom_attrs }
-            link2_d = { E.uv.value: (new_node, node_to), **link2_attrs, **link2_geom_attrs }
+            link1_d = { E.uv.value: (new_node, node_from), **link1_attrs, **link1_rev_base_attrs }
+            link2_d = { E.uv.value: (new_node, node_to), **link2_attrs, **link2_base_attrs }
         else:
             # add linking edges from existing nodes to new node
             self.__new_edges.update({
-                (node_from, new_node): { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs },
-                (node_to, new_node): { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
+                (node_from, new_node): { E.uv.value: (node_from, new_node), **link1_attrs, **link1_base_attrs },
+                (node_to, new_node): { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_base_attrs }
             })
-            link1_d = { E.uv.value: (node_from, new_node), **link1_attrs, **link1_geom_attrs }
-            link2_d = { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_geom_attrs }
+            link1_d = { E.uv.value: (node_from, new_node), **link1_attrs, **link1_base_attrs }
+            link2_d = { E.uv.value: (node_to, new_node), **link2_attrs, **link2_rev_base_attrs }
         
         self.log.duration(time_func, 'created links for new node (GraphHandler function)', unit='ms')
         return { 'node_from': node_from, 'new_node': new_node, 'node_to': node_to, 'link1': link1_d, 'link2': link2_d }

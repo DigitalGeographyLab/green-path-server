@@ -8,14 +8,27 @@ When exploring the API and the source codes, please bear in mind that the word "
 
 ## Endpoints
 - www.greenpaths.fi/
-- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
+- www.greenpaths.fi/paths/{travel_mode}/{routing_mode}/{orig_coords}/{dest_coords}
 - e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
 - e.g. www.greenpaths.fi/paths/walk/green/60.20772,24.96716/60.2037,24.9653
 
 ## Path variables
-- travel_mode: either `walk` or `bike` 
-- exposure_mode: either `quiet`, `green`, `clean` (for fresh air paths) or `short` (for shortest path only) 
-- orig/dest_coords: <latitude,longitude>, e.g. 60.20772,24.96716
+- travel_mode:
+  - `walk`
+  - `bike`
+- routing_mode:
+  - `quiet`
+  - `green`
+  - `clean` (i.e. fresh air paths)
+  - `fast` (only shortest/fastest route)
+  - `safe`  (only safest route, only available for travel mode `bike`)
+- orig/dest_coords: {latitude},{longitude}, e.g. 60.20772,24.96716
+
+## Status codes
+- Successful routing requests return route data and status code `200`
+- Possible status codes for unsuccessful requests are `400`, `404`, `500` and `503`
+- All routing errors and their status codes are defined in [src/gp_server/app/constants.py](../src/gp_server/app/constants.py)
+- In the case of an routing error, the error message is included in the property `error_key` of the response
 
 ## Response
 - 2 X GeoJSON FeatureCollections
@@ -89,12 +102,6 @@ When exploring the API and the source codes, please bear in mind that the word "
 | edge_ids | list | no | List of edge IDs of the edges that the path consists of. Note that the first and last edge may not exist in the graph as they can be virtual/temporary edges between O/D location and the nearest "real" vertex. Hence, the first and last edge of the path are included as separate properties (objects) as described below. |
 | edge_first_props | object | no | Object containing the following properties of the first edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
 | edge_last_props | object | no | Object containing the following properties of the last edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
-
-## Exceptions
-- Successful routing requests return route data and status code `200`
-- Possible status codes for unsuccessful requests are `400`, `404`, `500` and `503`
-- All routing errors and their status codes are defined in [src/gp_server/app/constants.py](../src/gp_server/app/constants.py)
-- In the case of an routing error, the error message is included in the property `error_key` of the response
 
 ## Example Path_FC
 ```yaml

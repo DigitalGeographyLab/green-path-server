@@ -21,7 +21,7 @@ def path_set_1(client) -> dict:
 
 
 @pytest.fixture
-def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]:
+def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]:
     def test_func(props: dict):
         assert isinstance(props['aqc'], (float, int))
         assert props['aqc_diff'] is None
@@ -34,11 +34,11 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['aqi_cl_pcts'], 100.0)
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
-        assert props['id'] == 'short'
+        assert props['id'] == 'fast'
         assert isinstance(props['len_diff'], (float, int))
         assert props['len_diff_rat'] is None
         assert isinstance(props['length'], (float, int))
-        assert isinstance(props['length_b'], (float, int))
+        assert isinstance(props['bike_time_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
         assert props['mdB_diff'] is None
         assert isinstance(props['missing_aqi'], bool)
@@ -53,7 +53,7 @@ def test_short_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['noises'])
         assert props['path_score'] is None
         assert isinstance(props['type'], str)
-        assert props['type'] == 'short'
+        assert props['type'] == 'fast'
     return test_func
 
 
@@ -74,7 +74,7 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['len_diff'], (float, int))
         assert isinstance(props['len_diff_rat'], (float, int))
         assert isinstance(props['length'], (float, int))
-        assert isinstance(props['length_b'], (float, int))
+        assert isinstance(props['bike_time_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
         assert isinstance(props['mdB_diff'], (float, int))
         assert isinstance(props['missing_aqi'], bool)
@@ -93,18 +93,18 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
     return test_func
 
 
-def test_path_set_1_shortest_path_prop_types(
+def test_path_set_1_fastest_path_prop_types(
     path_set_1, 
     test_line_geometry, 
-    test_short_path_prop_types
+    test_fast_path_prop_types
 ):
     _, path_fc = path_set_1
-    s_paths = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'short']
+    s_paths = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'fast']
     assert len(s_paths) == 1
     s_path = s_paths[0]
     props = s_path['properties']
     test_line_geometry(s_path['geometry'])
-    test_short_path_prop_types(props)
+    test_fast_path_prop_types(props)
 
 
 def test_path_set_1_clean_path_prop_types(
@@ -120,18 +120,18 @@ def test_path_set_1_clean_path_prop_types(
         test_clean_path_prop_types(qp['properties'])
 
 
-def test_path_set_1_shortest_path_geom(path_set_1):
+def test_path_set_1_fastest_path_geom(path_set_1):
     _, path_fc = path_set_1
-    s_path = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'short'][0]
+    s_path = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'fast'][0]
     geom = s_path['geometry']
     line = LineString(geom['coordinates'])
     proj_line = project_geom(line)
     assert round(proj_line.length, 2) == 1340.0
 
 
-def test_path_set_1_shortest_path_props(path_set_1):
+def test_path_set_1_fastest_path_props(path_set_1):
     _, path_fc = path_set_1
-    s_path = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'short'][0]
+    s_path = [feat for feat in path_fc['features'] if feat['properties']['type'] == 'fast'][0]
     props = s_path['properties']
     assert props['aqc'] == 177.86
     assert props['aqc_norm'] == 0.133
@@ -139,10 +139,10 @@ def test_path_set_1_shortest_path_props(path_set_1):
     assert props['aqi_m'] == 1.53
     assert json.dumps(props['aqi_cl_pcts'], sort_keys=True) == '{"1": 6.045, "2": 93.955}'
     assert props['cost_coeff'] == 0
-    assert props['id'] == 'short'
+    assert props['id'] == 'fast'
     assert props['len_diff'] == 0
     assert props['length'] == 1340.04
-    assert props['length_b'] == 1373.42
+    assert props['bike_time_cost'] == 1340.2
     assert props['mdB'] == 73.8
     assert not props['missing_aqi']
     assert not props['missing_noises']
@@ -152,7 +152,7 @@ def test_path_set_1_shortest_path_props(path_set_1):
     assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.672, "60": 11.977, "65": 4.5, "70": 82.851}'
     assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.008, "60": 160.5, "65": 60.298, "70": 1110.231}'
     assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.008, "60": 160.5, "65": 60.298, "70": 342.653, "75": 767.578}'
-    assert props['type'] == 'short'
+    assert props['type'] == 'fast'
 
 
 path_id_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.CLEAN]
@@ -186,7 +186,7 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['len_diff'] == 32.8
     assert props['len_diff_rat'] == 2.4
     assert props['length'] == 1372.87
-    assert props['length_b'] == 1880.01
+    assert props['bike_time_cost'] == 1533.5
     assert props['mdB'] == 69.2
     assert props['mdB_diff'] == -4.6
     assert not props['missing_aqi']
@@ -254,7 +254,7 @@ def test_clean_paths_on_same_street(
     path_set_1,
     clean_paths_on_one_street,
     test_line_geometry, 
-    test_short_path_prop_types,
+    test_fast_path_prop_types,
     test_edge_props
 ):
     """Tests that if origin and destination are on the same street, the resultsets are still as expected."""
@@ -266,7 +266,7 @@ def test_clean_paths_on_same_street(
     # paths
     assert len(path_fc['features']) == 1
     test_line_geometry(path_fc['features'][0]['geometry'])
-    test_short_path_prop_types(path_fc['features'][0]['properties'])
+    test_fast_path_prop_types(path_fc['features'][0]['properties'])
     # geom length
     coords = path_fc['features'][0]['geometry']['coordinates']
     line = LineString(coords)

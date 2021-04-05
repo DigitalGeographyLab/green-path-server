@@ -15,7 +15,7 @@ def get_gvi_sensitivities() -> List[float]:
 def get_gvi_adjusted_cost(
     length: float,
     gvi: float,
-    length_b: float = None,
+    bike_time_cost: float = None,
     sen: float = 1.0
 ) -> float:
     """Calculates GVI adjusted edge cost for GVI optimized routing.
@@ -27,19 +27,19 @@ def get_gvi_adjusted_cost(
     Args:
         length (float): Length of the edge.
         gvi (float): GVI of the edge (0-1).
-        length_b (float): Biking cost ("adjusted length") of the edge (optional, for biking).
+        bike_time_cost (float): Biking time cost (not measured in time).
         sen (float): Sensitivity coefficient (optional, default = 1)
 
     The function employs the following four assumptions: 
         1) "greyness index" = 1 - gvi
         2) "greyness cost" = (1 - gvi) * length
-        3) base cost = either length or length_b (if the latter is given)
+        3) base cost = either length or bike_time_cost (if the latter is given)
         4) GVI adjusted cost = base cost (length) + greyness cost * sensitivity
     """
 
-    base_cost = length_b if length_b else length
+    base_cost = bike_time_cost if bike_time_cost else length
     
-    return round(base_cost + (1 - gvi) * length * sen, 2)
+    return round(base_cost + (1 - gvi) * base_cost * sen, 2)
     
 
 def get_mean_gvi(gvi_exps: List[Tuple[float, float]]) -> float:

@@ -10,7 +10,7 @@ class PathEdge:
     """Class for handling edge attributes during routing."""
     id: int
     length: float
-    length_b: float
+    bike_time_cost: float
     aqi: Union[float, None]
     aqi_cl: Union[float, None]
     noises: Union[dict, None]
@@ -38,8 +38,9 @@ class PathEdge:
 
 
 edge_group_attr_by_routing_mode: Dict[RoutingMode, str] = {
-    RoutingMode.SHORT_ONLY: 'gvi_cl',
-    RoutingMode.CLEAN: 'aqi_cl',
     RoutingMode.QUIET: 'db_range',
-    RoutingMode.GREEN: 'gvi_cl'
+    RoutingMode.GREEN: 'gvi_cl',
+    RoutingMode.CLEAN: 'aqi_cl',
+    RoutingMode.FAST: 'gvi_cl',
+    RoutingMode.SAFE: 'gvi_cl',
 }

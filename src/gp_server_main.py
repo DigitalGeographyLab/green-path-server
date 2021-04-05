@@ -65,17 +65,17 @@ def edge_attrs_near_point(lat, lon):
     return jsonify(G.format_edge_dict_for_debugging(edge) if edge else None)
 
 
-@app.route('/paths/<travel_mode>/<exposure_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
-def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_lat, dest_lon):
+@app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
     try:
         travel_mode = TravelMode(travel_mode)
     except Exception:
         return create_error_response(ErrorKey.INVALID_TRAVEL_MODE_PARAM)
 
     try:
-        routing_mode = RoutingMode(exposure_mode)
+        routing_mode = RoutingMode(routing_mode)
     except Exception:
-        return create_error_response(ErrorKey.INVALID_EXPOSURE_MODE_PARAM)
+        return create_error_response(ErrorKey.INVALID_ROUTING_MODE_PARAM)
 
     if routing_mode == RoutingMode.CLEAN:
         if (not conf.clean_paths_enabled 

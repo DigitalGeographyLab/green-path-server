@@ -9,7 +9,8 @@ import gp_server.app.od_handler as od_handler
 from gp_server.app.path import Path
 from gp_server.app.path_set import PathSet
 from gp_server.app.graph_handler import GraphHandler
-from gp_server.app.constants import TravelMode, RoutingMode, PathType, RoutingException, ErrorKey, cost_prefix_dict
+from gp_server.app.constants import (TravelMode, RoutingMode, 
+    PathType, RoutingException, ErrorKey, cost_prefix_dict)
 from gp_server.app.logger import Logger
 from common.igraph import Edge as E
 
@@ -20,13 +21,34 @@ sensitivities_by_routing_mode: Dict[RoutingMode, List[float]] = {
     RoutingMode.GREEN: gvi_exps.get_gvi_sensitivities()
 }
 
+fastest_route_edge_attr_by_travel_mode: Dict[TravelMode, E] = {
+    TravelMode.WALK: E.length,
+    TravelMode.BIKE: E.bike_time_cost
+}
+
+path_type_by_routing_mode: Dict[RoutingMode, PathType] = {
+    RoutingMode.QUIET: PathType.QUIET,
+    RoutingMode.CLEAN: PathType.CLEAN,
+    RoutingMode.GREEN: PathType.GREEN
+}
+
 class PathFinder:
     """An instance of PathFinder is responsible for orchestrating all routing related tasks from finding the 
     origin & destination nodes to returning the paths as GeoJSON feature collection.
     
     """
 
-    def __init__(self, logger: Logger, travel_mode: TravelMode, routing_mode: RoutingMode, G: GraphHandler, orig_lat, orig_lon, dest_lat, dest_lon):
+    def __init__(
+        self,
+        logger: Logger,
+        travel_mode: TravelMode,
+        routing_mode: RoutingMode,
+        G: GraphHandler,
+        orig_lat,
+        orig_lon,
+        dest_lat,
+        dest_lon
+    ):
         self.log = logger
         self.travel_mode = travel_mode
         self.routing_mode = routing_mode
@@ -69,36 +91,69 @@ class PathFinder:
         if (self.orig_node == self.dest_node):
             raise RoutingException(ErrorKey.OD_SAME_LOCATION.value)
 
+    def find_safest_path(self) -> Path:
+        safest_path_edges = self.G.get_least_cost_path(
+            self.orig_node['node'],
+            self.dest_node['node'],
+            weight=E.bike_safety_cost.value
+        )
+        return Path(
+            orig_node = self.orig_node['node'],
+            edge_ids = safest_path_edges,
+            name = PathType.SAFEST.value,
+            path_type = PathType.SAFEST
+        )
+
     def find_least_cost_paths(self):
-        """Finds both shortest and least cost paths. 
+        """Finds both fastest and least cost paths. 
 
         Raises:
             Only meaningful exception strings that can be shown in UI.
         """
-        if self.routing_mode == RoutingMode.SHORT_ONLY:
-            sens = []
-            cost_prefix = ''
-        else:
-            sens = sensitivities_by_routing_mode[self.routing_mode]
-            cost_prefix = cost_prefix_dict[self.travel_mode][self.routing_mode]
+        fastest_route_edge_weight = fastest_route_edge_attr_by_travel_mode[self.travel_mode]
         
+        start_time = time.time()
         try:
-            start_time = time.time()
-            shortest_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=E.length.value)
-            self.path_set.set_shortest_path(Path(
-                orig_node=self.orig_node['node'],
-                edge_ids=shortest_path,
-                name='short',
-                path_type=PathType.SHORT))
+            if self.routing_mode != RoutingMode.SAFE:
+                fastest_path = self.G.get_least_cost_path(
+                    self.orig_node['node'],
+                    self.dest_node['node'],
+                    weight=fastest_route_edge_weight.value
+                )
+                self.path_set.set_fastest_path(
+                    Path(
+                        orig_node = self.orig_node['node'],
+                        edge_ids = fastest_path,
+                        name = PathType.FASTEST.value,
+                        path_type = PathType.FASTEST
+                    )
+                )
+
+            # add safest path to path set if biking
+            if self.travel_mode == TravelMode.BIKE:
+                if self.routing_mode == RoutingMode.SAFE:
+                    self.path_set.set_fastest_path(self.find_safest_path())
+                elif not conf.research_mode:
+                    self.path_set.add_exp_optimized_path(self.find_safest_path())
+
+            if self.routing_mode in (RoutingMode.FAST, RoutingMode.SAFE):
+                sens = []
+            else:
+                sens = sensitivities_by_routing_mode[self.routing_mode]
+                cost_prefix = cost_prefix_dict[self.travel_mode][self.routing_mode]
+                
             for sen in sens:
                 cost_attr = cost_prefix + str(sen)
                 least_cost_path = self.G.get_least_cost_path(self.orig_node['node'], self.dest_node['node'], weight=cost_attr)
-                self.path_set.add_green_path(Path(
-                    orig_node=self.orig_node['node'],
-                    edge_ids=least_cost_path,
-                    name=cost_attr,
-                    path_type=PathType[self.routing_mode.name],
-                    cost_coeff=sen))
+                self.path_set.add_exp_optimized_path(
+                    Path(
+                        orig_node = self.orig_node['node'],
+                        edge_ids = least_cost_path,
+                        name = cost_attr,
+                        path_type = path_type_by_routing_mode[self.routing_mode],
+                        cost_coeff = sen
+                    )
+                )
             self.log.duration(start_time, 'routing done', unit='ms', log_level='info')
 
         except RoutingException as e:
@@ -121,10 +176,10 @@ class PathFinder:
             self.path_set.filter_out_unique_edge_sequence_paths()
             self.path_set.set_path_edges(self.G)
             self.path_set.aggregate_path_attrs()
-            self.path_set.filter_out_green_paths_missing_exp_data()
+            self.path_set.filter_out_exp_optimized_paths_missing_exp_data()
             self.path_set.set_path_exp_attrs(self.G.db_costs)
             self.path_set.filter_out_unique_geom_paths(buffer_m=50)
-            self.path_set.set_green_path_diff_attrs()
+            self.path_set.set_compare_to_fastest_attrs()
             self.log.duration(start_time, 'aggregated paths', unit='ms', log_level='info')
             
             start_time = time.time()
