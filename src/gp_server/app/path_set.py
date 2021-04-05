@@ -43,7 +43,7 @@ class PathSet:
     
     def filter_out_exp_optimized_paths_missing_exp_data(self) -> None:
         path_count = len(self.paths)
-        if path_count == 1:
+        if path_count <= 1:
             return
 
         if self.routing_mode == RoutingMode.GREEN:
@@ -74,6 +74,8 @@ class PathSet:
     def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
         """Filters out fast / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
         """
+        if len(self.paths) <= 1:
+            return
         cost_attr = 'aqc_norm' if self.routing_mode == RoutingMode.CLEAN else 'nei_norm'
         unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(
             self.log, 
@@ -97,7 +99,7 @@ class PathSet:
         self.paths = filtered_paths
 
     def ensure_right_path_order(self, travel_mode: TravelMode):
-        if len(self.paths) == 1:
+        if len(self.paths) <= 1:
             return
         edge_speed_attr = edge_time_attr_by_travel_mode[travel_mode]
         self.paths.sort(key=lambda p: getattr(p, edge_speed_attr))
@@ -111,7 +113,7 @@ class PathSet:
                 path.set_path_name(f'f2')
 
     def set_compare_to_fastest_attrs(self) -> None:
-        if len(self.paths) == 1:
+        if len(self.paths) <= 1:
             return
         fastest_path = [
             p for p in self.paths if p.path_type == PathType.FASTEST

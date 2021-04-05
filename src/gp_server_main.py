@@ -81,6 +81,9 @@ def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
         if (not conf.clean_paths_enabled 
                 or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']):
             return create_error_response(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE)
+    
+    if travel_mode == TravelMode.WALK and routing_mode == RoutingMode.SAFE:
+        return create_error_response(ErrorKey.SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE)
 
     path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
 

@@ -51,28 +51,43 @@ def test_aqi_map_data_response(client):
     assert len(data['data']) == 387411 
 
 
-def test_invalid_request_path_error_response(client):
+def test_invalid_travel_mode_error_response(client):
     response = client.get('/paths/walkASDF/quiet/60.212031,24.968584/60.201520,24.961191')
     assert response.status_code == 400
     assert 'error_key' in json.loads(response.data)
+    assert json.loads(response.data)['error_key'] == 'invalid_travel_mode_in_request_params'
+
+
+def test_invalid_routing_mode_error_response(client):
     response = client.get('/paths/walk/quietASDF/60.212031,24.968584/60.201520,24.961191')
     assert response.status_code == 400
     assert 'error_key' in json.loads(response.data)
+    assert json.loads(response.data)['error_key'] == 'invalid_routing_mode_in_request_params'
+
+
+def test_invalid_walk_path_request_error_response(client):
+    response = client.get('/paths/walk/safe/60.212031,24.968584/60.201520,24.961191')
+    assert response.status_code == 400
+    assert 'error_key' in json.loads(response.data)
+    assert json.loads(response.data)['error_key'] == 'routing_mode_safe_is_only_for_bike'
 
 
 def test_same_od_error_response(client):
     response = client.get('/paths/walk/quiet/60.212031,24.968584/60.212031,24.968584')
     assert response.status_code == 400
     assert 'error_key' in json.loads(response.data)
+    assert json.loads(response.data)['error_key'] == 'od_are_same_location'
 
 
 def test_od_not_found_error_response(client):
     response = client.get('/paths/walk/quiet/160.212031,24.968584/60.201520,24.961191')
     assert response.status_code == 404
     assert 'error_key' in json.loads(response.data)
+    assert json.loads(response.data)['error_key'] == 'origin_not_found'
     response = client.get('/paths/walk/quiet/60.212031,24.968584/160.201520,24.961191')
     assert response.status_code == 404
     assert 'error_key' in json.loads(response.data)
+    assert json.loads(response.data)['error_key'] == 'destination_not_found'
 
 
 def test_route_only_fastest_walk_path(client):
