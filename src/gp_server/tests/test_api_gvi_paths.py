@@ -31,6 +31,7 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
         assert props['len_diff_rat'] is None
         assert isinstance(props['length'], (float, int))
         assert isinstance(props['bike_time_cost'], (float, int))
+        assert isinstance(props['bike_safety_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
         assert props['mdB_diff'] is None
         assert isinstance(props['missing_aqi'], bool)
@@ -43,7 +44,6 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
         test_exposure_prop_types(props['noise_pcts'])
         test_exposure_prop_types(props['noise_range_exps'])
         test_exposure_prop_types(props['noises'])
-        assert props['path_score'] is None
         assert isinstance(props['type'], str)
         assert props['type'] == 'fast'
     return test_func
@@ -62,6 +62,7 @@ def test_gvi_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]
         assert isinstance(props['len_diff_rat'], (float, int))
         assert isinstance(props['length'], (float, int))
         assert isinstance(props['bike_time_cost'], (float, int))
+        assert isinstance(props['bike_safety_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
         assert isinstance(props['mdB_diff'], (float, int))
         assert isinstance(props['missing_aqi'], bool)
@@ -74,7 +75,6 @@ def test_gvi_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]
         test_exposure_prop_types(props['noise_pcts'])
         test_exposure_prop_types(props['noise_range_exps'])
         test_exposure_prop_types(props['noises'])
-        assert isinstance(props['path_score'], (float, int))
         assert isinstance(props['type'], str)
         assert props['type'] == expected_path_type
     return test_func

@@ -11,6 +11,7 @@ class PathEdge:
     id: int
     length: float
     bike_time_cost: float
+    bike_safety_cost: float
     aqi: Union[float, None]
     aqi_cl: Union[float, None]
     noises: Union[dict, None]

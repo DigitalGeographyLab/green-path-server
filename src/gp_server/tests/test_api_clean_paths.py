@@ -39,6 +39,7 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
         assert props['len_diff_rat'] is None
         assert isinstance(props['length'], (float, int))
         assert isinstance(props['bike_time_cost'], (float, int))
+        assert isinstance(props['bike_safety_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
         assert props['mdB_diff'] is None
         assert isinstance(props['missing_aqi'], bool)
@@ -51,7 +52,6 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
         test_exposure_prop_types(props['noise_pcts'], 100.0)
         test_exposure_prop_types(props['noise_range_exps'])
         test_exposure_prop_types(props['noises'])
-        assert props['path_score'] is None
         assert isinstance(props['type'], str)
         assert props['type'] == 'fast'
     return test_func
@@ -75,6 +75,7 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['len_diff_rat'], (float, int))
         assert isinstance(props['length'], (float, int))
         assert isinstance(props['bike_time_cost'], (float, int))
+        assert isinstance(props['bike_safety_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
         assert isinstance(props['mdB_diff'], (float, int))
         assert isinstance(props['missing_aqi'], bool)
@@ -87,7 +88,6 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         test_exposure_prop_types(props['noise_pcts'], 100.0)
         test_exposure_prop_types(props['noise_range_exps'])
         test_exposure_prop_types(props['noises'])
-        assert isinstance(props['path_score'], (float, int))
         assert isinstance(props['type'], str)
         assert props['type'] == 'clean'
     return test_func
@@ -199,7 +199,6 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert json.dumps(props['noise_pcts'], sort_keys=True) == '{"55": 0.656, "60": 47.114, "65": 5.324, "70": 46.906}'
     assert json.dumps(props['noise_range_exps'], sort_keys=True) == '{"55": 9.008, "60": 646.815, "65": 73.09, "70": 643.961}'
     assert json.dumps(props['noises'], sort_keys=True) == '{"55": 9.008, "60": 646.815, "65": 73.09, "70": 157.939, "75": 486.022}'
-    assert props['path_score'] == 12.6
     assert props['type'] == 'clean'
 
 

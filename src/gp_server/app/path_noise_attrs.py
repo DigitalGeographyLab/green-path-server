@@ -16,13 +16,11 @@ class PathNoiseAttrs:
     mdB_diff: float = None
     nei_diff: float = None
     nei_diff_rat: float = None
-    nei_diff_score: float = None
 
     def set_noise_diff_attrs(self, s_path_noise_attrs, len_diff = 0):
         self.mdB_diff = round(self.mdB - s_path_noise_attrs.mdB, 1)
         self.nei_diff = round(self.nei - s_path_noise_attrs.nei, 1)
         self.nei_diff_rat = round((self.nei_diff / s_path_noise_attrs.nei) * 100, 1) if s_path_noise_attrs.nei > 0 else 0
-        self.nei_diff_score = round(self.nei_diff/len_diff * -1, 1) if len_diff > 0 else 0
 
     def get_noise_props_dict(self) -> dict:
         return {
@@ -34,8 +32,7 @@ class PathNoiseAttrs:
             'noise_pcts': self.noise_pcts,
             'mdB_diff':  self.mdB_diff,
             'nei_diff':  self.nei_diff,
-            'nei_diff_rat': self.nei_diff_rat,
-            'path_score': self.nei_diff_score
+            'nei_diff_rat': self.nei_diff_rat
         }
 
 

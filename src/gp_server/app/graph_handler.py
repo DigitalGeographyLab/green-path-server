@@ -206,6 +206,7 @@ class GraphHandler:
             id = edge[E.id_ig.value],
             length = edge[E.length.value],
             bike_time_cost = edge[E.bike_time_cost.value],
+            bike_safety_cost = edge[E.bike_safety_cost.value],
             aqi = edge[E.aqi.value],
             aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
             noises = edge[E.noises.value],
@@ -365,6 +366,7 @@ class GraphHandler:
         link_1_length_attrs = {
             E.length.value: link1_length,
             E.bike_time_cost.value: link1_length,
+            E.bike_safety_cost.value: link1_length
         }
         link1_base_attrs = {
             E.geometry.value: link1,
@@ -380,6 +382,7 @@ class GraphHandler:
         link_2_length_attrs = {
             E.length.value: link2_length,
             E.bike_time_cost.value: link2_length,
+            E.bike_safety_cost.value: link2_length
         }
         link2_base_attrs = {
             E.geometry.value: link2,

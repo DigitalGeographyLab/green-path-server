@@ -26,6 +26,7 @@ class Path:
         self.geometry = None
         self.length: float = None
         self.bike_time_cost: float = None
+        self.bike_safety_cost: float = None
         self.len_diff: float = 0
         self.len_diff_rat: float = None
         self.missing_aqi: bool = False
@@ -51,6 +52,7 @@ class Path:
         self.geometry = LineString(path_coords)
         self.length = round(sum(edge.length for edge in self.edges), 2)
         self.bike_time_cost = round(sum(edge.bike_time_cost for edge in self.edges), 2)
+        self.bike_safety_cost = round(sum(edge.bike_safety_cost for edge in self.edges), 2)
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge.aqi for edge in self.edges]) else False
         self.missing_gvi = True if (None in [edge.gvi for edge in self.edges]) else False
@@ -130,6 +132,7 @@ class Path:
             'id': self.name,
             'length': self.length,
             'bike_time_cost': self.bike_time_cost,
+            'bike_safety_cost': self.bike_safety_cost,
             'len_diff': self.len_diff,
             'len_diff_rat': self.len_diff_rat,
             'cost_coeff': self.cost_coeff,
