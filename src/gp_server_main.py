@@ -5,10 +5,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
 import gp_server.conf as conf
+import gp_server.app.routing as routing
 from gp_server.app.aqi_map_data_api import get_aqi_map_data_api
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
-from gp_server.app.path_finder import PathFinder
 from gp_server.app.constants import (TravelMode, RoutingMode, 
     RoutingException, ErrorKey, status_code_by_error)
 from gp_server.app.logger import Logger
@@ -27,6 +27,7 @@ if __name__ != '__main__':
 
 log = Logger(app_logger=app.logger, b_printing=False)
 
+routing_conf = routing.get_routing_conf()
 
 # initialize graph
 G = GraphHandler(log, conf.graph_file)
@@ -85,12 +86,22 @@ def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
     if travel_mode == TravelMode.WALK and routing_mode == RoutingMode.SAFE:
         return create_error_response(ErrorKey.SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE)
 
-    path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
 
+    od_settings = routing.get_od_settings(
+        travel_mode, 
+        routing_mode, 
+        routing_conf, 
+        orig_lat, 
+        orig_lon, 
+        dest_lat, 
+        dest_lon
+    )
+
+    od_nodes = None
     try:
-        path_finder.find_origin_dest_nodes()
-        path_finder.find_least_cost_paths()
-        path_FC, edge_FC = path_finder.process_paths_to_FC()
+        od_nodes = routing.find_or_create_od_nodes(log, G, routing_conf, od_settings)
+        path_set = routing.find_least_cost_paths(log, G, routing_conf, od_settings, od_nodes)
+        path_FC, edge_FC = routing.process_paths_to_FC(log, G, routing_conf, od_settings, path_set)
         return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC }), 200
 
     except RoutingException as e:
@@ -102,7 +113,7 @@ def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
         return create_error_response(ErrorKey.UNKNOWN_ERROR)
 
     finally:
-        path_finder.delete_added_graph_features()
+        if od_nodes: routing.delete_added_graph_features(log, G, od_nodes)
         G.reset_edge_cache()
 
 

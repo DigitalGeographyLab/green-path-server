@@ -1,8 +1,10 @@
-from dataclasses import dataclass, field
 from typing import Dict, Union, List, Tuple
-import gp_server.app.noise_exposures as noise_exps
+from dataclasses import dataclass, field
 import common.geometry as geom_utils
-from gp_server.app.constants import RoutingMode
+import gp_server.app.noise_exposures as noise_exps
+from shapely.geometry import Point
+from common.igraph import Edge as E
+from gp_server.app.constants import RoutingMode, TravelMode
 
 
 @dataclass
@@ -45,3 +47,27 @@ edge_group_attr_by_routing_mode: Dict[RoutingMode, str] = {
     RoutingMode.FAST: 'gvi_cl',
     RoutingMode.SAFE: 'gvi_cl',
 }
+
+@dataclass(frozen=True)
+class RoutingConf:
+    aq_sens: List[float]
+    gvi_sens: List[float]
+    noise_sens: List[float]
+    db_costs: Dict[int, float]
+    sensitivities_by_routing_mode: Dict[RoutingMode, List[float]]
+    fastest_path_cost_attr_by_travel_mode: Dict[TravelMode, E]
+
+@dataclass(frozen=True)
+class OdSettings:
+    orig_point: Point
+    dest_point: Point
+    travel_mode: TravelMode
+    routing_mode: RoutingMode
+    sensitivities: Union[List[float], None]
+
+@dataclass(frozen=True)
+class OdNodes:
+    orig_node: dict
+    dest_node: dict
+    orig_link_edges: dict
+    dest_link_edges: dict

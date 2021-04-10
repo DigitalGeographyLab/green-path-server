@@ -91,7 +91,8 @@ Learn how to use the API by reading [the documentation](docs/green_paths_api.md)
 ## Running the tests
 ```
 $ cd src
-$ python -m pytest gp_server/tests -v
+$ python -m pytest gp_server/tests_unit -v
+$ python -m pytest gp_server/tests_api -v
 $ python -m pytest aqi_updater/tests -v
 ```
 ## Links
