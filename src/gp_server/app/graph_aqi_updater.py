@@ -65,7 +65,7 @@ class GraphAqiUpdater:
         self.__scheduler.start()
 
     def __get_latest_aqi_data_utc_time_secs(self) -> Union[int, None]:
-        if self.__aqi_data_latest:
+        if self.__aqi_data_latest and not self.__aqi_update_error:
             try:
                 aqi_data_time = self.__aqi_data_latest.split('aqi_', 1)[1].split('.')[0]
                 dt = datetime.strptime(aqi_data_time, '%Y-%m-%dT%H')
@@ -77,10 +77,10 @@ class GraphAqiUpdater:
             return None
 
     def get_aqi_update_status_response(self):
-        return { 
-            'aqi_data_updated': self.__aqi_data_latest != '',
+        return {
+            'aqi_data_updated': self.__aqi_data_latest != '' and not self.__aqi_update_error,
             'aqi_data_utc_time_secs': self.__get_latest_aqi_data_utc_time_secs()
-            }
+        }
 
     def __maybe_read_update_aqi_to_graph(self):
         """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
@@ -89,9 +89,10 @@ class GraphAqiUpdater:
         if new_aqi_data_csv:
             for attempt in range(3):
                 try:
-                    self.__aqi_update_error = ''
-                    self.__read_update_aqi_to_graph(new_aqi_data_csv)
+                    aqi_data_name = self.__read_update_aqi_to_graph(new_aqi_data_csv)
                     self.__validate_graph_aqi()
+                    self.__aqi_data_latest = aqi_data_name
+                    self.__aqi_update_error = ''
                     self.__aqi_data_wip = ''
                     gc.collect()
                     break
@@ -199,13 +200,13 @@ class GraphAqiUpdater:
             self.log.info(f'Failed to merge AQI updates to edge gdf, missing {aqi_update_count - len(aqi_update_df)} edges')  
         
         aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.__get_aq_update_attrs(x['aqi'], x[E.length.name], x[E.bike_time_cost.name]), axis=1)
-        self.__G.update_edge_attr_to_graph(aqi_update_df, df_attr='aq_updates')
+        self.__G.update_edge_attrs_from_df_to_graph(aqi_update_df, df_attr='aq_updates')
 
         # update missing AQI and AQ costs to edges outside AQI data extent (AQI -> None)
         missing_aqi_update_df = pd.merge(self.__edge_df, edge_aqi_updates, on=E.id_ig.name, how='outer', suffixes=['', '_'], indicator=True)
         missing_aqi_update_df = missing_aqi_update_df[missing_aqi_update_df['_merge'] == 'left_only']
         missing_aqi_update_df['aq_updates'] = [self.__get_missing_aq_update_attrs(length) for length in missing_aqi_update_df[E.length.name]]
-        self.__G.update_edge_attr_to_graph(missing_aqi_update_df, df_attr='aq_updates')
+        self.__G.update_edge_attrs_from_df_to_graph(missing_aqi_update_df, df_attr='aq_updates')
 
         # check that all edges got either AQI value or AQI=None
         if len(self.__edge_df) != (len(missing_aqi_update_df) + len(aqi_update_df)):
@@ -221,7 +222,7 @@ class GraphAqiUpdater:
         del aqi_update_df
         del missing_aqi_update_df
         
-        self.__aqi_data_latest = aqi_updates_csv
+        return aqi_updates_csv
 
     def __validate_graph_aqi(self):
         edge_count = self.__G.graph.ecount()

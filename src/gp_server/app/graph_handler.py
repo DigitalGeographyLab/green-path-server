@@ -6,11 +6,11 @@ import gp_server.conf as conf
 from gp_server.app.types import NearestEdge, PathEdge, RoutingConf 
 from common.igraph import Edge as E, Node as N
 import common.igraph as ig_utils
-import gp_server.app.noise_exposures as noise_exps
 import gp_server.app.aq_exposures as aq_exps
 import gp_server.app.greenery_exposures as gvi_exps
+import gp_server.app.edge_cost_factory as edge_cost_factory
 from gp_server.app.logger import Logger
-from gp_server.app.constants import RoutingException, ErrorKey, cost_prefix_dict, TravelMode, RoutingMode
+from gp_server.app.constants import RoutingException, ErrorKey
 
 
 class GraphHandler:
@@ -44,9 +44,11 @@ class GraphHandler:
         self.__edge_sindex = self.__edge_gdf.sindex
         self.__node_gdf = ig_utils.get_node_gdf(self.graph)
         self.__nodes_sind = self.__node_gdf.sindex
-        if conf.quiet_paths_enabled: self.__set_noise_costs_to_edges()
+        if conf.quiet_paths_enabled:
+            edge_cost_factory.set_noise_costs_to_edges(self.graph, routing_conf)
         self.log.info('Noise costs set')
-        if conf.gvi_paths_enabled: self.__set_gvi_costs_to_graph()
+        if conf.gvi_paths_enabled:
+            edge_cost_factory.set_gvi_costs_to_graph(self.graph, routing_conf)
         self.log.info('GVI costs set')
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
@@ -62,85 +64,7 @@ class GraphHandler:
         self.log.info(f'Added {len(edge_gdf)} edges to edge_gdf')
         return edge_gdf
 
-    def __set_noise_costs_to_edges(self):
-        """Updates all noise cost attributes to a graph.
-        """
-        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.QUIET]
-        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.QUIET]
-
-        noises_list = self.graph.es[E.noises.value]
-        length_list = self.graph.es[E.length.value]
-        bike_time_costs = self.graph.es[E.bike_time_cost.value]
-        has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
-
-        # update dB 40 lengths to graph (the lowest level in noise data is 45)
-        noises_lengths = zip(noises_list, length_list)
-        self.graph.es[E.noises.value] = [
-            noise_exps.add_db_40_exp_to_noises(noises, length)
-            for noises, length
-            in noises_lengths
-        ]
-
-        for sen in self.routing_conf.noise_sens:
-
-            if conf.walking_enabled:
-                lengths_noises_b_geoms = zip(length_list, noises_list, has_geom_list)
-                cost_attr = cost_prefix + str(sen)
-
-                self.graph.es[cost_attr] = [
-                    noise_exps.get_noise_adjusted_edge_cost(
-                        sen, self.routing_conf.db_costs, noises, length
-                    ) if has_geom else 0.0
-                    for length, noises, has_geom
-                    in lengths_noises_b_geoms
-                ]
-
-            if conf.cycling_enabled:
-                lengths_noises_b_geoms = zip(length_list, bike_time_costs, noises_list, has_geom_list)
-                cost_attr = cost_prefix_bike + str(sen)
-
-                self.graph.es[cost_attr] = [
-                    noise_exps.get_noise_adjusted_edge_cost(
-                        sen, self.routing_conf.db_costs, noises, length, bike_time_cost
-                    ) if has_geom else 0.0
-                    for length, bike_time_cost, noises, has_geom
-                    in lengths_noises_b_geoms
-                ]
-
-    def __set_gvi_costs_to_graph(self):
-        cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]
-        cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.GREEN]
-
-        lengths = self.graph.es[E.length.value]
-        bike_time_costs = self.graph.es[E.bike_time_cost.value]
-        gvi_list = self.graph.es[E.gvi.value]
-        has_geom_list = [isinstance(geom, LineString) for geom in list(self.graph.es[E.geometry.value])]
-
-        for sen in self.routing_conf.gvi_sens:
-            
-            if conf.walking_enabled:
-                length_gvi_b_geom = zip(lengths, gvi_list, has_geom_list)
-                cost_attr = cost_prefix + str(sen)
-                self.graph.es[cost_attr] = [
-                    gvi_exps.get_gvi_adjusted_cost(length, gvi, sen=sen) 
-                    if has_geom else 0.0
-                    for length, gvi, has_geom 
-                    in length_gvi_b_geom
-                ]
-
-            if conf.cycling_enabled:
-                length_gvi_b_geom = zip(lengths, bike_time_costs, gvi_list, has_geom_list)
-                cost_attr = cost_prefix_bike + str(sen)
-                self.graph.es[cost_attr] = [
-                    gvi_exps.get_gvi_adjusted_cost(
-                        length, gvi, bike_time_cost=bike_time_cost, sen=sen
-                    )
-                    if has_geom else 0.0
-                    for length, bike_time_cost, gvi, has_geom 
-                    in length_gvi_b_geom
-                ]
-
-    def update_edge_attr_to_graph(self, edge_gdf, df_attr: str):
+    def update_edge_attrs_from_df_to_graph(self, edge_gdf, df_attr: str):
         """Updates the given edge attribute(s) from a DataFrame to a graph. The attribute(s) to update
         are given as series of dictionaries (df_attr): keys will be used ass attribute names and values
         as values in the graph.
@@ -159,7 +83,7 @@ class GraphHandler:
         Returns:
             The name (id) of the nearest node. None if no nearest node is found.
         """
-        for radius in [50, 100, 500]:
+        for radius in (50, 100, 500):
             possible_matches_index = list(self.__node_gdf.sindex.intersection(point.buffer(radius).bounds))
             if possible_matches_index:
                 break
@@ -222,7 +146,7 @@ class GraphHandler:
     def find_nearest_edge(self, point: Point) -> Union[NearestEdge, None]:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
-        for radius in [35, 150, 400, 650]:
+        for radius in (35, 150, 400, 650):
             possible_matches_index = list(self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds))
             if possible_matches_index:
                 possible_matches = self.__edge_gdf.iloc[possible_matches_index].copy()
@@ -337,6 +261,6 @@ class GraphHandler:
 
         # make sure that graph has the expected number of edges and nodes after routing
         if self.graph.ecount() != self.ecount:
-            self.log.error('Graph has incorrect number of edges: '+ str(self.graph.ecount()) + ' is not '+ str(self.ecount))
+            self.log.error(f'Graph has incorrect number of edges: {self.graph.ecount()} is not {self.ecount}')
         if self.graph.vcount() != self.vcount:
-            self.log.error('Graph has incorrect number of nodes: '+ str(self.graph.vcount()) + ' is not '+ str(self.vcount))
+            self.log.error(f'Graph has incorrect number of nodes: {self.graph.vcount()} is not {self.vcount}')
