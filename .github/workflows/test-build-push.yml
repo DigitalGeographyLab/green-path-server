@@ -57,6 +57,10 @@ jobs:
       run: |
           cd src/
           python -m pytest gp_server/tests_api -vv
+    - name: Test GP server (research mode)
+      run: |
+          cd src/
+          python -m pytest gp_server/tests_api_research -vv
 
   docker-build-push-gp-server:
     name: Build GP server (dev)

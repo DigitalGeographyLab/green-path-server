@@ -1,4 +1,5 @@
 from typing import List, Dict
+import gp_server.conf as conf
 import gp_server.utils.paths_overlay_filter as path_overlay_filter
 from gp_server.app.constants import RoutingMode, PathType, TravelMode, path_type_by_routing_mode
 from gp_server.app.logger import Logger
@@ -101,7 +102,12 @@ class PathSet:
     def ensure_right_path_order(self, travel_mode: TravelMode):
         if len(self.paths) <= 1:
             return
-        edge_speed_attr = edge_time_attr_by_travel_mode[travel_mode]
+
+        if conf.research_mode:
+            edge_speed_attr = 'length'
+        else:
+            edge_speed_attr = edge_time_attr_by_travel_mode[travel_mode]
+
         self.paths.sort(key=lambda p: getattr(p, edge_speed_attr))
         exp_path_type = path_type_by_routing_mode[self.routing_mode]
         for idx, path in enumerate(self.paths):
@@ -124,6 +130,8 @@ class PathSet:
 
     def get_paths_as_feature_collection(self) -> List[dict]:
         feats = [path.get_as_geojson_feature() for path in self.paths]
+        if conf.research_mode:
+            feats[0]['properties']['type'] = 'short'
         return self.__as_geojson_feature_collection(feats)
 
     def get_edges_as_feature_collection(self) -> dict:

@@ -32,7 +32,7 @@ import os
 from typing import List
 
 
-graph_subset: bool = os.getenv('GRAPH_SUBSET', 'False') == 'True'
+graph_subset: bool = os.getenv('GRAPH_SUBSET') == 'True'
 graph_id = 'kumpula' if graph_subset else 'hma'
 graph_file: str = fr'graphs/{graph_id}.graphml'
 

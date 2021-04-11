@@ -29,12 +29,12 @@ def get_bikeability(
     if allows_biking:
         return Bikeability.BIKE_OK
 
-    raise ValueError(f'Values should be booleans, were: {allows_biking} {is_stairs}')
+    raise ValueError(f'Could not set bikeability from: {allows_biking} & {is_stairs}')
 
 
 def get_bike_cost(
-    length: Union[float, None], 
-    bikeability: Bikeability, 
+    length: Union[float, None],
+    bikeability: Bikeability,
     safety_factor: Union[float, None]
 ) -> float:
     """
