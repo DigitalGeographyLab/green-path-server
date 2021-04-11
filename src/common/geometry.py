@@ -47,7 +47,6 @@ def project_geom(geom, geom_epsg: int = 4326, to_epsg: int = 3879):
 
 
 def split_line_at_point(
-    log, 
     line: LineString, 
     split_point: Point, 
     tolerance: float = 0.01
@@ -60,10 +59,9 @@ def split_line_at_point(
     for snap_dist in (tolerance, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001):
         snap_line = snap(line, split_point, snap_dist)
         split_lines = split(snap_line, split_point)
-        if (len(split_lines) > 1):
+        if len(split_lines) > 1:
             break
-    if (snap_dist != tolerance):
-        log.warning(f'Used adjusted snapping distance {snap_dist} vs {tolerance} in splitting nearest edge')
-    if (len(split_lines) == 1):
+    if len(split_lines) == 1:
         raise ValueError('Split lines to only one line instead of 2 - split point was probably not on the line')
+    
     return split_lines[0], split_lines[1]

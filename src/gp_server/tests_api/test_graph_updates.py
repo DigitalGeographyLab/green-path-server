@@ -9,6 +9,12 @@ from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 from unittest.mock import patch
+import gp_server.app.routing as routing
+
+
+__noise_sensitivities = [ 0.1, 0.4, 1.3, 3.5, 6 ]
+__aq_sensitivities = [ 5, 15, 30 ]
+__gvi_sensitivities = [ 2, 4, 8 ]
 
 
 @pytest.fixture(scope='module')
@@ -17,18 +23,27 @@ def log():
 
 
 @pytest.fixture(scope='module')
-def graph_handler(log):
-    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
-    patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
-    with patch_env_test_mode, patch_env_graph_file:
-        yield GraphHandler(log, conf.graph_file)
+def routing_conf():
+    patch_noise_sens = patch('gp_server.app.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
+    patch_aq_sens = patch('gp_server.app.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
+    patch_gvi_sens = patch('gp_server.app.greenery_exposures.get_gvi_sensitivities', return_value=__gvi_sensitivities)
+    with patch_noise_sens, patch_aq_sens, patch_gvi_sens:
+        yield routing.get_routing_conf()
 
 
 @pytest.fixture(scope='module')
-def aqi_updater(graph_handler, log):
+def graph_handler(log, routing_conf):
+    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
+    patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
+    with patch_env_test_mode, patch_env_graph_file:
+        yield GraphHandler(log, conf.graph_file, routing_conf)
+
+
+@pytest.fixture(scope='module')
+def aqi_updater(log, graph_handler, routing_conf):
     patch_env_test_mode = patch('gp_server.conf.test_mode', True)
     with patch_env_test_mode:
-        return GraphAqiUpdater(log, graph_handler, r'aqi_updates/test_data/')
+        return GraphAqiUpdater(log, graph_handler, r'aqi_updates/test_data/', routing_conf)
 
 
 def test_initial_aqi_updater_status(aqi_updater):

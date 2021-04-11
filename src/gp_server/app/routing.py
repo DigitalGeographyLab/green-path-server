@@ -1,4 +1,4 @@
-from typing import Dict, List
+from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 import time
 import gp_server.conf as conf
 import common.geometry as geom_utils
@@ -14,7 +14,7 @@ from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.constants import (
     ErrorKey, PathType, RoutingException, RoutingMode, 
     TravelMode, cost_prefix_dict, path_type_by_routing_mode)
-from gp_server.app.types import OdNodes, OdSettings, RoutingConf
+from gp_server.app.types import OdData, OdSettings, RoutingConf
 
 
 def get_routing_conf() -> RoutingConf:
@@ -37,15 +37,33 @@ def get_routing_conf() -> RoutingConf:
      )
 
 
-def get_od_settings(        
-    travel_mode: TravelMode,
-    routing_mode: RoutingMode,
+def parse_od_settings(        
+    travel_mode: str,
+    routing_mode: str,
     routing_conf: RoutingConf,
     orig_lat,
     orig_lon,
     dest_lat,
     dest_lon,
+    aqi_updater: GraphAqiUpdater
 ) -> OdSettings:
+
+    try:
+        travel_mode = TravelMode(travel_mode)
+    except Exception:
+        raise RoutingException(ErrorKey.INVALID_TRAVEL_MODE_PARAM.value)
+
+    try:
+        routing_mode = RoutingMode(routing_mode)
+    except Exception:
+        raise RoutingException(ErrorKey.INVALID_ROUTING_MODE_PARAM.value)
+
+    if routing_mode == RoutingMode.CLEAN and (not conf.clean_paths_enabled 
+                or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']):
+            raise RoutingException(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE.value)
+    
+    if travel_mode == TravelMode.WALK and routing_mode == RoutingMode.SAFE:
+        raise RoutingException(ErrorKey.SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE.value)
 
     orig_latLon = {'lat': float(orig_lat), 'lon': float(orig_lon)}
     dest_latLon = {'lat': float(dest_lat), 'lon': float(dest_lon)}
@@ -59,24 +77,24 @@ def get_od_settings(
 def find_or_create_od_nodes(
     log: Logger,
     G: GraphHandler,
-    routing_conf: RoutingConf,
     od_settings: OdSettings
-) -> OdNodes:
-    """Finds & sets origin & destination nodes and linking edges as instance variables.
+) -> OdData:
+    """Finds or creates origin & destination nodes and linking edges.
 
     Raises:
         RoutingException
     """
     start_time = time.time()
     try:
-        orig_node, dest_node, orig_link_edges, dest_link_edges = od_handler.get_orig_dest_nodes_and_linking_edges(
-            log, G, od_settings.orig_point, od_settings.dest_point, routing_conf.aq_sens, routing_conf.noise_sens, routing_conf.db_costs)
+        od_data = od_handler.get_orig_dest_nodes_and_linking_edges(
+            G, od_settings.orig_point, od_settings.dest_point
+        )
         log.duration(start_time, 'origin & destination nodes set', unit='ms', log_level='info')
 
-        if orig_node == dest_node:
+        if od_data.orig_node.id == od_data.dest_node.id:
             raise RoutingException(ErrorKey.OD_SAME_LOCATION.value)
-        
-        return OdNodes(orig_node, dest_node, orig_link_edges, dest_link_edges)
+
+        return od_data
 
     except RoutingException as e:
         raise e
@@ -85,14 +103,14 @@ def find_or_create_od_nodes(
         raise RoutingException(ErrorKey.ORIGIN_OR_DEST_NOT_FOUND.value)
 
 
-def find_safest_path(G: GraphHandler, od_nodes: OdNodes) -> Path:
+def find_safest_path(G: GraphHandler, od_nodes: OdData) -> Path:
     safest_path_edges = G.get_least_cost_path(
-        od_nodes.orig_node['node'],
-        od_nodes.dest_node['node'],
+        od_nodes.orig_node.id,
+        od_nodes.dest_node.id,
         weight=E.bike_safety_cost.value
     )
     return Path(
-        orig_node = od_nodes.orig_node['node'],
+        orig_node = od_nodes.orig_node.id,
         edge_ids = safest_path_edges,
         name = PathType.SAFEST.value,
         path_type = PathType.SAFEST
@@ -104,7 +122,7 @@ def find_least_cost_paths(
     G: GraphHandler,
     routing_conf: RoutingConf,
     od_settings: OdSettings,
-    od_nodes: OdNodes,
+    od_nodes: OdData,
 ) -> PathSet:
     """Finds both fastest and least cost paths. 
 
@@ -118,13 +136,13 @@ def find_least_cost_paths(
     try:
         if od_settings.routing_mode != RoutingMode.SAFE:
             fastest_path = G.get_least_cost_path(
-                od_nodes.orig_node['node'],
-                od_nodes.dest_node['node'],
+                od_nodes.orig_node.id,
+                od_nodes.dest_node.id,
                 weight=fastest_path_cost_attr.value
             )
             path_set.add_path(
                 Path(
-                    orig_node = od_nodes.orig_node['node'],
+                    orig_node = od_nodes.orig_node.id,
                     edge_ids = fastest_path,
                     name = PathType.FASTEST.value,
                     path_type = PathType.FASTEST
@@ -142,13 +160,13 @@ def find_least_cost_paths(
             for sen in od_settings.sensitivities:
                 cost_attr = f'{cost_prefix}{sen}'
                 least_cost_path = G.get_least_cost_path(
-                    od_nodes.orig_node['node'], 
-                    od_nodes.dest_node['node'], 
+                    od_nodes.orig_node.id, 
+                    od_nodes.dest_node.id, 
                     weight=cost_attr
                 )
                 path_set.add_path(
                     Path(
-                        orig_node = od_nodes.orig_node['node'],
+                        orig_node = od_nodes.orig_node.id,
                         edge_ids = least_cost_path,
                         name = cost_attr,
                         path_type = path_type_by_routing_mode[od_settings.routing_mode],
@@ -207,13 +225,9 @@ def process_paths_to_FC(
         raise RoutingException(ErrorKey.PATH_PROCESSING_ERROR.value)
 
 
-def delete_added_graph_features(log: Logger, G: GraphHandler, od_nodes: OdNodes):
-    """Keeps a graph clean by removing new nodes & edges created during routing from the graph.
+def delete_added_graph_features(G: GraphHandler, od_nodes: OdData):
+    """Keeps the graph clean by removing new nodes & edges created during routing from the graph.
     """
-    log.debug('Deleting created nodes & edges from the graph')
-    G.delete_added_linking_edges(
-        orig_edges=od_nodes.orig_link_edges,
-        orig_node=od_nodes.orig_node, 
-        dest_edges=od_nodes.dest_link_edges,
-        dest_node=od_nodes.dest_node
-    )
+    delete_o_node = (od_nodes.orig_node.id,) if od_nodes.orig_link_edges else ()
+    delete_d_node = (od_nodes.dest_node.id,) if od_nodes.dest_link_edges else ()
+    G.drop_nodes_edges(delete_o_node + delete_d_node)

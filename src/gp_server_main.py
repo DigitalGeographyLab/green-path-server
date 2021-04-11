@@ -30,10 +30,10 @@ log = Logger(app_logger=app.logger, b_printing=False)
 routing_conf = routing.get_routing_conf()
 
 # initialize graph
-G = GraphHandler(log, conf.graph_file)
+G = GraphHandler(log, conf.graph_file, routing_conf)
 
 if conf.clean_paths_enabled:
-    aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/')
+    aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/', routing_conf)
 
 # start AQI map data service
 aqi_map_data_api = get_aqi_map_data_api(log, r'aqi_updates/')
@@ -68,38 +68,25 @@ def edge_attrs_near_point(lat, lon):
 
 @app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
 def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
-    try:
-        travel_mode = TravelMode(travel_mode)
-    except Exception:
-        return create_error_response(ErrorKey.INVALID_TRAVEL_MODE_PARAM)
-
-    try:
-        routing_mode = RoutingMode(routing_mode)
-    except Exception:
-        return create_error_response(ErrorKey.INVALID_ROUTING_MODE_PARAM)
-
-    if routing_mode == RoutingMode.CLEAN:
-        if (not conf.clean_paths_enabled 
-                or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']):
-            return create_error_response(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE)
     
-    if travel_mode == TravelMode.WALK and routing_mode == RoutingMode.SAFE:
-        return create_error_response(ErrorKey.SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE)
-
-
-    od_settings = routing.get_od_settings(
-        travel_mode, 
-        routing_mode, 
-        routing_conf, 
-        orig_lat, 
-        orig_lon, 
-        dest_lat, 
-        dest_lon
-    )
+    try:
+        od_settings = routing.parse_od_settings(
+            travel_mode,
+            routing_mode,
+            routing_conf,
+            orig_lat,
+            orig_lon,
+            dest_lat,
+            dest_lon,
+            aqi_updater
+        )
+    except RoutingException as e:
+        log.error(traceback.format_exc())
+        return create_error_response(str(e))
 
     od_nodes = None
     try:
-        od_nodes = routing.find_or_create_od_nodes(log, G, routing_conf, od_settings)
+        od_nodes = routing.find_or_create_od_nodes(log, G, od_settings)
         path_set = routing.find_least_cost_paths(log, G, routing_conf, od_settings, od_nodes)
         path_FC, edge_FC = routing.process_paths_to_FC(log, G, routing_conf, od_settings, path_set)
         return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC }), 200
@@ -113,7 +100,7 @@ def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
         return create_error_response(ErrorKey.UNKNOWN_ERROR)
 
     finally:
-        if od_nodes: routing.delete_added_graph_features(log, G, od_nodes)
+        if od_nodes: routing.delete_added_graph_features(G, od_nodes)
         G.reset_edge_cache()
 
 

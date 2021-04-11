@@ -12,12 +12,12 @@ __aq_sensitivities = [5, 15, 30]
 __gvi_sensitivities = [2, 4, 8]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def log():
     yield Logger()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def routing_conf():
     patch_noise_sens = patch('gp_server.conf.noise_sensitivities', __noise_sensitivities)
     patch_aq_sens = patch('gp_server.conf.aq_sensitivities', __aq_sensitivities)
@@ -26,7 +26,7 @@ def routing_conf():
         yield routing.get_routing_conf()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def graph_handler(log):
     patch_env_test_mode = patch('gp_server.conf.test_mode', True)
     patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
@@ -36,7 +36,7 @@ def graph_handler(log):
     patch_gvi_sens = patch('gp_server.conf.gvi_sensitivities', __gvi_sensitivities)
 
     with patch_env_test_mode, patch_env_graph_file, patch_noise_sens, patch_aq_sens, patch_gvi_sens:
-        yield GraphHandler(log, conf.graph_file)
+        yield GraphHandler(log, conf.graph_file, routing.get_routing_conf())
 
 
 @pytest.fixture
