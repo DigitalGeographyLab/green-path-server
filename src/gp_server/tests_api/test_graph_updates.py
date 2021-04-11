@@ -52,7 +52,7 @@ def test_initial_aqi_updater_status(aqi_updater):
     assert aqi_status['aqi_data_utc_time_secs'] == None
 
 
-def test_aqi_graph_update(aqi_updater, graph_handler):
+def test_updates_aqi_values_to_graph(aqi_updater, graph_handler):
     # do AQI -> graph update
     aqi_edge_updates_csv = 'aqi_2019-11-08T14.csv'
     aqi_updater._GraphAqiUpdater__read_update_aqi_to_graph(aqi_edge_updates_csv)
@@ -67,11 +67,6 @@ def test_aqi_graph_update(aqi_updater, graph_handler):
     aqi_updates_none = [aqi for aqi in aqi_updates if not aqi]
     assert len(aqi_updates_ok) == 16469
     assert len(aqi_updates_none) == 174
-
-    # aqi updater status response
-    aqi_status = aqi_updater.get_aqi_update_status_response()
-    assert aqi_status['aqi_data_updated'] == True
-    assert aqi_status['aqi_data_utc_time_secs'] > 1000000000
 
 
 def test_noise_cost_edge_attributes(graph_handler):

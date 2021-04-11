@@ -1,3 +1,5 @@
+from collections import Counter
+from graph_build.graph_export.types import Bikeability
 import geopandas as gpd
 import pytest
 import graph_build.graph_export.main as graph_export
@@ -10,6 +12,11 @@ base_dir = r'graph_build/tests/graph_export/'
 hel_extent = gpd.read_file(fr'graph_build/tests/common/hel.geojson')
 
 
+@pytest.fixture()
+def graph_in():
+    yield ig_utils.read_graphml(fr'{base_dir}graph_in/{graph_name}.graphml')
+
+
 @pytest.fixture(scope='session')
 def graph():
     graph_export.graph_export(
@@ -18,6 +25,16 @@ def graph():
         hel_extent
     )
     yield ig_utils.read_graphml(fr'{base_dir}graph_out/{graph_name}.graphml')
+
+
+def test_parses_bikeabilities_as_expected(graph_in):
+    expected_bikeabilities = {
+        Bikeability.BIKE_OK: 10715,
+        Bikeability.NO_BIKE: 5674,
+        Bikeability.NO_BIKE_STAIRS: 254
+    }
+    bikeabilities = dict(Counter(graph_export.get_bikeabilities(graph_in)))
+    assert bikeabilities == expected_bikeabilities
 
 
 def test_feature_counts(graph):

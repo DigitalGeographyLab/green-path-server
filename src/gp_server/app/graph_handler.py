@@ -23,7 +23,7 @@ class GraphHandler:
         __edges_sind: Spatial index of the edges GeoDataFrame.
         __node_gdf: The nodes of the graph as a GeoDataFrame.
         __nodes_sind: Spatial index of the nodes GeoDataFrame.
-        __edge_cache: A cache of path edges for current routing request. 
+        __path_edge_cache: A cache of path edges for current routing request. 
     """
 
     def __init__(self, logger: Logger, graph_file: str, routing_conf: RoutingConf):
@@ -52,7 +52,7 @@ class GraphHandler:
         self.log.info('GVI costs set')
         self.graph.es[E.aqi.value] = None # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
-        self.__edge_cache: Dict[int, PathEdge] = {}
+        self.__path_edge_cache: Dict[int, PathEdge] = {}
 
     def __get_edge_gdf(self):
         edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[E.id_way])
@@ -175,7 +175,7 @@ class GraphHandler:
         path_edges: List[PathEdge] = []
         
         for edge_id in edge_ids:
-            edge_d = self.__edge_cache.get(edge_id)
+            edge_d = self.__path_edge_cache.get(edge_id)
             if edge_d:
                 path_edges.append(edge_d)
                 continue
@@ -183,7 +183,7 @@ class GraphHandler:
             path_edge = self.get_edge_object_by_id(edge_id)
             
             if path_edge:
-                self.__edge_cache[edge_id] = path_edge
+                self.__path_edge_cache[edge_id] = path_edge
                 path_edges.append(path_edge)
 
         return path_edges
@@ -248,7 +248,7 @@ class GraphHandler:
             raise RoutingException(ErrorKey.OD_SAME_LOCATION.value)
 
     def reset_edge_cache(self):
-        self.__edge_cache = {}
+        self.__path_edge_cache = {}
 
     def drop_nodes_edges(self, node_ids = Tuple) -> None:
         """Removes nodes and connected edges from the graph.
