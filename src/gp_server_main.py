@@ -63,7 +63,7 @@ def aqi_map_data():
 def edge_attrs_near_point(lat, lon):
     point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon({'lat': float(lat), 'lon': float(lon)}))
     edge = G.find_nearest_edge(point)
-    return jsonify(G.format_edge_dict_for_debugging(edge) if edge else None)
+    return jsonify(G.format_edge_dict_for_debugging(edge.attrs) if edge else None)
 
 
 @app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')

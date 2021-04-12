@@ -1,3 +1,4 @@
+from typing import List
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 import time
 import gp_server.conf as conf
@@ -131,6 +132,7 @@ def find_least_cost_paths(
     """
     fastest_path_cost_attr = routing_conf.fastest_path_cost_attr_by_travel_mode[od_settings.travel_mode]
     path_set = PathSet(log, od_settings.routing_mode)
+    paths: List[Path] = []
     
     start_time = time.time()
     try:
@@ -140,7 +142,7 @@ def find_least_cost_paths(
                 od_nodes.dest_node.id,
                 weight=fastest_path_cost_attr.value
             )
-            path_set.add_path(
+            paths.append(
                 Path(
                     orig_node = od_nodes.orig_node.id,
                     edge_ids = fastest_path,
@@ -152,7 +154,7 @@ def find_least_cost_paths(
         # add safest path to path set if biking
         if (od_settings.travel_mode == TravelMode.BIKE and
             (od_settings.routing_mode == RoutingMode.SAFE or not conf.research_mode)):
-                path_set.add_path(find_safest_path(G, od_nodes))
+                paths.append(find_safest_path(G, od_nodes))
 
         if od_settings.routing_mode not in (RoutingMode.FAST, RoutingMode.SAFE):
             cost_prefix = cost_prefix_dict[od_settings.travel_mode][od_settings.routing_mode]
@@ -164,7 +166,7 @@ def find_least_cost_paths(
                     od_nodes.dest_node.id, 
                     weight=cost_attr
                 )
-                path_set.add_path(
+                paths.append(
                     Path(
                         orig_node = od_nodes.orig_node.id,
                         edge_ids = least_cost_path,
@@ -173,6 +175,7 @@ def find_least_cost_paths(
                         cost_coeff = sen
                     )
                 )
+        path_set.set_unique_paths(paths)
         log.duration(start_time, 'routing done', unit='ms', log_level='info')
 
         return path_set
@@ -201,15 +204,15 @@ def process_paths_to_FC(
     """
     start_time = time.time()
     try:
-        path_set.filter_out_unique_edge_sequence_paths()
         path_set.set_path_edges(G)
         path_set.aggregate_path_attrs()
-        path_set.filter_out_exp_optimized_paths_missing_exp_data()
-        path_set.set_path_exp_attrs(routing_conf.db_costs)
-        path_set.filter_out_unique_geom_paths(buffer_m=50)
 
         if conf.research_mode:
             path_set.ensure_right_path_order(od_settings.travel_mode)
+        
+        path_set.filter_out_exp_optimized_paths_missing_exp_data()
+        path_set.set_path_exp_attrs(routing_conf.db_costs)
+        path_set.filter_out_unique_geom_paths(buffer_m=50)
 
         path_set.set_compare_to_fastest_attrs()
         log.duration(start_time, 'aggregated paths', unit='ms', log_level='info')

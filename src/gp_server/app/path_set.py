@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import gp_server.conf as conf
 import gp_server.utils.paths_overlay_filter as path_overlay_filter
 from gp_server.app.constants import RoutingMode, PathType, TravelMode, path_type_by_routing_mode
@@ -20,19 +20,16 @@ class PathSet:
     def __init__(self, logger: Logger, routing_mode: RoutingMode):
         self.log = logger
         self.routing_mode = routing_mode
-        self.paths: List[Path] = []
+        self.paths: Tuple[Path] = ()
 
-    def add_path(self, path: Path) -> None:
-        self.paths.append(path)
-
-    def filter_out_unique_edge_sequence_paths(self) -> None:
+    def set_unique_paths(self, paths: List[Path]) -> None:
         filtered: List[Path] = []
         prev_edge_ids: List[int] = []
-        for path in self.paths:
+        for path in paths:
             if path.edge_ids != prev_edge_ids:
                 filtered.append(path)
             prev_edge_ids = path.edge_ids
-        self.paths = filtered
+        self.paths = tuple(filtered)
 
     def set_path_edges(self, G) -> None:
         for p in self.paths:
@@ -41,27 +38,46 @@ class PathSet:
     def aggregate_path_attrs(self) -> None:
         for p in self.paths:
             p.aggregate_path_attrs(self.log)
-    
+
+    def ensure_right_path_order(self, travel_mode: TravelMode):
+        if len(self.paths) <= 1:
+            return
+
+        if conf.research_mode:
+            edge_speed_attr = 'length'
+        else:
+            edge_speed_attr = edge_time_attr_by_travel_mode[travel_mode]
+
+        self.paths = sorted(self.paths, key=lambda p: getattr(p, edge_speed_attr))
+        exp_path_type = path_type_by_routing_mode[self.routing_mode]
+        for idx, path in enumerate(self.paths):
+            if idx == 0:
+                path.set_path_type(PathType.FASTEST)
+                path.set_path_name(PathType.FASTEST.value)
+            elif path.path_type == PathType.FASTEST:
+                path.set_path_type(exp_path_type)
+                path.set_path_name(f'f2')
+
     def filter_out_exp_optimized_paths_missing_exp_data(self) -> None:
         path_count = len(self.paths)
         if path_count <= 1:
             return
 
         if self.routing_mode == RoutingMode.GREEN:
-            self.paths = [
+            self.paths = tuple(
                 path for path in self.paths 
-                if (path.path_type == path_type_by_routing_mode[RoutingMode.FAST] or not path.missing_gvi)
-            ]
+                if (path.path_type == PathType.FASTEST or not path.missing_gvi)
+            )
         if self.routing_mode == RoutingMode.QUIET:
-            self.paths = [
+            self.paths = tuple(
                 path for path in self.paths 
-                if (path.path_type == path_type_by_routing_mode[RoutingMode.FAST] or not path.missing_noises)
-            ]
+                if (path.path_type == PathType.FASTEST or not path.missing_noises)
+            )
         if self.routing_mode == RoutingMode.CLEAN:
-            self.paths = [
+            self.paths = tuple(
                 path for path in self.paths
-                if (path.path_type == path_type_by_routing_mode[RoutingMode.FAST] or not path.missing_aqi)
-            ]
+                if (path.path_type == PathType.FASTEST or not path.missing_aqi)
+            )
         filtered_out_count = path_count - len(self.paths)
         if filtered_out_count:
             self.log.info(f'Filtered out {filtered_out_count} green paths without exposure data')
@@ -90,40 +106,21 @@ class PathSet:
     def filter_paths_by_names(self, filter_names: List[str]) -> None:
         """Filters out fast / green paths by list of path names to keep.
         """
-        filtered_paths = [
+        filtered_paths = tuple(
             path for path in self.paths if path.name in filter_names
-        ]
+        )
         if PathType.FASTEST.value not in filter_names:
             filtered_paths[0].set_path_type(PathType.FASTEST)
             filtered_paths[0].set_path_name(PathType.FASTEST.value)
         
         self.paths = filtered_paths
 
-    def ensure_right_path_order(self, travel_mode: TravelMode):
-        if len(self.paths) <= 1:
-            return
-
-        if conf.research_mode:
-            edge_speed_attr = 'length'
-        else:
-            edge_speed_attr = edge_time_attr_by_travel_mode[travel_mode]
-
-        self.paths.sort(key=lambda p: getattr(p, edge_speed_attr))
-        exp_path_type = path_type_by_routing_mode[self.routing_mode]
-        for idx, path in enumerate(self.paths):
-            if idx == 0:
-                path.set_path_type(PathType.FASTEST)
-                path.set_path_name(PathType.FASTEST.value)
-            elif path.path_type == PathType.FASTEST:
-                path.set_path_type(exp_path_type)
-                path.set_path_name(f'f2')
-
     def set_compare_to_fastest_attrs(self) -> None:
         if len(self.paths) <= 1:
             return
-        fastest_path = [
+        fastest_path = tuple(
             p for p in self.paths if p.path_type == PathType.FASTEST
-        ][0]
+        )[0]
         for path in self.paths:
             if path.path_type != PathType.FASTEST:
                 path.set_compare_to_fastest_attrs(fastest_path)

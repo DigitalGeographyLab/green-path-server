@@ -2,7 +2,7 @@
 This module provides functionality for filtering out paths with nearly identical geometries. 
 """
 
-from typing import List, Union
+from typing import List, Tuple, Union
 from gp_server.app.path import Path
 from gp_server.app.logger import Logger
 
@@ -60,7 +60,7 @@ def __get_least_cost_path(
 
 def get_unique_paths_by_geom_overlay(
     log: Logger, 
-    all_paths: List[Path], 
+    all_paths: Tuple[Path], 
     buffer_m: int = None, 
     cost_attr: str = 'nei_norm'
 ) -> Union[List[str], None]:
