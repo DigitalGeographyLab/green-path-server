@@ -1,10 +1,11 @@
+from common.igraph import Edge as E
 from collections import Counter
 from graph_build.graph_export.types import Bikeability
 import geopandas as gpd
 import pytest
 import graph_build.graph_export.main as graph_export
 import common.igraph as ig_utils
-from common.igraph import Edge as E
+import graph_build.graph_export.bike_cost_factory as bike_costs
 
 
 graph_name = r'kumpula'
@@ -33,7 +34,7 @@ def test_parses_bikeabilities_as_expected(graph_in):
         Bikeability.NO_BIKE: 5674,
         Bikeability.NO_BIKE_STAIRS: 254
     }
-    bikeabilities = dict(Counter(graph_export.get_bikeabilities(graph_in)))
+    bikeabilities = dict(Counter(bike_costs.get_bikeabilities(graph_in)))
     assert bikeabilities == expected_bikeabilities
 
 
@@ -59,7 +60,7 @@ def test_bike_time_costs(graph):
         assert isinstance(ct, float)
 
     assert 16469 == len([l for l in time_costs if l > 0])
-    assert 61.83 == round(sum(time_costs) / len(time_costs), 2)
+    assert 71.12 == round(sum(time_costs) / len(time_costs), 2)
 
 
 def test_bike_safety_costs(graph):
@@ -69,4 +70,4 @@ def test_bike_safety_costs(graph):
         assert isinstance(cs, float)
 
     assert 16469 == len([l for l in safety_costs if l > 0])
-    assert 69.86 == round(sum(safety_costs) / len(safety_costs), 2)
+    assert 79.15 == round(sum(safety_costs) / len(safety_costs), 2)

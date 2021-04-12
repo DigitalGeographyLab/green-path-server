@@ -2,109 +2,12 @@ import logging
 import geopandas as gpd
 import common.igraph as ig_utils
 import graph_build.graph_export.utils as utils
-import graph_build.common.conf as conf
-from igraph import Graph
-from typing import Union
 from geopandas import GeoDataFrame
-from collections import Counter
 from common.igraph import Edge as E, Node as N
-from graph_build.graph_export.types import Bikeability
+import graph_build.graph_export.bike_cost_factory as bike_costs
+
 
 log = logging.getLogger('graph_export.main')
-
-
-def get_bikeability(
-    allows_biking: bool,
-    is_stairs: bool
-) -> Bikeability:    
-    if not allows_biking and is_stairs:
-        return Bikeability.NO_BIKE_STAIRS
-    
-    if not allows_biking and not is_stairs:
-        return Bikeability.NO_BIKE
-    
-    if allows_biking and is_stairs:
-        return Bikeability.BIKE_OK_STAIRS
-    
-    if allows_biking:
-        return Bikeability.BIKE_OK
-
-    raise ValueError(f'Could not set bikeability from: {allows_biking} & {is_stairs}')
-
-
-def get_bike_cost(
-    length: Union[float, None],
-    bikeability: Bikeability,
-    safety_factor: Union[float, None]
-) -> float:
-    """
-    Returns biking cost that is proportional to travel time and adjusted with
-    biking safety factor (if provided). 
-    """
-    if not length:
-        return 0
-    
-    # normal stairs (i.e. NO_BIKE_STAIRS)
-    if bikeability == Bikeability.NO_BIKE_STAIRS:
-        return length * conf.bike_walk_time_ratio * 15
-    
-    # no bike or bikeable stairs (i.e. BIKE_OK_STAIRS) = walking speed?
-    if bikeability == Bikeability.NO_BIKE or bikeability == Bikeability.BIKE_OK_STAIRS:
-        return length * conf.bike_walk_time_ratio
-
-    if safety_factor:
-        return length * safety_factor
-
-    return length
-
-
-def get_bikeabilities(graph: Graph):
-    return [
-        get_bikeability(allows_biking, is_stairs)
-        for allows_biking, is_stairs
-        in zip(
-            graph.es[E.allows_biking.value],
-            graph.es[E.is_stairs.value]
-        )
-    ]
-
-
-def set_biking_costs(graph):
-    bikeabilities = get_bikeabilities(graph)
-    log.info(f'Bikeability counts: {dict(Counter(bikeabilities))}')
-
-    # biking time costs
-    graph.es[E.bike_time_cost.value] = [
-        round(
-            get_bike_cost(
-                length,
-                bikeability,
-                None
-            ), 1
-        )
-        for length, bikeability
-        in zip(
-            graph.es[E.length.value],
-            bikeabilities
-        )
-    ]
-
-    # biking safety costs
-    graph.es[E.bike_safety_cost.value] = [
-        round(
-            get_bike_cost(
-                length,
-                bikeability,
-                safety
-            ), 1
-        )
-        for length, bikeability, safety
-        in zip(
-            graph.es[E.length.value],
-            bikeabilities,
-            graph.es[E.bike_safety_factor.value]
-        )
-    ]
 
 
 def set_uv(graph, edge_gdf):
@@ -148,7 +51,7 @@ def graph_export(
         ig_attrs=['source', 'target']
     )
 
-    set_biking_costs(graph)
+    bike_costs.set_biking_costs(graph)
     set_uv(graph, edge_gdf)
     set_way_ids(graph, edge_gdf)
 

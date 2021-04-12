@@ -1,8 +1,10 @@
-import graph_build.common.conf as conf
+import logging
+import logging.config
+from graph_build.common.logging_conf import logging_conf
+logging.config.dictConfig(logging_conf)
 import graph_build.graph_export.main as graph_export
 import graph_build.common.utils as utils
 import geopandas as gpd
-import logging
 
 
 log = logging.getLogger('graph_build.main')

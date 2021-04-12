@@ -40,6 +40,9 @@ test_mode: bool = False
 
 research_mode: bool = False
 
+walk_speed_ms: float = 1.2
+bike_speed_ms: float = 5.55
+
 walking_enabled: bool = True
 cycling_enabled: bool = True
 quiet_paths_enabled: bool = True
