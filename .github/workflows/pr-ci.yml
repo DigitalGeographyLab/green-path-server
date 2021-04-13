@@ -21,7 +21,15 @@ jobs:
       run: |
           cd src/
           python -m pytest aqi_updater/tests -vv
-    - name: Test GP server API
+    - name: Test GP server (unit)
       run: |
           cd src/
-          python -m pytest gp_server/tests -vv
+          python -m pytest gp_server/tests_unit -vv
+    - name: Test GP server (API)
+      run: |
+          cd src/
+          python -m pytest gp_server/tests_api -vv
+    - name: Test GP server (research mode)
+      run: |
+          cd src/
+          python -m pytest gp_server/tests_api_research -vv

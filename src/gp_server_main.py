@@ -5,10 +5,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
 import gp_server.conf as conf
+import gp_server.app.routing as routing
 from gp_server.app.aqi_map_data_api import get_aqi_map_data_api
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
-from gp_server.app.path_finder import PathFinder
 from gp_server.app.constants import (TravelMode, RoutingMode, 
     RoutingException, ErrorKey, status_code_by_error)
 from gp_server.app.logger import Logger
@@ -27,12 +27,13 @@ if __name__ != '__main__':
 
 log = Logger(app_logger=app.logger, b_printing=False)
 
+routing_conf = routing.get_routing_conf()
 
 # initialize graph
-G = GraphHandler(log, conf.graph_file)
+G = GraphHandler(log, conf.graph_file, routing_conf)
 
 if conf.clean_paths_enabled:
-    aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/')
+    aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/', routing_conf)
 
 # start AQI map data service
 aqi_map_data_api = get_aqi_map_data_api(log, r'aqi_updates/')
@@ -62,32 +63,32 @@ def aqi_map_data():
 def edge_attrs_near_point(lat, lon):
     point = geom_utils.project_geom(geom_utils.get_point_from_lat_lon({'lat': float(lat), 'lon': float(lon)}))
     edge = G.find_nearest_edge(point)
-    return jsonify(G.format_edge_dict_for_debugging(edge) if edge else None)
+    return jsonify(G.format_edge_dict_for_debugging(edge.attrs) if edge else None)
 
 
-@app.route('/paths/<travel_mode>/<exposure_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
-def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_lat, dest_lon):
+@app.route('/paths/<travel_mode>/<routing_mode>/<orig_lat>,<orig_lon>/<dest_lat>,<dest_lon>')
+def paths(travel_mode, routing_mode, orig_lat, orig_lon, dest_lat, dest_lon):
+    
     try:
-        travel_mode = TravelMode(travel_mode)
-    except Exception:
-        return create_error_response(ErrorKey.INVALID_TRAVEL_MODE_PARAM)
+        od_settings = routing.parse_od_settings(
+            travel_mode,
+            routing_mode,
+            routing_conf,
+            orig_lat,
+            orig_lon,
+            dest_lat,
+            dest_lon,
+            aqi_updater
+        )
+    except RoutingException as e:
+        log.error(traceback.format_exc())
+        return create_error_response(str(e))
 
+    od_nodes = None
     try:
-        routing_mode = RoutingMode(exposure_mode)
-    except Exception:
-        return create_error_response(ErrorKey.INVALID_EXPOSURE_MODE_PARAM)
-
-    if routing_mode == RoutingMode.CLEAN:
-        if (not conf.clean_paths_enabled 
-                or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']):
-            return create_error_response(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE)
-
-    path_finder = PathFinder(log, travel_mode, routing_mode, G, orig_lat, orig_lon, dest_lat, dest_lon)
-
-    try:
-        path_finder.find_origin_dest_nodes()
-        path_finder.find_least_cost_paths()
-        path_FC, edge_FC = path_finder.process_paths_to_FC()
+        od_nodes = routing.find_or_create_od_nodes(log, G, od_settings)
+        path_set = routing.find_least_cost_paths(log, G, routing_conf, od_settings, od_nodes)
+        path_FC, edge_FC = routing.process_paths_to_FC(log, G, routing_conf, od_settings, path_set)
         return jsonify({ 'path_FC': path_FC, 'edge_FC': edge_FC }), 200
 
     except RoutingException as e:
@@ -99,7 +100,7 @@ def get_short_quiet_paths(travel_mode, exposure_mode, orig_lat, orig_lon, dest_l
         return create_error_response(ErrorKey.UNKNOWN_ERROR)
 
     finally:
-        path_finder.delete_added_graph_features()
+        if od_nodes: routing.delete_added_graph_features(G, od_nodes)
         G.reset_edge_cache()
 
 

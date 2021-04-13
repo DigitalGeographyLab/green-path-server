@@ -50,21 +50,21 @@ def get_aqi_coeff(aqi: float) -> float:
 def calc_aqi_cost(
     length: float, 
     aqi_coeff: float, 
-    length_b: float = None, 
+    bike_time_cost: float = None, 
     sen: float = 1.0
 ) -> float:
     """Returns AQI based cost based on exposure (distance) to certain AQI. 
     If sensitivity value is specified, the AQI based part of the cost is multiplied by it.
     """
-    base_cost = length if not length_b else length_b
-    return round(base_cost + length * aqi_coeff * sen, 2)
+    base_cost = length if not bike_time_cost else bike_time_cost
+    return round(base_cost + base_cost * aqi_coeff * sen, 2)
 
 
 def get_aqi_costs(
     aqi: float, 
     length: float, 
     sens: List[float], 
-    length_b: float = None, 
+    bike_time_cost: float = None, 
     travel_mode: TravelMode = TravelMode.WALK
 ) -> Dict[str, float]:
     """Returns a set of AQI based costs as dictionary. The set is based on a set of different sensitivities (sens).
@@ -82,7 +82,15 @@ def get_aqi_costs(
         aqi_coeff = 10
 
     cost_prefix = cost_prefix_dict[travel_mode][RoutingMode.CLEAN]
-    aq_costs = { cost_prefix + str(sen) : calc_aqi_cost(length, aqi_coeff, length_b=length_b, sen=sen) for sen in sens }
+    aq_costs = { 
+        cost_prefix + str(sen) : calc_aqi_cost(
+            length, 
+            aqi_coeff, 
+            bike_time_cost=bike_time_cost, 
+            sen=sen
+        ) 
+        for sen in sens
+    }
     return aq_costs
 
 

@@ -7,9 +7,6 @@ between paths.
 
 from typing import List, Dict, Union
 from collections import defaultdict
-from shapely.geometry import LineString
-from common.igraph import Edge as E
-from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 import gp_server.conf as conf
 
 
@@ -151,8 +148,8 @@ def get_noise_cost(
     if not noises:
         return 0.0
     else:
-        noise_cost = sum([db_costs[db] * length * sen for db, length in noises.items()])
-        return round(noise_cost, 2)
+        noise_cost = sum([db_costs[db] * length for db, length in noises.items()])
+        return round(noise_cost * sen, 2)
 
 
 def get_noise_adjusted_edge_cost(
@@ -160,7 +157,7 @@ def get_noise_adjusted_edge_cost(
     db_costs: Dict[int, float],
     noises: Union[dict, None], 
     length: float,
-    biking_length: Union[float, None] = None
+    bike_time_cost: Union[float, None] = None
 ):
     """Returns composite edge cost as 'base_cost' + 'noise_cost', i.e.
     length + noise exposure based cost. 
@@ -172,44 +169,13 @@ def get_noise_adjusted_edge_cost(
     else:
         noise_cost = get_noise_cost(noises, db_costs, sensitivity)
 
-    base_cost = biking_length if biking_length else length
+    base_cost = bike_time_cost if bike_time_cost else length
 
-    return round(base_cost + noise_cost, 2) 
+    # if bike_time_cost is different than length, let's use that as a cost coefficient
+    # effectively this means that the same base_cost becomes present on both sides of the equation
+    b_cost_coefficient = bike_time_cost/length if bike_time_cost else 1
 
-
-def interpolate_link_noises(
-    link_len_ratio: float, 
-    link_geom: LineString, 
-    edge_geom: LineString, 
-    edge_noises: dict
-) -> dict:
-    """Interpolates noise exposures for a split edge by multiplying each contaminated distance with a proportion
-    between the edge length to the length of the original edge.
-    """
-    link_noises = {}
-    link_len_ratio = link_geom.length / edge_geom.length
-    for db in edge_noises.keys():
-        link_noises[db] = round(edge_noises[db] * link_len_ratio, 3)
-    return link_noises
-
-
-def get_link_edge_noise_cost_estimates(sens, db_costs, edge_dict=None, link_geom=None) -> dict:
-    """Estimates noise exposures and noise costs for a split edge based on noise exposures of the original edge
-    (from which the edge was split). 
-    """
-    cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.QUIET]
-    cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.QUIET]
-
-    cost_attrs = {}
-    # estimate link costs based on link length - edge length -ratio and edge noises
-    link_len_ratio = link_geom.length / edge_dict[E.geometry.value].length
-    cost_attrs[E.noises.value] = interpolate_link_noises(link_len_ratio, link_geom, edge_dict[E.geometry.value], edge_dict[E.noises.value])
-    # calculate noise sensitivity specific noise costs
-    for sen in sens:
-        noise_cost = get_noise_cost(cost_attrs[E.noises.value], db_costs, sen=sen)
-        cost_attrs[cost_prefix + str(sen)] = round(link_geom.length + noise_cost, 3)
-        cost_attrs[cost_prefix_bike + str(sen)] = round(link_geom.length + noise_cost, 3) # biking costs
-    return cost_attrs
+    return round(base_cost + noise_cost * b_cost_coefficient, 2)
 
 
 def add_db_40_exp_to_noises(noises: Union[dict, None], length: float) -> Dict[int, float]:

@@ -27,7 +27,7 @@ def read_user_input(
                 print(f'Invalid answer: "{answer}" - should be one of {option_idx}')
         else:
             print(text)
-            print(f'{options}:', end='')
+            print(f'{options}\n:', end='')
             answer = input()
             answer = answer.strip()
             if answer == '':

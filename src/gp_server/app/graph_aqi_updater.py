@@ -1,3 +1,4 @@
+from gp_server.app.types import RoutingConf
 import time
 import gc
 import random
@@ -32,7 +33,7 @@ class GraphAqiUpdater:
         __check_interval (int): The number of seconds between AQI update attempts.
     """
 
-    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str):
+    def __init__(self, logger: Logger, G: GraphHandler, aqi_dir: str, routing_conf: RoutingConf):
         self.log = logger
         self.__aqi_update_status = ''
         self.__aqi_update_error = ''
@@ -40,7 +41,7 @@ class GraphAqiUpdater:
         self.__aqi_data_latest = ''
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
-        self.__sens = aq_exps.get_aq_sensitivities()
+        self.__sens = routing_conf.aq_sens
         self.__aqi_dir = aqi_dir if not conf.test_mode else 'aqi_updates/test_data/'
         self.__scheduler = BackgroundScheduler()
         self.__check_interval = 5 + random.randint(1, 15)
@@ -54,9 +55,9 @@ class GraphAqiUpdater:
         self.__start()
 
     def __create_updater_edge_df(self, G: GraphHandler):
-        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length, E.length_b])
+        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length, E.bike_time_cost])
         edge_df[E.id_ig.name] = edge_df.index
-        edge_df = edge_df[[E.id_ig.name, E.length.name, E.length_b.name]]
+        edge_df = edge_df[[E.id_ig.name, E.length.name, E.bike_time_cost.name]]
         return edge_df
 
     def __start(self):
@@ -64,7 +65,7 @@ class GraphAqiUpdater:
         self.__scheduler.start()
 
     def __get_latest_aqi_data_utc_time_secs(self) -> Union[int, None]:
-        if self.__aqi_data_latest:
+        if self.__aqi_data_latest and not self.__aqi_update_error:
             try:
                 aqi_data_time = self.__aqi_data_latest.split('aqi_', 1)[1].split('.')[0]
                 dt = datetime.strptime(aqi_data_time, '%Y-%m-%dT%H')
@@ -76,10 +77,10 @@ class GraphAqiUpdater:
             return None
 
     def get_aqi_update_status_response(self):
-        return { 
-            'aqi_data_updated': self.__aqi_data_latest != '',
+        return {
+            'aqi_data_updated': self.__aqi_data_latest != '' and not self.__aqi_update_error,
             'aqi_data_utc_time_secs': self.__get_latest_aqi_data_utc_time_secs()
-            }
+        }
 
     def __maybe_read_update_aqi_to_graph(self):
         """Triggers an AQI to graph update if new AQI data is available and not yet updated or being updated.
@@ -88,9 +89,10 @@ class GraphAqiUpdater:
         if new_aqi_data_csv:
             for attempt in range(3):
                 try:
-                    self.__aqi_update_error = ''
-                    self.__read_update_aqi_to_graph(new_aqi_data_csv)
+                    aqi_data_name = self.__read_update_aqi_to_graph(new_aqi_data_csv)
                     self.__validate_graph_aqi()
+                    self.__aqi_data_latest = aqi_data_name
+                    self.__aqi_update_error = ''
                     self.__aqi_data_wip = ''
                     gc.collect()
                     break
@@ -140,13 +142,13 @@ class GraphAqiUpdater:
             self.__aqi_update_status = aqi_update_status
         return new_aqi_csv
 
-    def __get_aq_update_attrs(self, aqi: float, length: float, length_b: float):        
+    def __get_aq_update_attrs(self, aqi: float, length: float, bike_time_cost: float):        
         aq_costs = aq_exps.get_aqi_costs(
             aqi, length, self.__sens
         ) if conf.walking_enabled else {}
         
         aq_costs_b = aq_exps.get_aqi_costs(
-            aqi, length, self.__sens, length_b=length_b, travel_mode=TravelMode.BIKE
+            aqi, length, self.__sens, bike_time_cost=bike_time_cost, travel_mode=TravelMode.BIKE
         ) if conf.cycling_enabled else {}
 
         return {
@@ -197,14 +199,14 @@ class GraphAqiUpdater:
         if len(aqi_update_df) != aqi_update_count:
             self.log.info(f'Failed to merge AQI updates to edge gdf, missing {aqi_update_count - len(aqi_update_df)} edges')  
         
-        aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.__get_aq_update_attrs(x['aqi'], x[E.length.name], x[E.length_b.name]), axis=1)
-        self.__G.update_edge_attr_to_graph(aqi_update_df, df_attr='aq_updates')
+        aqi_update_df['aq_updates'] = aqi_update_df.apply(lambda x: self.__get_aq_update_attrs(x['aqi'], x[E.length.name], x[E.bike_time_cost.name]), axis=1)
+        self.__G.update_edge_attrs_from_df_to_graph(aqi_update_df, df_attr='aq_updates')
 
         # update missing AQI and AQ costs to edges outside AQI data extent (AQI -> None)
         missing_aqi_update_df = pd.merge(self.__edge_df, edge_aqi_updates, on=E.id_ig.name, how='outer', suffixes=['', '_'], indicator=True)
         missing_aqi_update_df = missing_aqi_update_df[missing_aqi_update_df['_merge'] == 'left_only']
         missing_aqi_update_df['aq_updates'] = [self.__get_missing_aq_update_attrs(length) for length in missing_aqi_update_df[E.length.name]]
-        self.__G.update_edge_attr_to_graph(missing_aqi_update_df, df_attr='aq_updates')
+        self.__G.update_edge_attrs_from_df_to_graph(missing_aqi_update_df, df_attr='aq_updates')
 
         # check that all edges got either AQI value or AQI=None
         if len(self.__edge_df) != (len(missing_aqi_update_df) + len(aqi_update_df)):
@@ -220,7 +222,7 @@ class GraphAqiUpdater:
         del aqi_update_df
         del missing_aqi_update_df
         
-        self.__aqi_data_latest = aqi_updates_csv
+        return aqi_updates_csv
 
     def __validate_graph_aqi(self):
         edge_count = self.__G.graph.ecount()

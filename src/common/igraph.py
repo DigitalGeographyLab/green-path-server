@@ -11,9 +11,9 @@ is read to pandas DataFrame object.
 
 """
 
+from typing import Any, List, Dict
 import ast
 from enum import Enum
-from typing import List, Dict
 import geopandas as gpd
 import igraph as ig
 from pyproj import CRS
@@ -53,7 +53,8 @@ class Edge(Enum):
    geometry: LineString = 'geom'
    geom_wgs: LineString = 'geom_wgs'
    length: float = 'l'
-   length_b: float = 'lb'
+   bike_time_cost: float = 'c_bt'
+   bike_safety_cost: float = 'c_bs'
    edge_class: str = 'ec'
    street_class: str = 'sc'
    is_stairs: bool = 'b_st'
@@ -75,6 +76,11 @@ class Edge(Enum):
    gvi: float = 'g' # combined GVI to use in routing (one of the above two)
 
 
+def as_string(value: Any):
+    if isinstance(value, bool):
+        return '1' if value else '0'
+    return str(value)
+
 def to_str(value):
     return str(value) if value != 'None' else None
 def to_int(value):
@@ -84,7 +90,8 @@ def to_float(value):
 def to_geom(value):
     return wkt.loads(value)
 def to_bool(value):
-   return ast.literal_eval(value)
+    if len(value) == 1: return value == '1'
+    return ast.literal_eval(value)
 def to_dict(value):
    return ast.literal_eval(value) if value != 'None' else None
 def to_tuple(value):
@@ -100,7 +107,8 @@ __value_converter_by_edge_attribute = {
     Edge.geometry: to_geom,
     Edge.geom_wgs: to_geom,
     Edge.length: to_float,
-    Edge.length_b: to_float,
+    Edge.bike_time_cost: to_float,
+    Edge.bike_safety_cost: to_float,
     Edge.edge_class: to_str,
     Edge.street_class: to_str,
     Edge.is_stairs: to_bool,
@@ -263,10 +271,10 @@ def export_to_graphml(
     if not n_attrs:
         for attr in Node:
             if (attr.value in Gc.vs[0].attributes()):
-                Gc.vs[attr.value] = [str(value) for value in list(Gc.vs[attr.value])]
+                Gc.vs[attr.value] = [as_string(value) for value in list(Gc.vs[attr.value])]
     else:
         for attr in n_attrs:
-            Gc.vs[attr.value] = [str(value) for value in list(Gc.vs[attr.value])]
+            Gc.vs[attr.value] = [as_string(value) for value in list(Gc.vs[attr.value])]
         # delete unspecified attributes
         for node_attr in G.vs.attribute_names():
             if (node_attr not in [attr.value for attr in n_attrs]):
@@ -275,10 +283,10 @@ def export_to_graphml(
     if not e_attrs:
         for attr in Edge:
             if (attr.value in Gc.es[0].attributes()):
-                Gc.es[attr.value] = [str(value) for value in list(Gc.es[attr.value])]
+                Gc.es[attr.value] = [as_string(value) for value in list(Gc.es[attr.value])]
     else:
         for attr in e_attrs:
-            Gc.es[attr.value] = [str(value) for value in list(Gc.es[attr.value])]
+            Gc.es[attr.value] = [as_string(value) for value in list(Gc.es[attr.value])]
         # delete unspecified attributes
         for edge_attr in G.es.attribute_names():
             if (edge_attr not in [attr.value for attr in e_attrs]):

@@ -25,6 +25,8 @@ class Path:
         self.cost_coeff: float = cost_coeff
         self.geometry = None
         self.length: float = None
+        self.bike_time_cost: float = None
+        self.bike_safety_cost: float = None
         self.len_diff: float = 0
         self.len_diff_rat: float = None
         self.missing_aqi: bool = False
@@ -36,7 +38,7 @@ class Path:
     
     def set_path_name(self, path_name: str): self.name = path_name
 
-    def set_path_type(self, path_type: str): self.path_type = path_type
+    def set_path_type(self, path_type: PathType): self.path_type = path_type
 
     def set_path_edges(self, G: GraphHandler) -> None:
         """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
@@ -49,7 +51,8 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge.coords]
         self.geometry = LineString(path_coords)
         self.length = round(sum(edge.length for edge in self.edges), 2)
-        self.length_b = round(sum(edge.length_b for edge in self.edges), 2)
+        self.bike_time_cost = round(sum(edge.bike_time_cost for edge in self.edges), 2)
+        self.bike_safety_cost = round(sum(edge.bike_safety_cost for edge in self.edges), 2)
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge.aqi for edge in self.edges]) else False
         self.missing_gvi = True if (None in [edge.gvi for edge in self.edges]) else False
@@ -75,15 +78,15 @@ class Path:
             gvi_exp_list = [(edge.gvi, edge.length) for edge in self.edges]
             self.gvi_attrs = create_gvi_attrs(gvi_exp_list)
 
-    def set_green_path_diff_attrs(self, shortest_path: 'Path') -> None:
-        self.len_diff = round(self.length - shortest_path.length, 1)
-        self.len_diff_rat = round((self.len_diff / shortest_path.length) * 100, 1) if shortest_path.length > 0 else 0
-        if self.noise_attrs and shortest_path.noise_attrs:
-            self.noise_attrs.set_noise_diff_attrs(shortest_path.noise_attrs, len_diff=self.len_diff)
-        if self.aqi_attrs and shortest_path.aqi_attrs:
-            self.aqi_attrs.set_aqi_diff_attrs(shortest_path.aqi_attrs, len_diff=self.len_diff)
-        if self.gvi_attrs and shortest_path.gvi_attrs:
-            self.gvi_attrs.set_gvi_diff_attrs(shortest_path.gvi_attrs)
+    def set_compare_to_fastest_attrs(self, fastest_path: 'Path') -> None:
+        self.len_diff = round(self.length - fastest_path.length, 1)
+        self.len_diff_rat = round((self.len_diff / fastest_path.length) * 100, 1) if fastest_path.length > 0 else 0
+        if self.noise_attrs and fastest_path.noise_attrs:
+            self.noise_attrs.set_noise_diff_attrs(fastest_path.noise_attrs, len_diff=self.len_diff)
+        if self.aqi_attrs and fastest_path.aqi_attrs:
+            self.aqi_attrs.set_aqi_diff_attrs(fastest_path.aqi_attrs, len_diff=self.len_diff)
+        if self.gvi_attrs and fastest_path.gvi_attrs:
+            self.gvi_attrs.set_gvi_diff_attrs(fastest_path.gvi_attrs)
     
     def aggregate_edge_groups_by_attr(self, grouping_attr: str) -> None:
         """Create groups of edges by PathEdge attribute values. Groups are formed by
@@ -128,7 +131,8 @@ class Path:
             'type': self.path_type.value,
             'id': self.name,
             'length': self.length,
-            'length_b': self.length_b,
+            'bike_time_cost': self.bike_time_cost,
+            'bike_safety_cost': self.bike_safety_cost,
             'len_diff': self.len_diff,
             'len_diff_rat': self.len_diff_rat,
             'cost_coeff': self.cost_coeff,

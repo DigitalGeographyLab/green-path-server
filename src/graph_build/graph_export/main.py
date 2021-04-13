@@ -1,19 +1,12 @@
-import common.igraph as ig_utils
-from common.igraph import Edge as E, Node as N
-import graph_build.graph_export.utils as utils
-from geopandas import GeoDataFrame
-import geopandas as gpd
 import logging
-
+import geopandas as gpd
+import common.igraph as ig_utils
+import graph_build.graph_export.utils as utils
+import numpy as np
+from geopandas import GeoDataFrame
+from common.igraph import Edge as E, Node as N
 
 log = logging.getLogger('graph_export.main')
-
-
-def set_biking_lengths(graph, edge_gdf):
-    for edge in edge_gdf.itertuples():
-        length = getattr(edge, E.length.name)
-        biking_length = length * getattr(edge, E.bike_safety_factor.name) if length != 0.0 else 0.0
-        graph.es[getattr(edge, E.id_ig.name)][E.length_b.value] = round(biking_length, 3)
 
 
 def set_uv(graph, edge_gdf):
@@ -44,8 +37,9 @@ def graph_export(
 
     out_node_attrs = [N.geometry]
     out_edge_attrs = [
-        E.id_ig, E.uv, E.id_way, E.geometry, E.geom_wgs, 
-        E.length, E.length_b, E.noises, E.gvi
+        E.id_ig, E.uv, E.id_way, E.geometry, E.geom_wgs,
+        E.length, E.allows_biking, E.is_stairs,
+        E.bike_safety_factor, E.noises, E.gvi
     ]
 
     log.info(f'Reading graph file: {in_graph}')
@@ -53,13 +47,16 @@ def graph_export(
 
     edge_gdf = ig_utils.get_edge_gdf(
         graph, 
-        attrs=[E.id_ig, E.length, E.bike_safety_factor], 
+        attrs=[E.id_ig, E.length], 
         ig_attrs=['source', 'target']
     )
 
-    set_biking_lengths(graph, edge_gdf)
     set_uv(graph, edge_gdf)
     set_way_ids(graph, edge_gdf)
+
+    graph.es[E.bike_safety_factor.value] = [
+        round(v, 2) if (v and np.isfinite(v)) else 1 for v in graph.es[E.bike_safety_factor.value]
+    ]
 
     # set combined GVI to GVI attribute & export graph
     graph.es[E.gvi.value] = list(graph.es[E.gvi_comb_gsv_veg.value])

@@ -1,102 +1,109 @@
 # Green paths routing API
 This page contains useful information of the green paths routing API:
 - Endpoints
-- Schema
-- Exceptions
+- Path variables
+- Status codes
+- Response schema
 
-When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is already being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it's probably a good idea to take a look at it when familiarizing with the API. 
+When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is mainly being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it can be worthwhile to take a look at it when familiarizing with the API. 
 
 ## Endpoints
 - www.greenpaths.fi/
-- www.greenpaths.fi/paths/<travel_mode>/<exposure_mode>/<orig_coords>/<dest_coords>
-- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
+- www.greenpaths.fi/paths/{travel_mode}/{routing_mode}/{orig_coords}/{dest_coords}
 - e.g. www.greenpaths.fi/paths/walk/green/60.20772,24.96716/60.2037,24.9653
+- e.g. www.greenpaths.fi/paths/bike/quiet/60.20772,24.96716/60.2037,24.9653
 
 ## Path variables
-- travel_mode: either `walk` or `bike` 
-- exposure_mode: either `quiet`, `green`, `clean` (for fresh air paths) or `short` (for shortest path only) 
-- orig/dest_coords: <latitude,longitude>, e.g. 60.20772,24.96716
+- travel_mode:
+  - `walk`
+  - `bike`
+- routing_mode:
+  - `green`
+  - `quiet`
+  - `clean` (i.e. fresh air paths)
+  - `fast` (only shortest/fastest route)
+  - `safe`  (only safest route, only available for travel mode `bike`)
+- orig/dest_coords: {latitude},{longitude}, e.g. 60.20772,24.96716
 
-## Response
-- 2 X GeoJSON FeatureCollections
-- Edge_FC & Path_FC
+## Status codes
+- Successful routing requests return route data and status code `200`
+- Possible status codes for unsuccessful requests are `400`, `404`, `500` and `503`
+- All routing errors and their status codes are defined in [src/gp_server/app/constants.py](../src/gp_server/app/constants.py)
+- In the case of an routing error, the error message is included in the property `error_key` of the response
+
+## Response schema
+### Body
+- 2 X GeoJSON FeatureCollection
+- Path_FC & Edge_FC
 
 ```
   const response = await axios.get(https://www.greenpaths.fi/paths/bike/green/60.20772,24.96716/60.2037,24.9653)
   const Path_FC = response.data.path_FC
 ```
 
-## Edge_FC
-- Contains both short and green (quiet/clean) paths
-- Geometry of the paths is split to separate lines by noise level or air quality
-- For visualizing pollutants on the paths by colours on the map
-- To be shown on top of the Path_FC layer
-
-| Property | Type | Nullable | Description  |
-| ------------- | ---- | --- | ----------- |
-| path | string | no | The name of the path to which the edge belongs to. |
-| value | number | no | Either AQI class or noise level range of the edge. |
-| p_length | number | no | The length of the path to which the edge belongs to (m). |
-| p_len_diff | number | no | Difference in length between the shortest path and the path to which the edge belongs to (m). |
-
-## Path_FC
-- Contains both short and green (quiet/clean) paths
+### Path_FC
+- Contains both fastest and exposure optimized (green/quiet/clean) paths
 - Each path as a GeoJSON feature
 - One line geometry per path
-- Several properties on noise exposure, AQI exposure and length
-- Properties on differences in length and exposures compared to the shortest path
-  - Only available for green paths (null values for the shortest path)
+- Several properties on greenery, air quality and noise exposure
+- Properties on differences in length and exposures compared to the fastest path
+  - Only available for exposure optimized paths (null values for the fastest path)
 
 | Property | Type | Nullable | Description  |
 | ------------- | ---- | --- | ----------- |
-| type | string | no | Type of the path: either “short”, “quiet” or "clean" (clean = fresh air). |
-| id | string | no | Unique name of the path within the returned FeatureCollection (e.g. “short” or “qp_0.2”). |
+| type | string | no | Type of the path, one of the following: “green”, "quiet", "clean", “fast” or "safe" (clean = fresh air). |
+| id | string | no | Unique name of the path within the returned FeatureCollection. |
 | cost_coeff | number | no | Noise or AQI sensitivity coefficient with which the green path was optimized. |
 | length | number | no | Length of the path (m). |
-| length_b | number | no | Biking safety adjusted cost of the path, derived from lengths and biking safety factors of its edges. |
-| len_diff | number | no | Difference in path length compared to the shortest path (m). |
-| len_diff_rat | number | yes | Difference in path length compared to the shortest path (%). |
+| bike_time_cost | number | no | Total cost (index) for biking, proportional to travel time. |
+| bike_safety_cost | number | no | Total cost (index) for biking, based on both travel time and biking safety. |
+| len_diff | number | no | Difference in path length compared to the fastest path (m). |
+| len_diff_rat | number | yes | Difference in path length compared to the fastest path (%). |
 | aqc | number | no | Air pollution exposure index. |
-| aqc_diff | number | yes | Difference in the air pollution exposure index compared to the shortest path. |
-| aqc_diff_rat | number | yes | Difference in the air pollution exposure index compared to the shortest path (%). |
-| aqc_diff_score | number | yes | Ratio between the difference in the air pollution exposure index and the length (compared to the shortest path) - i.e. reduction in air pollution exposure index per each additional meter walked. |
+| aqc_diff | number | yes | Difference in the air pollution exposure index compared to the fastest path. |
+| aqc_diff_rat | number | yes | Difference in the air pollution exposure index compared to the fastest path (%). |
+| aqc_diff_score | number | yes | Ratio between the difference in the air pollution exposure index and the length (compared to the fastest path) - i.e. reduction in air pollution exposure index per each additional meter walked. |
 | aqc_norm | number | no | Distance normalized air pollution exposure index. |
 | aqi_m | number | no | Mean AQI. |
-| aqi_m_diff | number | yes | Difference in mean AQI compared to the shortest path. |
+| aqi_m_diff | number | yes | Difference in mean AQI compared to the fastest path. |
 | aqi_cl_exps | object | no | Exposures (m) to different AQI classes. Keys represent class names and values exposures as meters. AQI classes are calculated as `floor(aqi * 2) - 1` and they represent (8 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0, class 9 represents the highest possible AQI (5). Class ranges are 1: 1.0-1.5, 2: 1.5-2.0, 3: 2.0-2.5 etc. |
 | aqi_cl_pcts | object | no | Exposures (%) to different AQI classes. Keys represent class names and values exposures as percentages. |
 | gvi_m | number | no | Mean green view index (GVI) on the path. |
-| gvi_m_diff | number | yes | Difference in mean GVI compared to the shortest path. |
+| gvi_m_diff | number | yes | Difference in mean GVI compared to the fastest path. |
 | gvi_cl_exps | object | no | Exposures (m) to different GVI ranges (classes). Each class (object key) represents 0.1 wide interval in the original GVI range from 0 to 1, e.g. 1: 0.0-0.1, 2: 0.1-0.2, 3: 0.2-0.3 etc. (`GVI class = ceil(gvi * 10)`). |
 | gvi_cl_pcts | object | no | Exposures (%) to different GVI ranges (classes). Same as above but object values are relative shares as percentages. |
 | missing_aqi | boolean | no | A boolean variable indicating whether AQI data was available for all edges of the path. |
 | missing_gvi | boolean | no | A boolean variable indicating whether GVI data was available for all edges of the path. |
 | missing_noises | boolean | no | A boolean variable indicating whether noise data was available for all edges of the path. |
 | mdB | number | no | dBmean |
-| mdB_diff | number | yes | Difference in dBmean compared to the shortest path. |
+| mdB_diff | number | yes | Difference in dBmean compared to the fastest path. |
 | nei | number | no | Noise exposure index (EI). See the method: utils.noise_exposures.get_noise_cost() |
-| nei_diff | number | yes | Difference in noise exposure index (EIdiff) compared to the shortest path. |
-| nei_diff_rat | number | yes | Difference in noise exposure index (EIdiff) as percentages compared to the shortest path. |
+| nei_diff | number | yes | Difference in noise exposure index (EIdiff) compared to the fastest path. |
+| nei_diff_rat | number | yes | Difference in noise exposure index (EIdiff) as percentages compared to the fastest path. |
 | nei_norm | number | no | Distance-normalized noise exposure index (EIn). |
 | noise_range_exps | object | no | Exposures (m) to different 10 dB noise level ranges. Keys represent noise levels and values distances (m). |
 | noise_pcts | object | no | Exposures (%) to different noise level ranges. Keys represent noise levels and values percentages. |
 | noises | object | no | Exposures to different noise levels. Keys represent noise levels and values distances (m). |
-| path_score | number | yes | Ratio between difference in noise exposure index and length compared to the shortest path - i.e. reduction in noise exposure index per each additional meter walked. |
 
-**Additional properties in research mode:**
+### Additional path properties in research mode
 | Property | Type | Nullable | Description  |
 | ------------- | ---- | --- | ----------- |
-| edge_ids | list | no | List of edge IDs of the edges that the path consists of. Note that the first and last edge may not exist in the graph as they can be virtual/temporary edges between O/D location and the nearest "real" vertex. Hence, the first and last edge of the path are included as separate properties (objects) as described below. |
-| edge_first_props | object | no | Object containing the following properties of the first edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
-| edge_last_props | object | no | Object containing the following properties of the last edge: id, length, aqi (?), coords, coords_wgs & noises (noises object as defined above). |
+| edge_ids | list | yes | List of edge IDs of the edges that the path consists of. Note that the first and last edge may not exist in the graph as they can be virtual/temporary edges between O/D location and the nearest "real" vertex. |
+| edge_data | list | yes | Edge data (length, aqi, gvi, mdB, coords_wgs) as list of dictionaries. |
 
-## Exceptions
-- Successful routing requests return route data and status code `200`
-- Possible status codes for unsuccessful requests are `400`, `404`, `500` and `503`
-- All routing errors and their status codes are defined in [src/gp_server/app/constants.py](../src/gp_server/app/constants.py)
-- In the case of an routing error, the error message is included in the property `error_key` of the response
+### Edge_FC
+- Contains edge geometries of both fastest and exposure optimized (green/quiet/clean) paths
+- Edge geometries are aggregated by greenery, noise level or air quality (depending on routing mode)
+- For visualizing variation in environmental data on the paths
 
-## Example Path_FC
+| Property | Type | Nullable | Description  |
+| ------------- | ---- | --- | ----------- |
+| path | string | no | The name of the path to which the edge belongs to. |
+| value | number | no | Either GVI class, AQI class or noise level range of the edge. |
+| p_length | number | no | The length of the path to which the edge belongs to (m). |
+| p_len_diff | number | no | Difference in length between the fastest path and the path to which the edge belongs to (m). |
+
+### Example Path_FC
 ```yaml
 Path_FC: {
   features: [ {
@@ -106,7 +113,8 @@ Path_FC: {
       id: "short",
       cost_coeff: 0,
       length: 492.92,
-      length_b: 521.0,
+      bike_time_cost: 521.0,
+      bike_safety_cost: 551.0,
       len_diff: 0,
       len_diff_rat: null,
       aqc: 160.62,
@@ -164,8 +172,7 @@ Path_FC: {
         60: 5.51,
         65: 9.66,
         70: 372.62
-      },
-      path_score: null,
+      }
     },
     type: “Feature”
   }, {
@@ -175,7 +182,8 @@ Path_FC: {
       id: "q_20",
       cost_coeff: 20,
       length: 629.29,
-      length_b: 650.2,
+      bike_time_cost: 521.0,
+      bike_safety_cost: 551.0,
       len_diff: 136.4,
       len_diff_rat: 27.7,
       aqc: 206.76,
@@ -233,9 +241,8 @@ Path_FC: {
         60: 132.5,
         65: 40.85,
         70: 33.91
-      },
-      path_score: 0.9,
-      },
+      }
+    },
     type: “Feature”
     },
     {...}, {...}, ... ],

@@ -1,8 +1,11 @@
-from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, Union, List, Tuple
-import gp_server.app.noise_exposures as noise_exps
+from dataclasses import dataclass, field
 import common.geometry as geom_utils
-from gp_server.app.constants import RoutingMode
+import gp_server.app.noise_exposures as noise_exps
+from shapely.geometry import Point, LineString
+from common.igraph import Edge as E
+from gp_server.app.constants import RoutingMode, TravelMode
 
 
 @dataclass
@@ -10,7 +13,8 @@ class PathEdge:
     """Class for handling edge attributes during routing."""
     id: int
     length: float
-    length_b: float
+    bike_time_cost: float
+    bike_safety_cost: float
     aqi: Union[float, None]
     aqi_cl: Union[float, None]
     noises: Union[dict, None]
@@ -38,8 +42,57 @@ class PathEdge:
 
 
 edge_group_attr_by_routing_mode: Dict[RoutingMode, str] = {
-    RoutingMode.SHORT_ONLY: 'gvi_cl',
-    RoutingMode.CLEAN: 'aqi_cl',
     RoutingMode.QUIET: 'db_range',
-    RoutingMode.GREEN: 'gvi_cl'
+    RoutingMode.GREEN: 'gvi_cl',
+    RoutingMode.CLEAN: 'aqi_cl',
+    RoutingMode.FAST: 'gvi_cl',
+    RoutingMode.SAFE: 'gvi_cl'
 }
+
+
+class Bikeability(Enum):
+    NO_BIKE_STAIRS = 1
+    NO_BIKE = 2
+    BIKE_OK_STAIRS = 3
+    BIKE_OK = 4
+
+
+@dataclass(frozen=True)
+class RoutingConf:
+    aq_sens: List[float]
+    gvi_sens: List[float]
+    noise_sens: List[float]
+    db_costs: Dict[int, float]
+    sensitivities_by_routing_mode: Dict[RoutingMode, List[float]]
+    fastest_path_cost_attr_by_travel_mode: Dict[TravelMode, E]
+
+@dataclass(frozen=True)
+class OdSettings:
+    orig_point: Point
+    dest_point: Point
+    travel_mode: TravelMode
+    routing_mode: RoutingMode
+    sensitivities: Union[List[float], None]
+
+@dataclass
+class NearestEdge:
+    attrs: dict
+    distance: float
+
+@dataclass
+class LinkToEdgeSpec:
+    edge: dict
+    snap_point: Point
+
+@dataclass
+class OdNodeData:
+    id: int
+    is_temp_node: bool
+    link_to_edge_spec: Union[LinkToEdgeSpec, None] = None
+
+@dataclass(frozen=True)
+class OdData:
+    orig_node: OdNodeData
+    dest_node: OdNodeData
+    orig_link_edges: Union[Tuple[dict], Tuple[()]]
+    dest_link_edges: Union[Tuple[dict], Tuple[()]]
