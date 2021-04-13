@@ -2,13 +2,16 @@ import pytest
 import gp_server.conf as conf
 from shapely.geometry import LineString
 from common.igraph import Edge as E
+from collections import Counter
 import gp_server.app.greenery_exposures as gvi_exps
 import gp_server.app.noise_exposures as noise_exps
+import gp_server.app.edge_cost_factory_bike as bike_costs
 from gp_server.app.logger import Logger
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 from unittest.mock import patch
+from gp_server.app.types import Bikeability
 import gp_server.app.routing as routing
 
 
@@ -83,6 +86,33 @@ def test_noise_cost_edge_attributes(graph_handler):
             assert attrs[eg_noise_cost] > attrs[E.length.value] * 10
         else:
             assert attrs[eg_noise_cost] == 0.0
+
+
+def test_bike_time_costs_are_added_to_graph(graph_handler: GraphHandler):
+    time_costs = list(graph_handler.graph.es[E.bike_time_cost.value])
+
+    for ct in time_costs:
+        assert isinstance(ct, (float, int))
+
+    assert 16469 == len([l for l in time_costs if l > 0])
+    assert 71.12 == round(sum(time_costs) / len(time_costs), 2)
+
+
+def test_bike_safety_costs_are_added_to_graph(graph_handler: GraphHandler):
+    safety_costs = list(graph_handler.graph.es[E.bike_safety_cost.value])
+
+    for cs in safety_costs:
+        assert isinstance(cs, (float, int))
+
+    assert 16469 == len([l for l in safety_costs if l > 0])
+    assert 79.14 == round(sum(safety_costs) / len(safety_costs), 2)
+
+
+def test_no_redundant_edge_attributes_left_in_the_graph(graph_handler: GraphHandler):
+    with pytest.raises(KeyError):
+        graph_handler.graph.es[E.bike_safety_factor.value]
+    with pytest.raises(KeyError):
+        graph_handler.graph.es[E.is_stairs.value]
 
 
 def test_gvi_cost_edge_attributes(graph_handler):

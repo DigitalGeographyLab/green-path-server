@@ -6,6 +6,14 @@ from common.igraph import Edge as E
 import gp_server.app.noise_exposures as noise_exps
 import gp_server.app.greenery_exposures as gvi_exps
 import gp_server.conf as conf
+import gp_server.app.edge_cost_factory_bike as bike_costs
+
+
+def set_biking_costs(graph: Graph, log):
+    bike_costs.set_biking_costs(graph, log)
+    # remove now redundant edge attributes
+    del graph.es[E.bike_safety_factor.value]
+    del graph.es[E.is_stairs.value]
 
 
 def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
@@ -30,7 +38,6 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
     for sen in routing_conf.noise_sens:
 
         if conf.walking_enabled:
-            lengths_noises_b_geoms = zip(length_list, noises_list, has_geom_list)
             cost_attr = cost_prefix + str(sen)
 
             graph.es[cost_attr] = [
@@ -38,11 +45,10 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
                     sen, routing_conf.db_costs, noises, length
                 ) if has_geom else 0.0
                 for length, noises, has_geom
-                in lengths_noises_b_geoms
+                in zip(length_list, noises_list, has_geom_list)
             ]
 
         if conf.cycling_enabled:
-            lengths_noises_b_geoms = zip(length_list, bike_time_costs, noises_list, has_geom_list)
             cost_attr = cost_prefix_bike + str(sen)
 
             graph.es[cost_attr] = [
@@ -50,7 +56,9 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
                     sen, routing_conf.db_costs, noises, length, bike_time_cost
                 ) if has_geom else 0.0
                 for length, bike_time_cost, noises, has_geom
-                in lengths_noises_b_geoms
+                in zip(
+                    length_list, bike_time_costs, noises_list, has_geom_list
+                )
             ]
 
 
@@ -68,17 +76,15 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
     for sen in routing_conf.gvi_sens:
         
         if conf.walking_enabled:
-            length_gvi_b_geom = zip(lengths, gvi_list, has_geom_list)
             cost_attr = cost_prefix + str(sen)
             graph.es[cost_attr] = [
                 gvi_exps.get_gvi_adjusted_cost(length, gvi, sen=sen) 
                 if has_geom else 0.0
                 for length, gvi, has_geom 
-                in length_gvi_b_geom
+                in zip(lengths, gvi_list, has_geom_list)
             ]
 
         if conf.cycling_enabled:
-            length_gvi_b_geom = zip(lengths, bike_time_costs, gvi_list, has_geom_list)
             cost_attr = cost_prefix_bike + str(sen)
             graph.es[cost_attr] = [
                 gvi_exps.get_gvi_adjusted_cost(
@@ -86,5 +92,7 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
                 )
                 if has_geom else 0.0
                 for length, bike_time_cost, gvi, has_geom 
-                in length_gvi_b_geom
+                in zip(
+                    lengths, bike_time_costs, gvi_list, has_geom_list
+                )
             ]

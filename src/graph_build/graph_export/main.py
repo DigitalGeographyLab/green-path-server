@@ -2,10 +2,9 @@ import logging
 import geopandas as gpd
 import common.igraph as ig_utils
 import graph_build.graph_export.utils as utils
+import numpy as np
 from geopandas import GeoDataFrame
 from common.igraph import Edge as E, Node as N
-import graph_build.graph_export.bike_cost_factory as bike_costs
-
 
 log = logging.getLogger('graph_export.main')
 
@@ -38,8 +37,9 @@ def graph_export(
 
     out_node_attrs = [N.geometry]
     out_edge_attrs = [
-        E.id_ig, E.uv, E.id_way, E.geometry, E.geom_wgs, 
-        E.length, E.bike_time_cost, E.bike_safety_cost, E.noises, E.gvi
+        E.id_ig, E.uv, E.id_way, E.geometry, E.geom_wgs,
+        E.length, E.allows_biking, E.is_stairs,
+        E.bike_safety_factor, E.noises, E.gvi
     ]
 
     log.info(f'Reading graph file: {in_graph}')
@@ -47,13 +47,16 @@ def graph_export(
 
     edge_gdf = ig_utils.get_edge_gdf(
         graph, 
-        attrs=[E.id_ig, E.length, E.bike_safety_factor], 
+        attrs=[E.id_ig, E.length], 
         ig_attrs=['source', 'target']
     )
 
-    bike_costs.set_biking_costs(graph)
     set_uv(graph, edge_gdf)
     set_way_ids(graph, edge_gdf)
+
+    graph.es[E.bike_safety_factor.value] = [
+        round(v, 2) if (v and np.isfinite(v)) else 1 for v in graph.es[E.bike_safety_factor.value]
+    ]
 
     # set combined GVI to GVI attribute & export graph
     graph.es[E.gvi.value] = list(graph.es[E.gvi_comb_gsv_veg.value])

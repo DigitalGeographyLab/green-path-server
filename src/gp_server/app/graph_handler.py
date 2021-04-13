@@ -44,6 +44,8 @@ class GraphHandler:
         self.__edge_sindex = self.__edge_gdf.sindex
         self.__node_gdf = ig_utils.get_node_gdf(self.graph)
         self.__nodes_sind = self.__node_gdf.sindex
+        if conf.cycling_enabled:
+            edge_cost_factory.set_biking_costs(self.graph, self.log)
         if conf.quiet_paths_enabled:
             edge_cost_factory.set_noise_costs_to_edges(self.graph, routing_conf)
         self.log.info('Noise costs set')

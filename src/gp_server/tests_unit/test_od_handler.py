@@ -45,7 +45,7 @@ def test_data_for_linking_edges_has_all_attributes(
 ):
     assert len(new_linking_edge_data) == 2
     link_edge = new_linking_edge_data[0]
-    assert len(new_nearest_node.link_to_edge_spec.edge) == 27
+    assert len(new_nearest_node.link_to_edge_spec.edge) == 28
     for key in new_nearest_node.link_to_edge_spec.edge.keys():
         if key not in [E.id_ig.value, E.id_way.value]:
             assert key in link_edge
@@ -57,7 +57,7 @@ def test_data_for_linking_edges_has_right_values(
 ):
     assert len(new_linking_edge_data) == 2
     link_edge = new_linking_edge_data[0]
-    assert len(new_nearest_node.link_to_edge_spec.edge) == 27
+    assert len(new_nearest_node.link_to_edge_spec.edge) == 28
 
     edge = new_nearest_node.link_to_edge_spec.edge
     link_edge_len_ratio = link_edge[E.length.value] / edge[E.length.value]

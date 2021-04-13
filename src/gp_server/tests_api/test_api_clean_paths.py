@@ -186,7 +186,7 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['len_diff'] == 32.8
     assert props['len_diff_rat'] == 2.4
     assert props['length'] == 1372.87
-    assert props['bike_time_cost'] == 1533.5
+    assert props['bike_time_cost'] == 1581.6
     assert props['mdB'] == 69.2
     assert props['mdB_diff'] == -4.6
     assert not props['missing_aqi']

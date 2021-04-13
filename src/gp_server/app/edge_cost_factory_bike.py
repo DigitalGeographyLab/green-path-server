@@ -1,13 +1,9 @@
-import logging
 from gp_server.conf import walk_speed_ms, bike_speed_ms
 from common.igraph import Edge as E
 from igraph import Graph
 from typing import Union
 from collections import Counter
-from graph_build.graph_export.types import Bikeability
-
-
-log = logging.getLogger('graph_export.bike_cost_factory')
+from gp_server.app.types import Bikeability
 
 
 def get_bikeability(
@@ -67,7 +63,7 @@ def get_bikeabilities(graph: Graph):
     ]
 
 
-def set_biking_costs(graph):
+def set_biking_costs(graph, log):
     bike_walk_time_ratio = bike_speed_ms / walk_speed_ms
 
     log.info(

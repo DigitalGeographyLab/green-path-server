@@ -183,7 +183,7 @@ def test_path_set_1_quiet_path_props(path_set_1):
     assert props['len_diff'] == 135.1
     assert props['len_diff_rat'] == 10.1
     assert props['length'] == 1475.16
-    assert props['bike_time_cost'] == 2754.3
+    assert props['bike_time_cost'] == 3138.1
     assert props['mdB'] == 55.1
     assert props['mdB_diff'] == -18.7
     assert props['missing_aqi'] == False

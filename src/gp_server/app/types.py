@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Dict, Union, List, Tuple
 from dataclasses import dataclass, field
 import common.geometry as geom_utils
@@ -47,6 +48,14 @@ edge_group_attr_by_routing_mode: Dict[RoutingMode, str] = {
     RoutingMode.FAST: 'gvi_cl',
     RoutingMode.SAFE: 'gvi_cl'
 }
+
+
+class Bikeability(Enum):
+    NO_BIKE_STAIRS = 1
+    NO_BIKE = 2
+    BIKE_OK_STAIRS = 3
+    BIKE_OK = 4
+
 
 @dataclass(frozen=True)
 class RoutingConf:

@@ -207,7 +207,7 @@ def process_paths_to_FC(
         path_set.set_path_edges(G)
         path_set.aggregate_path_attrs()
 
-        if conf.research_mode:
+        if conf.research_mode and od_settings.travel_mode == TravelMode.BIKE:
             path_set.ensure_right_path_order(od_settings.travel_mode)
         
         path_set.filter_out_exp_optimized_paths_missing_exp_data()

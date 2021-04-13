@@ -45,6 +45,7 @@ def __project_link_edge_attrs(
         E.length.value: round(link_len, 2),
         E.geometry.value: link_geom,
         E.geom_wgs.value: link_geom_wgs,
+        E.allows_biking.value: on_edge_attrs[E.allows_biking.value],
         E.gvi.value: on_edge_attrs.get(E.gvi.value, None),
         E.noises.value: __calculate_link_noises(
             on_edge_attrs.get(E.noises.value, None),
