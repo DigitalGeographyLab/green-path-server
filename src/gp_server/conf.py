@@ -13,6 +13,9 @@ Configurations:
 
     research_mode (bool): set to True for additional path properties
 
+    max_od_search_dist_m (float): maximum distance in meters to search for nearest origin or destination,
+        higher values make O/D search slower
+
     walking_enabled (bool): enables/disables walk cost calculation
     cycling_enabled (bool): enables/disables bike cost calculation
     quiet_paths_enabled (bool): enables/disables noise cost calculation
@@ -42,6 +45,8 @@ research_mode: bool = False
 
 walk_speed_ms: float = 1.2
 bike_speed_ms: float = 5.55
+
+max_od_search_dist_m: float = 650
 
 walking_enabled: bool = True
 cycling_enabled: bool = True

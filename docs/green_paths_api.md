@@ -5,7 +5,7 @@ This page contains useful information of the green paths routing API:
 - Status codes
 - Response schema
 
-When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is mainly being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it can be worthwhile to take a look at it when familiarizing with the API. 
+When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is mainly being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it can be worthwhile to take a look at it when familiarizing with it. 
 
 ## Endpoints
 - www.greenpaths.fi/

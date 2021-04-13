@@ -85,7 +85,7 @@ class GraphHandler:
         Returns:
             The name (id) of the nearest node. None if no nearest node is found.
         """
-        for radius in (50, 100, 500):
+        for radius in (50, 100) + (conf.max_od_search_dist_m,):
             possible_matches_index = list(self.__node_gdf.sindex.intersection(point.buffer(radius).bounds))
             if possible_matches_index:
                 break
@@ -148,7 +148,7 @@ class GraphHandler:
     def find_nearest_edge(self, point: Point) -> Union[NearestEdge, None]:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
-        for radius in (35, 150, 400, 650):
+        for radius in (35, 150, 400) + (conf.max_od_search_dist_m,):
             possible_matches_index = list(self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds))
             if possible_matches_index:
                 possible_matches = self.__edge_gdf.iloc[possible_matches_index].copy()
