@@ -69,12 +69,12 @@ def test_one_shortest_path_is_present_in_paths(feats_1, feats_2):
     assert feats_2[0]['properties']['type'] == 'short'
 
 
-def test_green_paths_present_in_paths(feats_1, feats_2):
+def test_green_paths_present_in_paths(feats_1):
     types = tuple(feat['properties']['type'] for feat in feats_1)
     assert types.count('green') == 2
 
 
-def test_quiet_paths_present_in_paths(feats_1, feats_2):
+def test_quiet_paths_present_in_paths(feats_2):
     types = tuple(feat['properties']['type'] for feat in feats_2)
     assert types.count('quiet') == 4
 
@@ -91,3 +91,15 @@ def test_paths_are_sorted_by_length(feats_1, feats_2):
     for len in lengths:
         assert len >= prev_len
         prev_len = len
+
+
+def test_edge_data_is_included_as_path_property(feats_1):
+    edge_datas = tuple(feat['properties']['edge_data'] for feat in feats_1)
+    for edge_data in edge_datas:
+        for ed in edge_data:
+            assert isinstance(ed['length'], float)
+            assert 'aqi' in ed
+            assert isinstance(ed['gvi'], float)
+            assert isinstance(ed['mdB'], float)
+            assert isinstance(ed['coords_wgs'], list)
+            assert isinstance(ed['coords_wgs'][0], list)
