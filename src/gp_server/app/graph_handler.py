@@ -130,6 +130,7 @@ class GraphHandler:
             length = edge[E.length.value],
             bike_time_cost = edge[E.bike_time_cost.value],
             bike_safety_cost = edge[E.bike_safety_cost.value],
+            allows_biking = edge[E.allows_biking.value],
             aqi = edge[E.aqi.value],
             aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
             noises = edge[E.noises.value],

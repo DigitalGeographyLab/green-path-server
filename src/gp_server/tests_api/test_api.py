@@ -45,7 +45,7 @@ def test_aqi_map_data_path_returns_ok(client):
     assert response.status_code == 200
 
 
-def test_returns_aqi_map_data_response(client):
+def test_returns_as_long_aqi_map_data_array_as_expected(client):
     response = client.get('/aqi-map-data')
     assert response.status_code == 200
     data = json.loads(response.data)

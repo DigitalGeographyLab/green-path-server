@@ -131,7 +131,7 @@ def find_least_cost_paths(
         RoutingException
     """
     fastest_path_cost_attr = routing_conf.fastest_path_cost_attr_by_travel_mode[od_settings.travel_mode]
-    path_set = PathSet(log, od_settings.routing_mode)
+    path_set = PathSet(log, od_settings.routing_mode, od_settings.travel_mode)
     paths: List[Path] = []
     
     start_time = time.time()
@@ -208,7 +208,7 @@ def process_paths_to_FC(
         path_set.aggregate_path_attrs()
 
         if conf.research_mode and od_settings.travel_mode == TravelMode.BIKE:
-            path_set.ensure_right_path_order(od_settings.travel_mode)
+            path_set.ensure_right_path_order()
         
         path_set.filter_out_exp_optimized_paths_missing_exp_data()
         path_set.set_path_exp_attrs(routing_conf.db_costs)

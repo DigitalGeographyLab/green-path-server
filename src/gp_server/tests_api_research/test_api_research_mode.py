@@ -93,7 +93,12 @@ def test_paths_are_sorted_by_length(feats_1, feats_2):
         prev_len = len
 
 
-def test_edge_data_is_included_as_path_property(feats_1):
+def test_edge_data_is_included_as_path_property(feats_1, feats_2):
+    for feat in feats_1 + feats_2:
+        assert 'edge_data' in feat['properties']
+
+
+def test_edge_data_has_correct_properties(feats_1):
     edge_datas = [feat['properties']['edge_data'] for feat in feats_1]
     for edge_data in edge_datas:
         for ed in edge_data:

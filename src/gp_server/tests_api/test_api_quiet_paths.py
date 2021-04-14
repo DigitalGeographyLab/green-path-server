@@ -21,7 +21,18 @@ def path_set_1(client) -> dict:
 
 
 @pytest.fixture
-def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]:
+def test_length_props() -> Callable[[dict], None]:
+    def test_func(props: dict):
+        assert isinstance(props['length'], (float, int))
+        assert isinstance(props['mode_lengths']['bike'], (float, int))
+        assert isinstance(props['mode_lengths']['walk'], (float, int))
+        assert props['mode_lengths']['bike'] == 0 # for travel mode: walk
+        assert round(sum(props['mode_lengths'].values()), 1) == round(props['length'], 1)
+    return test_func
+
+
+@pytest.fixture
+def test_fast_path_prop_types(test_exposure_prop_types, test_length_props) -> Callable[[dict], None]:
     def test_func(props: dict):
         assert isinstance(props['cost_coeff'], (float, int))
         assert isinstance(props['id'], str)
@@ -32,7 +43,7 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
         assert props['id'] == 'fast'
         assert isinstance(props['len_diff'], (float, int))
         assert props['len_diff_rat'] is None
-        assert isinstance(props['length'], (float, int))
+        test_length_props(props)
         assert isinstance(props['bike_time_cost'], (float, int))
         assert isinstance(props['bike_safety_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
@@ -53,7 +64,7 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
 
 
 @pytest.fixture
-def test_quiet_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None]:
+def test_quiet_path_prop_types(test_exposure_prop_types, test_length_props) -> Callable[[dict], None]:
     def test_func(props: dict):
         assert isinstance(props['cost_coeff'], (float, int))
         test_exposure_prop_types(props['gvi_cl_exps'])
@@ -63,7 +74,7 @@ def test_quiet_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['id'], str)
         assert isinstance(props['len_diff'], (float, int))
         assert isinstance(props['len_diff_rat'], (float, int))
-        assert isinstance(props['length'], (float, int))
+        test_length_props(props)
         assert isinstance(props['bike_time_cost'], (float, int))
         assert isinstance(props['bike_safety_cost'], (float, int))
         assert isinstance(props['mdB'], (float, int))
@@ -263,7 +274,7 @@ def quiet_paths_on_one_street(client) -> Tuple[dict]:
     yield (data['edge_FC'], data['path_FC'])
 
 
-def test_quiet_paths_on_same_street(
+def test_routes_quiet_paths_on_same_street(
     quiet_paths_on_one_street,
     test_line_geometry, 
     test_fast_path_prop_types,

@@ -17,9 +17,10 @@ class PathSet:
     """An instance of PathSet holds, manipulates and filters both fastest and least cost paths.
     """
 
-    def __init__(self, logger: Logger, routing_mode: RoutingMode):
+    def __init__(self, logger: Logger, routing_mode: RoutingMode, travel_mode: TravelMode):
         self.log = logger
         self.routing_mode = routing_mode
+        self.travel_mode = travel_mode
         self.paths: List[Path] = ()
 
     def set_unique_paths(self, paths: List[Path]) -> None:
@@ -39,14 +40,14 @@ class PathSet:
         for p in self.paths:
             p.aggregate_path_attrs(self.log)
 
-    def ensure_right_path_order(self, travel_mode: TravelMode):
+    def ensure_right_path_order(self):
         if len(self.paths) <= 1:
             return
 
         if conf.research_mode:
             edge_speed_attr = 'length'
         else:
-            edge_speed_attr = edge_time_attr_by_travel_mode[travel_mode]
+            edge_speed_attr = edge_time_attr_by_travel_mode[self.travel_mode]
 
         self.paths = sorted(self.paths, key=lambda p: getattr(p, edge_speed_attr))
         exp_path_type = path_type_by_routing_mode[self.routing_mode]
@@ -126,7 +127,7 @@ class PathSet:
                 path.set_compare_to_fastest_attrs(fastest_path)
 
     def get_paths_as_feature_collection(self) -> List[dict]:
-        feats = [path.get_as_geojson_feature() for path in self.paths]
+        feats = [path.get_as_geojson_feature(self.travel_mode) for path in self.paths]
         if conf.research_mode:
             feats[0]['properties']['type'] = 'short'
         return self.__as_geojson_feature_collection(feats)

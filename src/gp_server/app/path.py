@@ -2,13 +2,13 @@ from shapely.geometry import LineString
 from typing import List, Tuple
 import gp_server.conf as conf
 import common.geometry as geom_utils
+from gp_server.app.constants import PathType, TravelMode
 from gp_server.app.logger import Logger
 from gp_server.app.types import PathEdge
 from gp_server.app.path_noise_attrs import PathNoiseAttrs, create_path_noise_attrs
 from gp_server.app.path_aqi_attrs import PathAqiAttrs, create_aqi_attrs
 from gp_server.app.path_gvi_attrs import PathGviAttrs, create_gvi_attrs
 from gp_server.app.graph_handler import GraphHandler
-from gp_server.app.constants import PathType
 
 
 class Path:
@@ -25,6 +25,8 @@ class Path:
         self.cost_coeff: float = cost_coeff
         self.geometry = None
         self.length: float = None
+        self.length_bike_allowed: float = None
+        self.length_no_bike_allowed: float = None
         self.bike_time_cost: float = None
         self.bike_safety_cost: float = None
         self.len_diff: float = 0
@@ -51,6 +53,8 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge.coords]
         self.geometry = LineString(path_coords)
         self.length = round(sum(edge.length for edge in self.edges), 2)
+        self.length_bike_allowed = round(sum(edge.length for edge in self.edges if edge.allows_biking), 2)
+        self.length_no_bike_allowed = round(sum(edge.length for edge in self.edges if not edge.allows_biking), 2)
         self.bike_time_cost = round(sum(edge.bike_time_cost for edge in self.edges), 2)
         self.bike_safety_cost = round(sum(edge.bike_safety_cost for edge in self.edges), 2)
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
@@ -121,16 +125,22 @@ class Path:
             features.append(feature)
         return features
 
-    def get_as_geojson_feature(self) -> dict:
+    def get_as_geojson_feature(self, travel_mode: TravelMode) -> dict:
         wgs_coords = [coord for edge in self.edges for coord in edge.coords_wgs]
         wgs_coords = geom_utils.round_coordinates(wgs_coords, digits=6)
 
         feature_d = self.__get_geojson_feature_dict(wgs_coords)
 
+        mode_lengths = {
+            'walk': self.length_no_bike_allowed if travel_mode == TravelMode.BIKE else self.length,
+            'bike': self.length_bike_allowed if travel_mode == TravelMode.BIKE else 0,
+        }
+
         props = {
             'type': self.path_type.value,
             'id': self.name,
             'length': self.length,
+            'mode_lengths': mode_lengths,
             'bike_time_cost': self.bike_time_cost,
             'bike_safety_cost': self.bike_safety_cost,
             'len_diff': self.len_diff,
