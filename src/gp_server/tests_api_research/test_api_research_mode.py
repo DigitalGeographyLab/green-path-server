@@ -44,49 +44,49 @@ def test_response_does_not_include_edge_fc(path_set_1, path_set_2):
 
 
 def test_no_safest_path_present_in_paths(feats_1, feats_2):
-    types = tuple(feat['properties']['type'] for feat in feats_1)
+    types = [feat['properties']['type'] for feat in feats_1]
     assert PathType.SAFEST.value not in types
 
-    types = tuple(feat['properties']['type'] for feat in feats_2)
+    types = [feat['properties']['type'] for feat in feats_2]
     assert PathType.SAFEST.value not in types
 
 
 def test_fastest_path_not_present_in_paths(feats_1, feats_2):
-    types = tuple(feat['properties']['type'] for feat in feats_1)
+    types = [feat['properties']['type'] for feat in feats_1]
     assert PathType.FASTEST.value not in types 
 
-    types = tuple(feat['properties']['type'] for feat in feats_2)
+    types = [feat['properties']['type'] for feat in feats_2]
     assert PathType.FASTEST.value not in types 
 
 
 def test_one_shortest_path_is_present_in_paths(feats_1, feats_2):
-    types = tuple(feat['properties']['type'] for feat in feats_1)
+    types = [feat['properties']['type'] for feat in feats_1]
     assert types.count('short') == 1
     assert feats_1[0]['properties']['type'] == 'short'
 
-    types = tuple(feat['properties']['type'] for feat in feats_2)
+    types = [feat['properties']['type'] for feat in feats_2]
     assert types.count('short') == 1
     assert feats_2[0]['properties']['type'] == 'short'
 
 
 def test_green_paths_present_in_paths(feats_1):
-    types = tuple(feat['properties']['type'] for feat in feats_1)
+    types = [feat['properties']['type'] for feat in feats_1]
     assert types.count('green') == 2
 
 
 def test_quiet_paths_present_in_paths(feats_2):
-    types = tuple(feat['properties']['type'] for feat in feats_2)
+    types = [feat['properties']['type'] for feat in feats_2]
     assert types.count('quiet') == 4
 
 
 def test_paths_are_sorted_by_length(feats_1, feats_2):
-    lengths = tuple(feat['properties']['length'] for feat in feats_1)
+    lengths = [feat['properties']['length'] for feat in feats_1]
     prev_len = lengths[0]
     for len in lengths:
         assert len >= prev_len
         prev_len = len
 
-    lengths = tuple(feat['properties']['length'] for feat in feats_2)
+    lengths = [feat['properties']['length'] for feat in feats_2]
     prev_len = lengths[0]
     for len in lengths:
         assert len >= prev_len
@@ -94,7 +94,7 @@ def test_paths_are_sorted_by_length(feats_1, feats_2):
 
 
 def test_edge_data_is_included_as_path_property(feats_1):
-    edge_datas = tuple(feat['properties']['edge_data'] for feat in feats_1)
+    edge_datas = [feat['properties']['edge_data'] for feat in feats_1]
     for edge_data in edge_datas:
         for ed in edge_data:
             assert isinstance(ed['length'], float)

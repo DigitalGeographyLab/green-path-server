@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import gp_server.conf as conf
 import gp_server.utils.paths_overlay_filter as path_overlay_filter
 from gp_server.app.constants import RoutingMode, PathType, TravelMode, path_type_by_routing_mode
@@ -20,7 +20,7 @@ class PathSet:
     def __init__(self, logger: Logger, routing_mode: RoutingMode):
         self.log = logger
         self.routing_mode = routing_mode
-        self.paths: Tuple[Path] = ()
+        self.paths: List[Path] = ()
 
     def set_unique_paths(self, paths: List[Path]) -> None:
         filtered: List[Path] = []
@@ -29,7 +29,7 @@ class PathSet:
             if path.edge_ids != prev_edge_ids:
                 filtered.append(path)
             prev_edge_ids = path.edge_ids
-        self.paths = tuple(filtered)
+        self.paths = filtered
 
     def set_path_edges(self, G) -> None:
         for p in self.paths:
@@ -64,20 +64,20 @@ class PathSet:
             return
 
         if self.routing_mode == RoutingMode.GREEN:
-            self.paths = tuple(
+            self.paths = [
                 path for path in self.paths 
                 if (path.path_type == PathType.FASTEST or not path.missing_gvi)
-            )
+            ]
         if self.routing_mode == RoutingMode.QUIET:
-            self.paths = tuple(
+            self.paths = [
                 path for path in self.paths 
                 if (path.path_type == PathType.FASTEST or not path.missing_noises)
-            )
+            ]
         if self.routing_mode == RoutingMode.CLEAN:
-            self.paths = tuple(
+            self.paths = [
                 path for path in self.paths
                 if (path.path_type == PathType.FASTEST or not path.missing_aqi)
-            )
+            ]
         filtered_out_count = path_count - len(self.paths)
         if filtered_out_count:
             self.log.info(f'Filtered out {filtered_out_count} green paths without exposure data')
@@ -106,9 +106,9 @@ class PathSet:
     def filter_paths_by_names(self, filter_names: List[str]) -> None:
         """Filters out fast / green paths by list of path names to keep.
         """
-        filtered_paths = tuple(
+        filtered_paths = [
             path for path in self.paths if path.name in filter_names
-        )
+        ]
         if PathType.FASTEST.value not in filter_names:
             filtered_paths[0].set_path_type(PathType.FASTEST)
             filtered_paths[0].set_path_name(PathType.FASTEST.value)
@@ -118,9 +118,9 @@ class PathSet:
     def set_compare_to_fastest_attrs(self) -> None:
         if len(self.paths) <= 1:
             return
-        fastest_path = tuple(
+        fastest_path = next((
             p for p in self.paths if p.path_type == PathType.FASTEST
-        )[0]
+        ))
         for path in self.paths:
             if path.path_type != PathType.FASTEST:
                 path.set_compare_to_fastest_attrs(fastest_path)
