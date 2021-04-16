@@ -39,8 +39,8 @@ def get_routing_conf() -> RoutingConf:
 
 
 def parse_od_settings(        
-    travel_mode: str,
-    routing_mode: str,
+    path_travel_mode: str,
+    path_routing_mode: str,
     routing_conf: RoutingConf,
     orig_lat,
     orig_lon,
@@ -50,12 +50,16 @@ def parse_od_settings(
 ) -> OdSettings:
 
     try:
-        travel_mode = TravelMode(travel_mode)
+        travel_mode = TravelMode(path_travel_mode)
     except Exception:
         raise RoutingException(ErrorKey.INVALID_TRAVEL_MODE_PARAM.value)
 
     try:
-        routing_mode = RoutingMode(routing_mode)
+        if path_routing_mode == 'short':
+            # retain support for legacy path variable 'short'
+            routing_mode = RoutingMode.FAST
+        else:
+            routing_mode = RoutingMode(path_routing_mode)
     except Exception:
         raise RoutingException(ErrorKey.INVALID_ROUTING_MODE_PARAM.value)
 
@@ -221,11 +225,18 @@ def process_paths_to_FC(
         path_FC = path_set.get_paths_as_feature_collection()
         edge_FC = path_set.get_edges_as_feature_collection() if not conf.research_mode else None
         log.duration(start_time, 'processed paths & edges to FC', unit='ms', log_level='info')
+
+        if conf.research_mode:
+            __reclassify_shortest_path(path_FC)
         
         return (path_FC, edge_FC)
     
     except Exception:
         raise RoutingException(ErrorKey.PATH_PROCESSING_ERROR.value)
+
+
+def __reclassify_shortest_path(path_FC: dict) -> None:
+    path_FC['features'][0]['properties']['type'] = 'short'
 
 
 def delete_added_graph_features(G: GraphHandler, od_nodes: OdData):

@@ -12,6 +12,12 @@ edge_time_attr_by_travel_mode: Dict[TravelMode, str] = {
     TravelMode.BIKE: 'bike_time_cost'
 }
 
+def as_geojson_feature_collection(features: List[dict]) -> dict:
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
+
 
 class PathSet:
     """An instance of PathSet holds, manipulates and filters both fastest and least cost paths.
@@ -126,11 +132,13 @@ class PathSet:
             if path.path_type != PathType.FASTEST:
                 path.set_compare_to_fastest_attrs(fastest_path)
 
-    def get_paths_as_feature_collection(self) -> List[dict]:
-        feats = [path.get_as_geojson_feature(self.travel_mode) for path in self.paths]
-        if conf.research_mode:
-            feats[0]['properties']['type'] = 'short'
-        return self.__as_geojson_feature_collection(feats)
+    def get_paths_as_feature_collection(self) -> dict:
+        """Returns paths of the set as GeoJSON FeatureCollection (dict). 
+        """
+        return as_geojson_feature_collection([
+                path.get_as_geojson_feature(self.travel_mode) for path in self.paths
+            ]
+        )
 
     def get_edges_as_feature_collection(self) -> dict:
         edge_grouping_attr = edge_group_attr_by_routing_mode[self.routing_mode]
@@ -139,11 +147,7 @@ class PathSet:
         
         feat_lists = [path.get_edge_groups_as_features() for path in self.paths]
 
-        feats = [feat for feat_list in feat_lists for feat in feat_list]
-        return self.__as_geojson_feature_collection(feats)
-
-    def __as_geojson_feature_collection(self, features: List[dict]) -> dict:
-        return {
-            "type": "FeatureCollection",
-            "features": features
-        }
+        return as_geojson_feature_collection([
+            feat for feat_list in feat_lists for feat in feat_list
+            ]
+        )
