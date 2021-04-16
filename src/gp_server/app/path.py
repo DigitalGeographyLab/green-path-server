@@ -15,14 +15,13 @@ class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
-    def __init__(self, orig_node: int, edge_ids: List[int], name: str, path_type, cost_coeff: float=0.0):
-        self.orig_node: int = orig_node
+    def __init__(self, path_id: str, path_type: PathType, edge_ids: List[int], cost_coeff: float=0.0):
+        self.path_id: str = path_id
+        self.path_type: PathType = path_type
         self.edge_ids: List[int] = edge_ids
+        self.cost_coeff: float = cost_coeff
         self.edges: List[PathEdge] = []
         self.edge_groups: List[Tuple[int, List[dict]]] = []
-        self.name: str = name
-        self.path_type: PathType = path_type
-        self.cost_coeff: float = cost_coeff
         self.geometry = None
         self.length: float = None
         self.length_bike_allowed: float = None
@@ -38,7 +37,7 @@ class Path:
         self.aqi_attrs: PathAqiAttrs = None
         self.gvi_attrs: PathGviAttrs = None
     
-    def set_path_name(self, path_name: str): self.name = path_name
+    def set_path_id(self, path_id: str): self.path_id = path_id
 
     def set_path_type(self, path_type: PathType): self.path_type = path_type
 
@@ -121,7 +120,7 @@ class Path:
             group_coords = [coords for edge in group[1] for coords in edge.coords_wgs]
             group_coords = geom_utils.round_coordinates(group_coords, digits=6)       
             feature = self.__get_geojson_feature_dict(group_coords)
-            feature['properties'] = { 'value': group[0], 'path': self.name, 'p_len_diff': self.len_diff, 'p_length': self.length }
+            feature['properties'] = { 'value': group[0], 'path': self.path_id, 'p_len_diff': self.len_diff, 'p_length': self.length }
             features.append(feature)
         return features
 
@@ -138,7 +137,7 @@ class Path:
 
         props = {
             'type': self.path_type.value,
-            'id': self.name,
+            'id': self.path_id,
             'length': self.length,
             'mode_lengths': mode_lengths,
             'bike_time_cost': self.bike_time_cost,

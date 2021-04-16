@@ -46,24 +46,50 @@ class PathSet:
         for p in self.paths:
             p.aggregate_path_attrs(self.log)
 
-    def ensure_right_path_order(self):
+    def sort_bike_paths_by_length(self):
         if len(self.paths) <= 1:
             return
 
-        if conf.research_mode:
-            edge_speed_attr = 'length'
-        else:
-            edge_speed_attr = edge_time_attr_by_travel_mode[self.travel_mode]
+        if self.travel_mode != TravelMode.BIKE:
+            raise ValueError('Sort bike paths is for bike paths only')
 
-        self.paths = sorted(self.paths, key=lambda p: getattr(p, edge_speed_attr))
+        self.paths.sort(key=lambda p: getattr(p, 'length'))
+    
+    def drop_slower_shorter_bike_paths(self):
+        """After sorting bike paths by length, it is reasonable to drop shorter paths that
+        are slower, so that the remaining paths are in order by both legnth and time.
+        """
+        if len(self.paths) <= 1:
+            return
+
+        if self.travel_mode != TravelMode.BIKE:
+            raise ValueError('Drop slower shorter bike paths is for bike paths only')
+        
+        drop_path_ids = []
+        for idx, path in enumerate(self.paths):
+            if idx == 0:
+                prev_id, prev_length, prev_bike_time = (path.path_id, path.length, path.bike_time_cost)
+                continue
+            if prev_length < path.length and prev_bike_time > path.bike_time_cost:
+                drop_path_ids.append(prev_id)
+
+            prev_id, prev_length, prev_bike_time = (path.path_id, path.length, path.bike_time_cost)
+
+        if drop_path_ids:
+            self.paths = [p for p in self.paths if p.path_id not in drop_path_ids]
+
+    def reclassify_path_types(self):
+        """After sorting paths by lengths and possibly using drop_slower_shorter_bike_paths,
+        the first path of the set needs to be reclassified as fastest and the rest as exposure optimized. 
+        """
         exp_path_type = path_type_by_routing_mode[self.routing_mode]
         for idx, path in enumerate(self.paths):
             if idx == 0:
                 path.set_path_type(PathType.FASTEST)
-                path.set_path_name(PathType.FASTEST.value)
+                path.set_path_id(PathType.FASTEST.value)
             elif path.path_type == PathType.FASTEST:
                 path.set_path_type(exp_path_type)
-                path.set_path_name(f'f2')
+                path.set_path_id(f'f2')
 
     def filter_out_exp_optimized_paths_missing_exp_data(self) -> None:
         path_count = len(self.paths)
@@ -101,24 +127,24 @@ class PathSet:
         if len(self.paths) <= 1:
             return
         cost_attr = 'aqc_norm' if self.routing_mode == RoutingMode.CLEAN else 'nei_norm'
-        unique_paths_names = path_overlay_filter.get_unique_paths_by_geom_overlay(
+        keep_path_ids = path_overlay_filter.get_unique_paths_by_geom_overlay(
             self.log, 
             self.paths, 
             buffer_m=buffer_m, 
             cost_attr=cost_attr
         )
-        if unique_paths_names:
-            self.filter_paths_by_names(unique_paths_names)
+        if keep_path_ids:
+            self.filter_paths_by_ids(keep_path_ids)
 
-    def filter_paths_by_names(self, filter_names: List[str]) -> None:
-        """Filters out fast / green paths by list of path names to keep.
+    def filter_paths_by_ids(self, path_ids: List[str]) -> None:
+        """Filters out fast / green paths by list of path IDs to keep.
         """
         filtered_paths = [
-            path for path in self.paths if path.name in filter_names
+            path for path in self.paths if path.path_id in path_ids
         ]
-        if PathType.FASTEST.value not in filter_names:
+        if PathType.FASTEST.value not in path_ids:
             filtered_paths[0].set_path_type(PathType.FASTEST)
-            filtered_paths[0].set_path_name(PathType.FASTEST.value)
+            filtered_paths[0].set_path_id(PathType.FASTEST.value)
         
         self.paths = filtered_paths
 

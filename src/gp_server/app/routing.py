@@ -109,17 +109,32 @@ def find_or_create_od_nodes(
 
 
 def find_safest_path(G: GraphHandler, od_nodes: OdData) -> Path:
-    safest_path_edges = G.get_least_cost_path(
-        od_nodes.orig_node.id,
-        od_nodes.dest_node.id,
-        weight=E.bike_safety_cost.value
-    )
     return Path(
-        orig_node = od_nodes.orig_node.id,
-        edge_ids = safest_path_edges,
-        name = PathType.SAFEST.value,
-        path_type = PathType.SAFEST
+        path_id = PathType.SAFEST.value,
+        path_type = PathType.SAFEST,
+        edge_ids = G.get_least_cost_path(
+            od_nodes.orig_node.id,
+            od_nodes.dest_node.id,
+            weight=E.bike_safety_cost.value
+        )
     )
+
+
+def find_exp_optimized_paths(G: GraphHandler, od_settings: OdSettings, od_nodes: OdData):
+    cost_prefix = cost_prefix_dict[od_settings.travel_mode][od_settings.routing_mode]
+    return [
+        Path(
+            path_id = f'{cost_prefix}{sen}',
+            path_type = path_type_by_routing_mode[od_settings.routing_mode],
+            edge_ids = G.get_least_cost_path(
+                od_nodes.orig_node.id,
+                od_nodes.dest_node.id,
+                weight=f'{cost_prefix}{sen}'
+            ),
+            cost_coeff = sen
+        )
+        for sen in od_settings.sensitivities
+    ]
 
 
 def find_least_cost_paths(
@@ -129,7 +144,7 @@ def find_least_cost_paths(
     od_settings: OdSettings,
     od_nodes: OdData,
 ) -> PathSet:
-    """Finds both fastest and least cost paths. 
+    """Finds both fastest and exposure optimized paths. 
 
     Raises:
         RoutingException
@@ -137,48 +152,29 @@ def find_least_cost_paths(
     fastest_path_cost_attr = routing_conf.fastest_path_cost_attr_by_travel_mode[od_settings.travel_mode]
     path_set = PathSet(log, od_settings.routing_mode, od_settings.travel_mode)
     paths: List[Path] = []
-    
     start_time = time.time()
     try:
         if od_settings.routing_mode != RoutingMode.SAFE:
-            fastest_path = G.get_least_cost_path(
-                od_nodes.orig_node.id,
-                od_nodes.dest_node.id,
-                weight=fastest_path_cost_attr.value
-            )
             paths.append(
                 Path(
-                    orig_node = od_nodes.orig_node.id,
-                    edge_ids = fastest_path,
-                    name = PathType.FASTEST.value,
-                    path_type = PathType.FASTEST
+                    path_id = PathType.FASTEST.value,
+                    path_type = PathType.FASTEST,
+                    edge_ids = G.get_least_cost_path(
+                        od_nodes.orig_node.id,
+                        od_nodes.dest_node.id,
+                        weight=fastest_path_cost_attr.value
+                    )
                 )
             )
 
         # add safest path to path set if biking
         if (od_settings.travel_mode == TravelMode.BIKE and
-            (od_settings.routing_mode == RoutingMode.SAFE or not conf.research_mode)):
+            (not conf.research_mode or od_settings.routing_mode == RoutingMode.SAFE)):
                 paths.append(find_safest_path(G, od_nodes))
 
         if od_settings.routing_mode not in (RoutingMode.FAST, RoutingMode.SAFE):
-            cost_prefix = cost_prefix_dict[od_settings.travel_mode][od_settings.routing_mode]
-            
-            for sen in od_settings.sensitivities:
-                cost_attr = f'{cost_prefix}{sen}'
-                least_cost_path = G.get_least_cost_path(
-                    od_nodes.orig_node.id, 
-                    od_nodes.dest_node.id, 
-                    weight=cost_attr
-                )
-                paths.append(
-                    Path(
-                        orig_node = od_nodes.orig_node.id,
-                        edge_ids = least_cost_path,
-                        name = cost_attr,
-                        path_type = path_type_by_routing_mode[od_settings.routing_mode],
-                        cost_coeff = sen
-                    )
-                )
+            paths.extend(find_exp_optimized_paths(G, od_settings, od_nodes))
+        
         path_set.set_unique_paths(paths)
         log.duration(start_time, 'routing done', unit='ms', log_level='info')
 
@@ -212,7 +208,9 @@ def process_paths_to_FC(
         path_set.aggregate_path_attrs()
 
         if conf.research_mode and od_settings.travel_mode == TravelMode.BIKE:
-            path_set.ensure_right_path_order()
+            path_set.sort_bike_paths_by_length()
+            path_set.drop_slower_shorter_bike_paths()
+            path_set.reclassify_path_types()
         
         path_set.filter_out_exp_optimized_paths_missing_exp_data()
         path_set.set_path_exp_attrs(routing_conf.db_costs)

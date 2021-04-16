@@ -31,12 +31,12 @@ def __get_overlapping_paths(
     """
     overlapping_paths = [param_path]
     path_geom_buff = param_path.geometry.buffer(buffer_m)
-    for compare_path in [compare_path for compare_path in compare_paths if compare_path.name != param_path.name]:
+    for compare_path in [compare_path for compare_path in compare_paths if compare_path.path_id != param_path.path_id]:
         bool_within = compare_path.geometry.within(path_geom_buff)
         if bool_within:
             overlapping_paths.append(compare_path)
     if len(overlapping_paths) > 1: 
-        log.debug(f'Found {len(overlapping_paths)} overlapping paths for: {param_path.name} - {[path.name for path in overlapping_paths]}')
+        log.debug(f'Found {len(overlapping_paths)} overlapping paths for: {param_path.path_id} - {[path.path_id for path in overlapping_paths]}')
     return overlapping_paths
 
 
@@ -79,15 +79,15 @@ def get_unique_paths_by_geom_overlay(
     if len(all_paths) == 1:
         return None
     paths_already_overlapped = []
-    filtered_paths_names = []
+    filtered_paths_ids = []
     for path in all_paths:
-        if path.name not in filtered_paths_names and path.name not in paths_already_overlapped:
+        if path.path_id not in filtered_paths_ids and path.path_id not in paths_already_overlapped:
             overlay_candidates = __get_path_overlay_candidates_by_len(path, all_paths, len_diff=25)
             overlapping_paths = __get_overlapping_paths(log, path, overlay_candidates, buffer_m)
             best_overlapping_path = __get_least_cost_path(overlapping_paths, cost_attr=cost_attr)
-            if best_overlapping_path.name not in filtered_paths_names:
-                filtered_paths_names.append(best_overlapping_path.name)
-            paths_already_overlapped += [path.name for path in overlapping_paths]
+            if best_overlapping_path.path_id not in filtered_paths_ids:
+                filtered_paths_ids.append(best_overlapping_path.path_id)
+            paths_already_overlapped += [path.path_id for path in overlapping_paths]
 
-    log.debug(f'Filtered {len(filtered_paths_names)} unique paths from {len(all_paths)} unique paths by overlay')
-    return filtered_paths_names
+    log.debug(f'Filtered {len(filtered_paths_ids)} unique paths from {len(all_paths)} unique paths by overlay')
+    return filtered_paths_ids
