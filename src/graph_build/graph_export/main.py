@@ -15,9 +15,11 @@ def set_uv(graph, edge_gdf):
 
 
 def set_way_ids(graph, edge_gdf):
-    edge_gdf['way_id'] = edge_gdf.apply(lambda x: str(round(x['length'], 1))+str(sorted(x['uv'])), axis=1)
+    edge_gdf['way_id'] = edge_gdf.apply(
+        lambda x: str(round(x['length'], 1))+str(sorted(x['uv'])), axis=1
+    )
     way_ids = list(edge_gdf['way_id'].unique())
-    way_ids_d = { way_id: idx for idx, way_id in enumerate(way_ids) }
+    way_ids_d = {way_id: idx for idx, way_id in enumerate(way_ids)}
     edge_gdf['way_id'] = [way_ids_d[way_id] for way_id in edge_gdf['way_id']]
     graph.es[E.id_way.value] = list(edge_gdf['way_id'])
 
@@ -46,8 +48,8 @@ def graph_export(
     graph = ig_utils.read_graphml(in_graph)
 
     edge_gdf = ig_utils.get_edge_gdf(
-        graph, 
-        attrs=[E.id_ig, E.length], 
+        graph,
+        attrs=[E.id_ig, E.length],
         ig_attrs=['source', 'target']
     )
 
@@ -69,7 +71,12 @@ def graph_export(
 
     # for research use, set combined GVI that omits low vegetation to GVI attribute and export graph
     graph.es[E.gvi.value] = list(graph.es[E.gvi_comb_gsv_high_veg.value])
-    ig_utils.export_to_graphml(graph, out_graph_research, n_attrs=out_node_attrs, e_attrs=out_edge_attrs)
+    ig_utils.export_to_graphml(
+        graph,
+        out_graph_research,
+        n_attrs=out_node_attrs,
+        e_attrs=out_edge_attrs
+    )
 
     # export clip of the graph by the extent of Helsinki
 
@@ -78,7 +85,10 @@ def graph_export(
     hel_extent['geometry'] = [geom.buffer(500) for geom in hel_extent['geometry']]
     inside_hel = gpd.sjoin(node_gdf, hel_extent)
     inside_hel_ids = list(inside_hel[N.id_ig.name])
-    outside_hel_ids = [id_ig for id_ig in list(node_gdf[N.id_ig.name]) if id_ig not in inside_hel_ids]
+    outside_hel_ids = [
+        id_ig for id_ig in list(node_gdf[N.id_ig.name])
+        if id_ig not in inside_hel_ids
+    ]
 
     graph.delete_vertices(outside_hel_ids)
     # delete isolated nodes
@@ -89,10 +99,15 @@ def graph_export(
     graph.vs[N.id_ig.value] = [v.index for v in graph.vs]
     # recalculate uv_id edge attributes
     edge_gdf = ig_utils.get_edge_gdf(
-        graph, 
+        graph,
         ig_attrs=['source', 'target']
     )
     set_uv(graph, edge_gdf)
 
     # export clipped graph
-    ig_utils.export_to_graphml(graph, out_graph_research_hel, n_attrs=out_node_attrs, e_attrs=out_edge_attrs)
+    ig_utils.export_to_graphml(
+        graph,
+        out_graph_research_hel,
+        n_attrs=out_node_attrs,
+        e_attrs=out_edge_attrs
+    )

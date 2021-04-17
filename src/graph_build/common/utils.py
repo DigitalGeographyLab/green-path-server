@@ -2,7 +2,7 @@ from typing import List, Union
 
 
 def read_user_input(
-    text: str, 
+    text: str,
     options: List[Union[str, int]],
     as_number: bool = False,
 ) -> Union[str, None]:

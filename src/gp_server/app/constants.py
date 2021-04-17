@@ -6,12 +6,14 @@ class TravelMode(Enum):
     WALK = 'walk'
     BIKE = 'bike'
 
+
 class RoutingMode(Enum):
     GREEN = 'green'
     QUIET = 'quiet'
-    CLEAN = 'clean' # i.e. fresh air
-    FAST = 'fast' # i.e. shortest
-    SAFE = 'safe' # only for bike
+    CLEAN = 'clean'  # i.e. fresh air
+    FAST = 'fast'  # i.e. shortest
+    SAFE = 'safe'  # only for bike
+
 
 class PathType(Enum):
     GREEN = RoutingMode.GREEN.value
@@ -19,6 +21,7 @@ class PathType(Enum):
     CLEAN = RoutingMode.CLEAN.value
     FASTEST = RoutingMode.FAST.value
     SAFEST = RoutingMode.SAFE.value
+
 
 cost_prefix_dict: Dict[TravelMode, Dict[RoutingMode, str]] = {
     TravelMode.WALK: {
@@ -33,6 +36,7 @@ cost_prefix_dict: Dict[TravelMode, Dict[RoutingMode, str]] = {
     }
 }
 
+
 path_type_by_routing_mode: Dict[RoutingMode, PathType] = {
     RoutingMode.GREEN: PathType.GREEN,
     RoutingMode.QUIET: PathType.QUIET,
@@ -41,8 +45,10 @@ path_type_by_routing_mode: Dict[RoutingMode, PathType] = {
     RoutingMode.SAFE: PathType.SAFEST,
 }
 
+
 class RoutingException(Exception):
     pass
+
 
 class ErrorKey(Enum):
     ORIGIN_NOT_FOUND = 'origin_not_found'
@@ -57,6 +63,7 @@ class ErrorKey(Enum):
     SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE = 'routing_mode_safe_is_only_for_bike'
     AQI_ROUTING_NOT_AVAILABLE = 'air_quality_routing_not_available'
     UNKNOWN_ERROR = 'unknown_error'
+
 
 status_code_by_error: Dict[ErrorKey, int] = {
     ErrorKey.ORIGIN_NOT_FOUND.value: 404,

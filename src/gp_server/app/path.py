@@ -15,7 +15,13 @@ class Path:
     """An instance of Path holds all attributes of a path and provides methods for manipulating them.
     """
 
-    def __init__(self, path_id: str, path_type: PathType, edge_ids: List[int], cost_coeff: float=0.0):
+    def __init__(
+        self,
+        path_id: str,
+        path_type: PathType,
+        edge_ids: List[int],
+        cost_coeff: float = 0.0
+    ):
         self.path_id: str = path_id
         self.path_type: PathType = path_type
         self.edge_ids: List[int] = edge_ids
@@ -36,13 +42,13 @@ class Path:
         self.noise_attrs: PathNoiseAttrs = None
         self.aqi_attrs: PathAqiAttrs = None
         self.gvi_attrs: PathGviAttrs = None
-    
+
     def set_path_id(self, path_id: str): self.path_id = path_id
 
     def set_path_type(self, path_type: PathType): self.path_type = path_type
 
     def set_path_edges(self, G: GraphHandler) -> None:
-        """Iterates through the path's node list and loads the respective edges (& their attributes) from a graph.
+        """Iterates through the path's edge IDs and loads edge attributes from a graph.
         """
         self.edges = G.get_path_edges_by_ids(self.edge_ids)
 
@@ -52,8 +58,12 @@ class Path:
         path_coords = [coord for edge in self.edges for coord in edge.coords]
         self.geometry = LineString(path_coords)
         self.length = round(sum(edge.length for edge in self.edges), 2)
-        self.length_bike_allowed = round(sum(edge.length for edge in self.edges if edge.allows_biking), 2)
-        self.length_no_bike_allowed = round(sum(edge.length for edge in self.edges if not edge.allows_biking), 2)
+        self.length_bike_allowed = round(
+            sum(edge.length for edge in self.edges if edge.allows_biking), 2
+        )
+        self.length_no_bike_allowed = round(
+            sum(edge.length for edge in self.edges if not edge.allows_biking), 2
+        )
         self.bike_time_cost = round(sum(edge.bike_time_cost for edge in self.edges), 2)
         self.bike_safety_cost = round(sum(edge.bike_safety_cost for edge in self.edges), 2)
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
@@ -66,9 +76,9 @@ class Path:
         if not self.missing_noises:
             noises_list = [edge.noises for edge in self.edges]
             self.noise_attrs = create_path_noise_attrs(
-                noises_list = noises_list, 
-                db_costs = db_costs, 
-                length = self.length
+                noises_list=noises_list,
+                db_costs=db_costs,
+                length=self.length
             )
 
     def set_aqi_attrs(self) -> None:
@@ -83,17 +93,19 @@ class Path:
 
     def set_compare_to_fastest_attrs(self, fastest_path: 'Path') -> None:
         self.len_diff = round(self.length - fastest_path.length, 1)
-        self.len_diff_rat = round((self.len_diff / fastest_path.length) * 100, 1) if fastest_path.length > 0 else 0
+        self.len_diff_rat = round(
+            (self.len_diff / fastest_path.length) * 100, 1
+        ) if fastest_path.length > 0 else 0
         if self.noise_attrs and fastest_path.noise_attrs:
-            self.noise_attrs.set_noise_diff_attrs(fastest_path.noise_attrs, len_diff=self.len_diff)
+            self.noise_attrs.set_noise_diff_attrs(fastest_path.noise_attrs)
         if self.aqi_attrs and fastest_path.aqi_attrs:
-            self.aqi_attrs.set_aqi_diff_attrs(fastest_path.aqi_attrs, len_diff=self.len_diff)
+            self.aqi_attrs.set_aqi_diff_attrs(fastest_path.aqi_attrs)
         if self.gvi_attrs and fastest_path.gvi_attrs:
             self.gvi_attrs.set_gvi_diff_attrs(fastest_path.gvi_attrs)
-    
+
     def aggregate_edge_groups_by_attr(self, grouping_attr: str) -> None:
         """Create groups of edges by PathEdge attribute values. Groups are formed by
-        aggregating all adjacent edges with same attribute value (grouping_attr). 
+        aggregating all adjacent edges with same attribute value (grouping_attr).
         """
 
         cur_group = []
@@ -118,9 +130,14 @@ class Path:
         features = []
         for group in self.edge_groups:
             group_coords = [coords for edge in group[1] for coords in edge.coords_wgs]
-            group_coords = geom_utils.round_coordinates(group_coords, digits=6)       
-            feature = self.__get_geojson_feature_dict(group_coords)
-            feature['properties'] = { 'value': group[0], 'path': self.path_id, 'p_len_diff': self.len_diff, 'p_length': self.length }
+            group_coords = geom_utils.round_coordinates(group_coords, digits=6)
+            feature = _get_geojson_feature_dict(group_coords)
+            feature['properties'] = {
+                'value': group[0],
+                'path': self.path_id,
+                'p_len_diff': self.len_diff,
+                'p_length': self.length
+            }
             features.append(feature)
         return features
 
@@ -128,7 +145,7 @@ class Path:
         wgs_coords = [coord for edge in self.edges for coord in edge.coords_wgs]
         wgs_coords = geom_utils.round_coordinates(wgs_coords, digits=6)
 
-        feature_d = self.__get_geojson_feature_dict(wgs_coords)
+        feature_d = _get_geojson_feature_dict(wgs_coords)
 
         mode_lengths = {
             'walk': self.length_no_bike_allowed if travel_mode == TravelMode.BIKE else self.length,
@@ -153,14 +170,14 @@ class Path:
         aqi_props = self.aqi_attrs.get_aqi_props_dict() if self.aqi_attrs else {}
         gvi_props = self.gvi_attrs.get_gvi_props_dict() if self.gvi_attrs else {}
 
-        edge_ids = { 'edge_ids': self.edge_ids } if conf.research_mode else {}
-        edge_data = { 
-            'edge_data': [edge.as_props() for edge in self.edges] 
+        edge_ids = {'edge_ids': self.edge_ids} if conf.research_mode else {}
+        edge_data = {
+            'edge_data': [edge.as_props() for edge in self.edges]
         } if conf.edge_data else {}
 
-        feature_d['properties'] = { 
-            **props, 
-            **noise_props, 
+        feature_d['properties'] = {
+            **props,
+            **noise_props,
             **aqi_props,
             **gvi_props,
             **edge_ids,
@@ -168,16 +185,17 @@ class Path:
         }
         return feature_d
 
-    def __get_geojson_feature_dict(self, coords: List[tuple]) -> dict:
-        """Returns a dictionary with GeoJSON schema and geometry based on the given geometry. The returned dictionary can be used as a
-        feature inside a GeoJSON feature collection. 
-        """
-        feature = { 
-            'type': 'Feature', 
-            'properties': {}, 
-            'geometry': {
-                'coordinates': coords,
-                'type': 'LineString'
-            }
+
+def _get_geojson_feature_dict(coords: List[tuple]) -> dict:
+    """Returns a dictionary with GeoJSON schema and geometry based on the given geometry.
+    The returned dictionary can be used as a feature inside a GeoJSON feature collection.
+    """
+    feature = {
+        'type': 'Feature',
+        'properties': {},
+        'geometry': {
+            'coordinates': coords,
+            'type': 'LineString'
         }
-        return feature
+    }
+    return feature

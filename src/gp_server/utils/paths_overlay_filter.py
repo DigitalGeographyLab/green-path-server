@@ -1,5 +1,5 @@
 """
-This module provides functionality for filtering out paths with nearly identical geometries. 
+This module provides functionality for filtering out paths with nearly identical geometries.
 """
 
 from typing import List, Tuple, Union
@@ -8,40 +8,47 @@ from gp_server.app.logger import Logger
 
 
 def __get_path_overlay_candidates_by_len(
-    param_path: Path, 
-    all_paths: List[Path], 
+    param_path: Path,
+    all_paths: List[Path],
     len_diff: int = 25
 ) -> List[Path]:
     """Returns paths with length difference not greater or less than specified in [len_diff] (m)
-    compared to the length of [path]. If [all_paths] contains [param_path], the latter is included in the returned list.
+    compared to the length of [path]. If [all_paths] contains [param_path], the latter is included
+    in the returned list.
     """
     return [
-        path for path in all_paths 
-        if (path.length < (param_path.length + len_diff)) & (path.length > (param_path.length - len_diff))
+        path for path in all_paths
+        if ((path.length < (param_path.length + len_diff)) and
+            (path.length > (param_path.length - len_diff)))
     ]
 
 
 def __get_overlapping_paths(
-    log: Logger, 
-    param_path: Path, 
-    compare_paths: List[Path], 
+    log: Logger,
+    param_path: Path,
+    compare_paths: List[Path],
     buffer_m: int = None
 ) -> List[Path]:
     """Returns [compare_paths] that are within a buffered geometry of [param_path].
     """
     overlapping_paths = [param_path]
     path_geom_buff = param_path.geometry.buffer(buffer_m)
-    for compare_path in [compare_path for compare_path in compare_paths if compare_path.path_id != param_path.path_id]:
+    for compare_path in [
+        compare_path for compare_path in compare_paths if compare_path.path_id != param_path.path_id
+    ]:
         bool_within = compare_path.geometry.within(path_geom_buff)
         if bool_within:
             overlapping_paths.append(compare_path)
-    if len(overlapping_paths) > 1: 
-        log.debug(f'Found {len(overlapping_paths)} overlapping paths for: {param_path.path_id} - {[path.path_id for path in overlapping_paths]}')
+    if len(overlapping_paths) > 1:
+        log.debug(
+            f'Found {len(overlapping_paths)} overlapping paths for: '
+            f'{param_path.path_id} - {[path.path_id for path in overlapping_paths]}'
+        )
     return overlapping_paths
 
 
 def __get_least_cost_path(
-    paths: List[Path], 
+    paths: List[Path],
     cost_attr: str = 'nei_norm'
 ) -> Path:
     """Returns the least expensive (best) path by given cost attribute.
@@ -49,32 +56,37 @@ def __get_least_cost_path(
     if len(paths) == 1:
         return next(iter(paths))
     ordered = paths.copy()
+
     def get_cost(path: Path):
         if cost_attr == 'nei_norm':
             return path.noise_attrs.nei_norm
         if cost_attr == 'aqc_norm':
             return path.aqi_attrs.aqc_norm
+
     ordered.sort(key=get_cost)
     return ordered[0]
 
 
 def get_unique_paths_by_geom_overlay(
-    log: Logger, 
-    all_paths: Tuple[Path], 
-    buffer_m: int = None, 
+    log: Logger,
+    all_paths: Tuple[Path],
+    buffer_m: int = None,
     cost_attr: str = 'nei_norm'
 ) -> Union[List[str], None]:
-    """Filters a list of paths by comparing buffered line geometries of the paths and selecting only the unique paths by given buffer_m (m).
+    """Filters a list of paths by comparing buffered line geometries of the paths and selecting
+    only the unique paths by given buffer_m (m).
 
     Args:
         all_paths: Both fastest and exposure optimized paths.
-        buffer_m: A buffer size in meters with which the path geometries will be buffered when comparing path geometries.
-        cost_attr: The name of a cost attribute to minimize when selecting the best of overlapping paths.
+        buffer_m: A buffer size in meters with which the path geometries will be buffered when
+            comparing path geometries.
+        cost_attr: The name of a cost attribute to minimize when selecting the best of overlapping
+            paths.
     Note:
         Filters out fastest path if an overlapping green path is found to replace it.
     Returns:
-        A filtered list of paths having nearly unique line geometry with respect to the given buffer_m.
-        None if PathSet contains only one path.
+        A filtered list of paths having nearly unique line geometry with respect to the given
+        buffer_m. None if PathSet contains only one path.
     """
     if len(all_paths) == 1:
         return None
@@ -89,5 +101,8 @@ def get_unique_paths_by_geom_overlay(
                 filtered_paths_ids.append(best_overlapping_path.path_id)
             paths_already_overlapped += [path.path_id for path in overlapping_paths]
 
-    log.debug(f'Filtered {len(filtered_paths_ids)} unique paths from {len(all_paths)} unique paths by overlay')
+    log.debug(
+        f'Filtered {len(filtered_paths_ids)} unique paths '
+        f'from {len(all_paths)} unique paths by overlay'
+    )
     return filtered_paths_ids

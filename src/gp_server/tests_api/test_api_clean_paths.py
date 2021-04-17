@@ -26,7 +26,6 @@ def test_fast_path_prop_types(test_exposure_prop_types) -> Callable[[dict], None
         assert isinstance(props['aqc'], (float, int))
         assert props['aqc_diff'] is None
         assert props['aqc_diff_rat'] is None
-        assert props['aqc_diff_score'] is None
         assert isinstance(props['aqc_norm'], (float, int))
         test_exposure_prop_types(props['aqi_cl_exps'])
         assert isinstance(props['aqi_m'], (float, int))
@@ -63,7 +62,6 @@ def test_clean_path_prop_types(test_exposure_prop_types) -> Callable[[dict], Non
         assert isinstance(props['aqc'], (float, int))
         assert isinstance(props['aqc_diff'], (float, int))
         assert isinstance(props['aqc_diff_rat'], (float, int))
-        assert isinstance(props['aqc_diff_score'], (float, int))
         assert isinstance(props['aqc_norm'], (float, int))
         test_exposure_prop_types(props['aqi_cl_exps'])
         assert isinstance(props['aqi_m'], (float, int))
@@ -175,7 +173,6 @@ def test_path_set_1_clean_path_props(path_set_1):
     assert props['aqc'] == 174.64
     assert props['aqc_diff'] == -3.22
     assert props['aqc_diff_rat'] == -1.8
-    assert props['aqc_diff_score'] == 0.1
     assert props['aqc_norm'] == 0.127
     assert json.dumps(props['aqi_cl_exps'], sort_keys=True) == '{"1": 290.019, "2": 1082.854}'
     assert props['aqi_m'] == 1.51

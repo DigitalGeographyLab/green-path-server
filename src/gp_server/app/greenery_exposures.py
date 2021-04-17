@@ -8,7 +8,7 @@ def get_gvi_sensitivities() -> List[float]:
 
     if conf.gvi_sensitivities:
         return conf.gvi_sensitivities
-    
+
     return [2, 4, 8]
 
 
@@ -21,8 +21,8 @@ def get_gvi_adjusted_cost(
     """Calculates GVI adjusted edge cost for GVI optimized routing.
     To find high GVI paths, we have to assign lower costs for edges with high GVI and
     higher costs for edges with low GVI. Negative costs cannot be used (with Dijkstra's),
-    so a temporarily inverted concept (of GVI) "greyness index" is needed. 
-    Higher sensitivity coefficient will give paths of higher GVI (i.e. lower "greyness"). 
+    so a temporarily inverted concept (of GVI) "greyness index" is needed.
+    Higher sensitivity coefficient will give paths of higher GVI (i.e. lower "greyness").
 
     Args:
         length (float): Length of the edge.
@@ -30,7 +30,7 @@ def get_gvi_adjusted_cost(
         bike_time_cost (float): Biking time cost (not measured in time).
         sen (float): Sensitivity coefficient (optional, default = 1)
 
-    The function employs the following four assumptions: 
+    The function employs the following four assumptions:
         1) "greyness index" = 1 - gvi
         2) "greyness cost" = (1 - gvi) * length
         3) base cost = either length or bike_time_cost (if the latter is given)
@@ -38,9 +38,9 @@ def get_gvi_adjusted_cost(
     """
 
     base_cost = bike_time_cost if bike_time_cost else length
-    
+
     return round(base_cost + (1 - gvi) * base_cost * sen, 2)
-    
+
 
 def get_mean_gvi(gvi_exps: List[Tuple[float, float]]) -> float:
     """Returns mean GVI by the list of GVI + length pairs (tuples).
@@ -57,7 +57,7 @@ def get_gvi_class(gvi: float) -> int:
     """
     if not isinstance(gvi, float) or gvi > 1 or gvi < 0:
         raise ValueError(f'GVI value is invalid: {gvi}')
-    
+
     return ceil(gvi * 10)
 
 
@@ -66,23 +66,23 @@ def aggregate_gvi_class_exps(gvi_exps: List[Tuple[float, float]]) -> Dict[int, f
     where the keys are the names of the GVI classes.
     """
     gvi_class_exps = defaultdict(float)
-    
+
     for gvi, exp in gvi_exps:
         gvi_class_exps[get_gvi_class(gvi)] += exp
-    
-    return { 
-        gvi_class: round(exp, 3) 
-        for gvi_class, exp 
+
+    return {
+        gvi_class: round(exp, 3)
+        for gvi_class, exp
         in gvi_class_exps.items()
     }
 
 
 def get_gvi_class_pcts(gvi_class_exps: Dict[int, float]) -> Dict[int, float]:
-    
+
     length = sum(gvi_class_exps.values())
 
-    return { 
+    return {
         gvi_class: round(exp * 100 / length, 3)
-        for gvi_class, exp 
-        in gvi_class_exps.items() 
+        for gvi_class, exp
+        in gvi_class_exps.items()
     }

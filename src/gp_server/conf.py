@@ -1,5 +1,5 @@
 """
-This file provides an easy access to settings of the Green Paths route planner app. 
+This file provides an easy access to settings of the Green Paths route planner app.
 
 The default values can be overridden as necessary, e.g. set research_mode to True if additional
 path properties (such as list of edge IDs) are needed. It is recommended to disable unused

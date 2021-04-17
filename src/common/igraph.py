@@ -1,13 +1,13 @@
 """igraph I/O utilities for green paths route planner.
 
 This module provides functions for both loading and exporting street network graph
-files for Green Paths route planner. External graph files use GraphML text format. 
+files for Green Paths route planner. External graph files use GraphML text format.
 
 An important export of the module are Enum classes that include names of edge and node attributes.
-The values of the enums are used as attribute names in the graph objects as well as in the exported 
-GraphML files. The attribute names in the exported files are compact to reduce file size. 
-On the other hand, the (descriptive) names of the enums are used as column names when edge or node data
-is read to pandas DataFrame object. 
+The values of the enums are used as attribute names in the graph objects as well as in the exported
+GraphML files. The attribute names in the exported files are compact to reduce file size.
+On the other hand, the (descriptive) names of the enums are used as column names when edge or node
+data is read to pandas DataFrame object.
 
 """
 
@@ -25,8 +25,9 @@ import logging
 log = logging.getLogger('common.igraph')
 
 
-# enum names are used as dataframe column names 
+# enum names are used as dataframe column names
 # values are used as attribute names in igraph graph objects and exported GraphML files
+
 
 class NoiseSource(Enum):
     road = 'road'
@@ -34,46 +35,48 @@ class NoiseSource(Enum):
     metro = 'metro'
     tram = 'tram'
 
+
 class Node(Enum):
-   id_ig = 'ii'
-   id_otp = 'io'
-   name_otp = 'no'
-   geometry = 'geom'
-   geom_wgs = 'geom_wgs'
-   traversable_walking = 'b_tw'
-   traversable_biking = 'b_tb'
-   traffic_light = 'tl'
+    id_ig = 'ii'
+    id_otp = 'io'
+    name_otp = 'no'
+    geometry = 'geom'
+    geom_wgs = 'geom_wgs'
+    traversable_walking = 'b_tw'
+    traversable_biking = 'b_tb'
+    traffic_light = 'tl'
+
 
 class Edge(Enum):
-   id_ig: int = 'ii'
-   id_otp: str = 'io'
-   id_way: int = 'iw' # for similar geometries (e.g. two-way connections between node pairs)
-   uv: tuple = 'uv' # source & target node ids as a tuple
-   name_otp: str = 'no'
-   geometry: LineString = 'geom'
-   geom_wgs: LineString = 'geom_wgs'
-   length: float = 'l'
-   bike_time_cost: float = 'c_bt'
-   bike_safety_cost: float = 'c_bs'
-   edge_class: str = 'ec'
-   street_class: str = 'sc'
-   is_stairs: bool = 'b_st'
-   is_no_thru_traffic: bool = 'b_ntt'
-   allows_walking: bool = 'b_aw'
-   allows_biking: bool = 'b_ab'
-   traversable_walking: bool = 'b_tw'
-   traversable_biking: bool = 'b_tb'
-   bike_safety_factor: float = 'bsf'
-   noises: Dict[int, float] = 'n' # nodata = None, no noises = {}
-   noise_source: NoiseSource = 'ns' # nodata = None, no noises = ''
-   noise_sources: Dict[NoiseSource, int] = 'nss' # nodata = None, no noises = {}
-   aqi: float = 'aqi' # air quality index
-   gvi_gsv: float = 'g_gsv' # mean green view index (GVI) calculated from Google Street View (GSV) images
-   gvi_low_veg_share: float = 'g_lv' # share of low (<2m) vegetation in 30m buffer around edge
-   gvi_high_veg_share: float = 'g_hv' # share of high (>2m) vegetation in 30m buffer around edge
-   gvi_comb_gsv_veg: float = 'g_gsv_v' # combined GVI of GSV GVI and both vegetation shares
-   gvi_comb_gsv_high_veg: float = 'g_gsv_hv' # combined GVI of GSV GVI and high vegetation share
-   gvi: float = 'g' # combined GVI to use in routing (one of the above two)
+    id_ig: int = 'ii'
+    id_otp: str = 'io'
+    id_way: int = 'iw'  # for similar geometries (e.g. two-way connections between node pairs)
+    uv: tuple = 'uv'  # source & target node ids as a tuple
+    name_otp: str = 'no'
+    geometry: LineString = 'geom'
+    geom_wgs: LineString = 'geom_wgs'
+    length: float = 'l'
+    bike_time_cost: float = 'c_bt'
+    bike_safety_cost: float = 'c_bs'
+    edge_class: str = 'ec'
+    street_class: str = 'sc'
+    is_stairs: bool = 'b_st'
+    is_no_thru_traffic: bool = 'b_ntt'
+    allows_walking: bool = 'b_aw'
+    allows_biking: bool = 'b_ab'
+    traversable_walking: bool = 'b_tw'
+    traversable_biking: bool = 'b_tb'
+    bike_safety_factor: float = 'bsf'
+    noises: Dict[int, float] = 'n'  # nodata = None, no noises = {}
+    noise_source: NoiseSource = 'ns'  # nodata = None, no noises = ''
+    noise_sources: Dict[NoiseSource, int] = 'nss'  # nodata = None, no noises = {}
+    aqi: float = 'aqi'  # air quality index
+    gvi_gsv: float = 'g_gsv'  # mean green view index (GVI) from Google Street View (GSV) images
+    gvi_low_veg_share: float = 'g_lv'  # share of low (<2m) vegetation in 30m buffer around edge
+    gvi_high_veg_share: float = 'g_hv'  # share of high (>2m) vegetation in 30m buffer around edge
+    gvi_comb_gsv_veg: float = 'g_gsv_v'  # combined GVI of GSV GVI and both vegetation shares
+    gvi_comb_gsv_high_veg: float = 'g_gsv_hv'  # combined GVI of GSV GVI and high vegetation share
+    gvi: float = 'g'  # combined GVI to use in routing (one of the above two)
 
 
 def as_string(value: Any):
@@ -83,19 +86,25 @@ def as_string(value: Any):
 
 def to_str(value):
     return str(value) if value != 'None' else None
+
 def to_int(value):
     return int(value) if value != 'None' else None
+
 def to_float(value):
     return float(value) if value != 'None' else None
+
 def to_geom(value):
     return wkt.loads(value)
+
 def to_bool(value):
     if len(value) == 1: return value == '1'
     return ast.literal_eval(value)
+
 def to_dict(value):
-   return ast.literal_eval(value) if value != 'None' else None
+    return ast.literal_eval(value) if value != 'None' else None
+
 def to_tuple(value):
-   return ast.literal_eval(value) if value != 'None' else None
+    return ast.literal_eval(value) if value != 'None' else None
 
 
 __value_converter_by_edge_attribute = {
@@ -144,7 +153,7 @@ __value_converter_by_node_attribute = {
 
 def get_edge_dicts(G: ig.Graph, attrs: List[Enum] = [Edge.geometry]) -> list:
     """Returns all edges of a graph as a list of dictionaries. Only the selected attributes (attrs)
-    are included in the dictionaries. 
+    are included in the dictionaries.
     """
     edge_dicts = []
     for edge in G.es:
@@ -154,20 +163,20 @@ def get_edge_dicts(G: ig.Graph, attrs: List[Enum] = [Edge.geometry]) -> list:
             if attr.value in edge_attrs:
                 edge_dict[attr.name] = edge_attrs[attr.value]
         edge_dicts.append(edge_dict)
-        
+
     return edge_dicts
 
 
 def get_edge_gdf(
-    G: ig.Graph, 
-    id_attr: Enum = None, 
-    attrs: List[Enum] = [], 
-    ig_attrs: List[str] = [], 
-    geom_attr: Enum = Edge.geometry, 
+    G: ig.Graph,
+    id_attr: Enum = None,
+    attrs: List[Enum] = [],
+    ig_attrs: List[str] = [],
+    geom_attr: Enum = Edge.geometry,
     epsg: int = 3879
 ) -> gpd.GeoDataFrame:
-    """Returns all edges of a graph as GeoPandas GeoDataFrame. The default is to load the projected geometry,
-    but it can be overridden by defining another geom_attr and the corresponding epsg. 
+    """Returns all edges of a graph as GeoPandas GeoDataFrame. The default is to load the projected
+    geometry, but it can be overridden by defining another geom_attr and the corresponding epsg.
     """
 
     edge_dicts = []
@@ -177,7 +186,7 @@ def get_edge_gdf(
         edge_attrs = edge.attributes()
         ids.append(edge_attrs[id_attr.value] if id_attr else edge.index)
         edge_dict[geom_attr.name] = edge_attrs[geom_attr.value]
-        
+
         for attr in attrs:
             if attr.value in edge_attrs:
                 edge_dict[attr.name] = edge_attrs[attr.value]
@@ -185,24 +194,24 @@ def get_edge_gdf(
         for attr in ig_attrs:
             if (hasattr(edge, attr)):
                 edge_dict[attr] = getattr(edge, attr)
-        
+
         edge_dicts.append(edge_dict)
 
     return gpd.GeoDataFrame(edge_dicts, geometry=geom_attr.name, index=ids, crs=CRS.from_epsg(epsg))
 
 
 def get_node_gdf(
-    G: ig.Graph, 
-    id_attr: Enum = None, 
-    attrs: List[Enum] = [], 
-    ig_attrs: List[str] = [], 
-    geom_attr: Enum = Node.geometry, 
+    G: ig.Graph,
+    id_attr: Enum = None,
+    attrs: List[Enum] = [],
+    ig_attrs: List[str] = [],
+    geom_attr: Enum = Node.geometry,
     epsg: int = 3879
 ) -> gpd.GeoDataFrame:
-    """Returns all nodes of a graph as pandas GeoDataFrame. The default is to load the projected geometry,
-    but it can be overridden by defining another geom_attr and a corresponding epsg. 
+    """Returns all nodes of a graph as pandas GeoDataFrame. The default is to load the projected
+    geometry, but it can be overridden by defining another geom_attr and a corresponding epsg.
     """
-    
+
     node_dicts = []
     ids = []
     for node in G.vs:
@@ -214,25 +223,25 @@ def get_node_gdf(
         for attr in attrs:
             if attr.value in node_attrs:
                 node_dict[attr.name] = node_attrs[attr.value]
-        
+
         for attr in ig_attrs:
             if (hasattr(node, attr)):
                 node_dict[attr] = getattr(node, attr)
-        
+
         node_dicts.append(node_dict)
 
     return gpd.GeoDataFrame(node_dicts, geometry=geom_attr.name, index=ids, crs=CRS.from_epsg(epsg))
 
 
-def read_graphml(graph_file: str, log = None) -> ig.Graph:
+def read_graphml(graph_file: str, log=None) -> ig.Graph:
     """Loads an igraph graph object from GraphML file, including all edge and node
-    attributes that are found in the data and recognized by this module. 
-    
-    Since all attributes are saved in text format, an attribute specific converter must be found 
-    in the dictionary __value_converter_by_node_attribute for each attribute. 
-    Attributes for which a converter is not found are omitted. 
+    attributes that are found in the data and recognized by this module.
+
+    Since all attributes are saved in text format, an attribute specific converter must be found
+    in the dictionary __value_converter_by_node_attribute for each attribute.
+    Attributes for which a converter is not found are omitted.
     """
-    
+
     G = ig.Graph()
     G = G.Read_GraphML(graph_file)
     del(G.vs['id'])
@@ -242,31 +251,33 @@ def read_graphml(graph_file: str, log = None) -> ig.Graph:
             converter = __value_converter_by_node_attribute[Node(attr)]
             G.vs[attr] = [converter(value) for value in list(G.vs[attr])]
         except Exception:
-            if log: log.warning(f'Failed to read node attribute {attr}')
-            
+            if log:
+                log.warning(f'Failed to read node attribute {attr}')
+
     for attr in G.es[0].attributes():
         try:
             converter = __value_converter_by_edge_attribute[Edge(attr)]
             G.es[attr] = [converter(value) for value in list(G.es[attr])]
         except Exception:
-            if log: log.warning(f'Failed to read edge attribute {attr}')
+            if log:
+                log.warning(f'Failed to read edge attribute {attr}')
 
     return G
 
 
 def export_to_graphml(
-    G: ig.Graph, 
-    graph_file: str, 
-    n_attrs: List[Node] = [], 
+    G: ig.Graph,
+    graph_file: str,
+    n_attrs: List[Node] = [],
     e_attrs: List[Edge] = []
 ) -> None:
     """Writes the given graph object to a text file in GraphML format. Only the
-    selected edge and node attributes are included in the export if some are specified. 
-    If no edge or node attributes are specified, all found attributes are exported. 
-    Attribute values are written as text, converted by str(value). 
+    selected edge and node attributes are included in the export if some are specified.
+    If no edge or node attributes are specified, all found attributes are exported.
+    Attribute values are written as text, converted by str(value).
     """
 
-    Gc = G.copy() # avoid mutating the original graph
+    Gc = G.copy()  # avoid mutating the original graph
 
     if not n_attrs:
         for attr in Node:
@@ -279,7 +290,7 @@ def export_to_graphml(
         for node_attr in G.vs.attribute_names():
             if (node_attr not in [attr.value for attr in n_attrs]):
                 del(Gc.vs[node_attr])
-    
+
     if not e_attrs:
         for attr in Edge:
             if (attr.value in Gc.es[0].attributes()):

@@ -74,13 +74,13 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
     has_geom_list = [isinstance(geom, LineString) for geom in list(graph.es[E.geometry.value])]
 
     for sen in routing_conf.gvi_sens:
-        
+
         if conf.walking_enabled:
             cost_attr = cost_prefix + str(sen)
             graph.es[cost_attr] = [
-                gvi_exps.get_gvi_adjusted_cost(length, gvi, sen=sen) 
+                gvi_exps.get_gvi_adjusted_cost(length, gvi, sen=sen)
                 if has_geom else 0.0
-                for length, gvi, has_geom 
+                for length, gvi, has_geom
                 in zip(lengths, gvi_list, has_geom_list)
             ]
 
@@ -91,7 +91,7 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
                     length, gvi, bike_time_cost=bike_time_cost, sen=sen
                 )
                 if has_geom else 0.0
-                for length, bike_time_cost, gvi, has_geom 
+                for length, bike_time_cost, gvi, has_geom
                 in zip(
                     lengths, bike_time_costs, gvi_list, has_geom_list
                 )

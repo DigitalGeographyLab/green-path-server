@@ -35,7 +35,7 @@ def __project_link_edge_attrs(
     on_edge_attrs: dict
 ) -> dict:
     """Creates edge attribute dictionary for a linking edge based on a base edge and ratio of
-    the lengths of the two. 
+    the lengths of the two.
     """
     link_len = link_geom.length
     link_len_ratio = link_len / on_edge_attrs[E.length.value]
@@ -56,10 +56,10 @@ def __project_link_edge_attrs(
     cost_attrs = {
         attr: round(value * link_len_ratio, 2)
         for attr, value in on_edge_attrs.items()
-        if attr.startswith('c_') # prefix of all cost attributes
+        if attr.startswith('c_')  # prefix of all cost attributes
     }
 
-    return { **base_attrs, **cost_attrs }
+    return {**base_attrs, **cost_attrs}
 
 
 def get_link_edge_data(
@@ -75,8 +75,8 @@ def get_link_edge_data(
         new_node_id: An identifier of the new node.
         split_point: A point geometry of the new node (on an existing edge).
         edge: All attributes of the edge on which the new node was created.
-        create_inbound_links: A boolean variable indicating whether links should should be inbound.
-        create_outbound_links: A boolean variable indicating whether links should should be outbound.
+        create_inbound_links: A boolean variable indicating whether links should be inbound.
+        create_outbound_links: A boolean variable indicating whether links should be outbound.
     """
     e_node_from = link_to_edge_spec.edge[E.uv.value][0]
     e_node_to = link_to_edge_spec.edge[E.uv.value][1]
@@ -121,20 +121,22 @@ def __maybe_use_nearest_existing_node(
 ) -> Union[OdNodeData, None]:
 
     nearest_node_vs_edge_dist = nearest_node_dist - nearest_edge.distance
-    # use the nearest node if it is on the nearest edge and at least almost as near as the nearest edge
-    # this can give a significant performance boost as adding (or deleting) linking edges to the graph is expensive 
+    # use the nearest node if it is on the nearest edge and at least almost
+    # as near as the nearest edge, this can give a significant performance boost
+    # as adding (or deleting) linking edges to the graph is expensive
     if avoid_node_creation:
         acceptable_od_offset = 30 if not long_distance else 40
-        if nearest_node_vs_edge_dist < acceptable_od_offset and nearest_node in nearest_edge.attrs[E.uv.value]:
+        if (nearest_node_vs_edge_dist < acceptable_od_offset and
+                (nearest_node in nearest_edge.attrs[E.uv.value])):
             return OdNodeData(
-                id = nearest_node,
-                is_temp_node = False
+                id=nearest_node,
+                is_temp_node=False
             )
     # snap 10 m to nearest node regardless of avoid_node_creation
     if nearest_node_vs_edge_dist < 10:
         return OdNodeData(
-            id = nearest_node,
-            is_temp_node = False
+            id=nearest_node,
+            is_temp_node=False
         )
 
     return None
@@ -148,8 +150,8 @@ def __select_nearest_edge(
     """Returns temp (i.e. link) edge as nearest edge for O/D creation if is as near to the Point
     as the nearest normal edge.
     """
-    
-    # check if the nearest edge of the destination is one of the linking edges created for origin 
+
+    # check if the nearest edge of the destination is one of the linking edges created for origin
     for link_edge in temp_link_edges:
         link_edge_dist = nearest_edge_point.distance(link_edge[E.geometry.value])
         if link_edge_dist < 0.1:
@@ -157,7 +159,7 @@ def __select_nearest_edge(
                 link_edge,
                 link_edge_dist
             )
-    
+
     return nearest_edge
 
 
@@ -172,7 +174,7 @@ def get_nearest_node(
     nearest_edge = G.find_nearest_edge(point)
     if not nearest_edge:
         raise Exception('Nearest edge not found')
-    
+
     nearest_node: int = G.find_nearest_node(point)
     if not nearest_node:
         raise Exception('Nearest node not found')
@@ -188,7 +190,8 @@ def get_nearest_node(
         nearest_node_dist,
         nearest_edge
     )
-    if od_as_nearest_node: return od_as_nearest_node
+    if od_as_nearest_node:
+        return od_as_nearest_node
 
     # still here, thus creating a new node to graph and linking edges for it
 
@@ -203,11 +206,11 @@ def get_nearest_node(
     # new edges from the new node to existing nodes need to be created to the graph
     # hence return the geometry of the nearest edge and the nearest point on the nearest edge
     return OdNodeData(
-        id = new_node,
-        is_temp_node = True,
-        link_to_edge_spec = LinkToEdgeSpec(
-            edge = nearest_edge.attrs,
-            snap_point = nearest_edge_point
+        id=new_node,
+        is_temp_node=True,
+        link_to_edge_spec=LinkToEdgeSpec(
+            edge=nearest_edge.attrs,
+            snap_point=nearest_edge_point
         )
     )
 
@@ -217,8 +220,8 @@ def get_orig_dest_nodes_and_linking_edges(
     orig_point: Point,
     dest_point: Point
 ) -> OdData:
-    """Selects nearest nodes ad OD if they are "near enough", otherwise creates new nodes either on the nearest
-    existing edges or on the previously created links (i.e. temporary) edges. 
+    """Selects nearest nodes ad OD if they are "near enough", otherwise creates new nodes
+    either on the nearest existing edges or on the previously created links (i.e. temporary) edges.
     """
     orig_link_edges = ()
     dest_link_edges = ()
@@ -228,12 +231,12 @@ def get_orig_dest_nodes_and_linking_edges(
         orig_node = get_nearest_node(
             G,
             orig_point,
-            avoid_node_creation = True,
-            long_distance = long_distance
+            avoid_node_creation=True,
+            long_distance=long_distance
         )
     except Exception:
         raise RoutingException(ErrorKey.ORIGIN_NOT_FOUND.value)
-    
+
     # add linking edges to graph if new node was created (on the nearest edge)
     if orig_node.link_to_edge_spec:
         orig_link_edges = get_link_edge_data(
@@ -242,14 +245,14 @@ def get_orig_dest_nodes_and_linking_edges(
             create_inbound_links=False,
             create_outbound_links=True
         )
-    
+
     try:
         dest_node = get_nearest_node(
             G,
             dest_point,
-            avoid_node_creation = not orig_link_edges,
-            temp_link_edges = orig_link_edges,
-            long_distance = long_distance
+            avoid_node_creation=not orig_link_edges,
+            temp_link_edges=orig_link_edges,
+            long_distance=long_distance
         )
     except Exception:
         raise RoutingException(ErrorKey.DESTINATION_NOT_FOUND.value)
@@ -259,8 +262,8 @@ def get_orig_dest_nodes_and_linking_edges(
         dest_link_edges = get_link_edge_data(
             dest_node.id,
             dest_node.link_to_edge_spec,
-            create_inbound_links = True,
-            create_outbound_links = False,
+            create_inbound_links=True,
+            create_outbound_links=False,
         )
 
     G.add_new_edges_to_graph(orig_link_edges + dest_link_edges)

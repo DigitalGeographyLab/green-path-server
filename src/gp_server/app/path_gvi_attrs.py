@@ -29,7 +29,7 @@ def create_gvi_attrs(gvi_exp_list: List[Tuple[float, float]]) -> PathGviAttrs:
     gvi_cl_exps = gvi_exps.aggregate_gvi_class_exps(gvi_exp_list)
 
     return PathGviAttrs(
-        gvi_m = gvi_exps.get_mean_gvi(gvi_exp_list),
-        gvi_cl_exps = gvi_cl_exps,
-        gvi_cl_pcts = gvi_exps.get_gvi_class_pcts(gvi_cl_exps)
+        gvi_m=gvi_exps.get_mean_gvi(gvi_exp_list),
+        gvi_cl_exps=gvi_cl_exps,
+        gvi_cl_pcts=gvi_exps.get_gvi_class_pcts(gvi_cl_exps)
     )

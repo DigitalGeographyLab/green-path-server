@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple, Union
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
 import gp_server.conf as conf
-from gp_server.app.types import NearestEdge, PathEdge, RoutingConf 
+from gp_server.app.types import NearestEdge, PathEdge, RoutingConf
 from common.igraph import Edge as E, Node as N
 import common.igraph as ig_utils
 import gp_server.app.aq_exposures as aq_exps
@@ -14,8 +14,9 @@ from gp_server.app.constants import RoutingException, ErrorKey
 
 
 class GraphHandler:
-    """Graph handler provides functions for accessing and manipulating graph during least cost path optimization. 
-    
+    """Graph handler provides functions for accessing and manipulating graph before, during
+    and after least cost path optimization.
+
     Attributes:
         graph: An igraph graph object.
         routing_conf: A RoutingConf object.
@@ -23,14 +24,15 @@ class GraphHandler:
         __edges_sind: Spatial index of the edges GeoDataFrame.
         __node_gdf: The nodes of the graph as a GeoDataFrame.
         __nodes_sind: Spatial index of the nodes GeoDataFrame.
-        __path_edge_cache: A cache of path edges for current routing request. 
+        __path_edge_cache: A cache of path edges for current routing request.
     """
 
     def __init__(self, logger: Logger, graph_file: str, routing_conf: RoutingConf):
         """Initializes a graph (and related features) used by green_paths_app and aqi_processor_app.
 
         Args:
-            subset: A boolean variable indicating whether a subset of the graph should be loaded (subset is for testing / developing).
+            subset: A boolean variable indicating whether a subset of the graph should be loaded
+            (subset is for testing / developing).
         """
         self.log = logger
         self.log.info(f'Loading graph from file: {graph_file}')
@@ -39,7 +41,7 @@ class GraphHandler:
         self.routing_conf = routing_conf
         self.ecount = self.graph.ecount()
         self.vcount = self.graph.vcount()
-        self.log.info('Graph of '+ str(self.graph.ecount()) + ' edges read')
+        self.log.info(f'Graph of {self.graph.ecount()} edges read')
         self.__edge_gdf = self.__get_edge_gdf()
         self.__edge_sindex = self.__edge_gdf.sindex
         self.__node_gdf = ig_utils.get_node_gdf(self.graph)
@@ -52,7 +54,7 @@ class GraphHandler:
         if conf.gvi_paths_enabled:
             edge_cost_factory.set_gvi_costs_to_graph(self.graph, routing_conf)
         self.log.info('GVI costs set')
-        self.graph.es[E.aqi.value] = None # set default AQI value to None
+        self.graph.es[E.aqi.value] = None  # set default AQI value to None
         self.log.duration(start_time, 'Graph initialized', log_level='info')
         self.__path_edge_cache: Dict[int, PathEdge] = {}
 
@@ -61,15 +63,17 @@ class GraphHandler:
         # drop edges with identical geometry
         edge_gdf = edge_gdf.drop_duplicates(E.id_way.name)
         # drop edges without geometry
-        edge_gdf = edge_gdf[edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))]
+        edge_gdf = edge_gdf[
+            edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))
+        ]
         edge_gdf = edge_gdf[[E.geometry.name]]
         self.log.info(f'Added {len(edge_gdf)} edges to edge_gdf')
         return edge_gdf
 
     def update_edge_attrs_from_df_to_graph(self, edge_gdf, df_attr: str):
-        """Updates the given edge attribute(s) from a DataFrame to a graph. The attribute(s) to update
-        are given as series of dictionaries (df_attr): keys will be used ass attribute names and values
-        as values in the graph.
+        """Updates the given edge attribute(s) from a DataFrame to a graph. The attribute(s) to
+        update are given as series of dictionaries (df_attr): keys will be used ass attribute names
+        and values as values in the graph.
         """
         for edge in edge_gdf.itertuples():
             updates: dict = getattr(edge, df_attr)
@@ -86,7 +90,9 @@ class GraphHandler:
             The name (id) of the nearest node. None if no nearest node is found.
         """
         for radius in (50, 100) + (conf.max_od_search_dist_m,):
-            possible_matches_index = list(self.__node_gdf.sindex.intersection(point.buffer(radius).bounds))
+            possible_matches_index = list(
+                self.__node_gdf.sindex.intersection(point.buffer(radius).bounds)
+            )
             if possible_matches_index:
                 break
         if not possible_matches_index:
@@ -96,7 +102,7 @@ class GraphHandler:
         points_union = possible_matches.geometry.unary_union
         nearest_geom = nearest_points(point, points_union)[1]
         nearest = possible_matches.geometry.geom_equals(nearest_geom)
-        nearest_point =  possible_matches.loc[nearest]
+        nearest_point = possible_matches.loc[nearest]
         nearest_node_id = nearest_point.index.tolist()[0]
         return nearest_node_id
 
@@ -104,7 +110,7 @@ class GraphHandler:
         try:
             return self.graph.vs[node_id].attributes()
         except Exception:
-            self.log.warning('Could not find node by id: '+ str(node_id))
+            self.log.warning(f'Could not find node by id: {node_id}')
             return None
 
     def get_edge_attrs_by_id(self, edge_id: int) -> Union[dict, None]:
@@ -112,7 +118,7 @@ class GraphHandler:
         try:
             return self.graph.es[edge_id].attributes()
         except Exception:
-            self.log.warning('Could not find edge by id: '+ str(edge_id))
+            self.log.warning(f'Could not find edge by id: {edge_id}')
             return None
 
     def get_edge_object_by_id(self, edge_id: int) -> Union[PathEdge, None]:
@@ -120,26 +126,26 @@ class GraphHandler:
         not found or it lacks geometry.
         """
         edge = self.get_edge_attrs_by_id(edge_id)
-        
-        if (not edge or edge[E.length.value] == 0.0 
+
+        if (not edge or edge[E.length.value] == 0.0
                 or not isinstance(edge[E.geometry.value], LineString)):
             return None
 
         return PathEdge(
-            id = edge[E.id_ig.value],
-            length = edge[E.length.value],
-            bike_time_cost = edge[E.bike_time_cost.value],
-            bike_safety_cost = edge[E.bike_safety_cost.value],
-            allows_biking = edge[E.allows_biking.value],
-            aqi = edge[E.aqi.value],
-            aqi_cl = aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
-            noises = edge[E.noises.value],
-            gvi = edge[E.gvi.value],
-            gvi_cl = gvi_exps.get_gvi_class(
+            id=edge[E.id_ig.value],
+            length=edge[E.length.value],
+            bike_time_cost=edge[E.bike_time_cost.value],
+            bike_safety_cost=edge[E.bike_safety_cost.value],
+            allows_biking=edge[E.allows_biking.value],
+            aqi=edge[E.aqi.value],
+            aqi_cl=aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,
+            noises=edge[E.noises.value],
+            gvi=edge[E.gvi.value],
+            gvi_cl=gvi_exps.get_gvi_class(
                 edge[E.gvi.value]
             ) if edge[E.gvi.value] is not None else None,
-            coords = edge[E.geometry.value].coords,
-            coords_wgs = edge[E.geom_wgs.value].coords
+            coords=edge[E.geometry.value].coords,
+            coords_wgs=edge[E.geom_wgs.value].coords
         )
 
     def get_node_point_geom(self, node_id: int) -> Union[Point, None]:
@@ -150,12 +156,16 @@ class GraphHandler:
         """Finds the nearest edge to a given point and returns it as dictionary of edge attributes.
         """
         for radius in (35, 150, 400) + (conf.max_od_search_dist_m,):
-            possible_matches_index = list(self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds))
+            possible_matches_index = list(
+                self.__edge_gdf.sindex.intersection(point.buffer(radius).bounds)
+            )
             if possible_matches_index:
                 possible_matches = self.__edge_gdf.iloc[possible_matches_index].copy()
-                possible_matches['distance'] = [geom.distance(point) for geom in possible_matches[E.geometry.name]]
+                possible_matches['distance'] = [
+                    geom.distance(point) for geom in possible_matches[E.geometry.name]
+                ]
                 shortest_dist = possible_matches['distance'].min()
-                if (shortest_dist < radius):
+                if shortest_dist < radius:
                     break
         if not possible_matches_index:
             self.log.error('No near edges found')
@@ -167,7 +177,7 @@ class GraphHandler:
 
     def format_edge_dict_for_debugging(self, edge: dict) -> dict:
         # map edge dict attribute names to the descriptive ones defined in Edge enum
-        edge_d = { E(k).name if k in [item.value for item in E] else k: v for k, v in edge.items() }
+        edge_d = {E(k).name if k in [item.value for item in E] else k: v for k, v in edge.items()}
         edge_d[E.geometry.name] = str(edge_d[E.geometry.name])
         edge_d[E.geom_wgs.name] = str(edge_d[E.geom_wgs.name])
         return edge_d
@@ -176,7 +186,7 @@ class GraphHandler:
         """Loads edge attributes from graph by ordered list of edges representing a path.
         """
         path_edges: List[PathEdge] = []
-        
+
         for edge_id in edge_ids:
             edge_d = self.__path_edge_cache.get(edge_id)
             if edge_d:
@@ -184,7 +194,7 @@ class GraphHandler:
                 continue
 
             path_edge = self.get_edge_object_by_id(edge_id)
-            
+
             if path_edge:
                 self.__path_edge_cache[edge_id] = path_edge
                 path_edges.append(path_edge)
@@ -200,7 +210,7 @@ class GraphHandler:
         """Adds a new node to a graph at a specified location (Point) and returns the id of the new node.
         """
         new_node_id = self.__get_new_node_id()
-        attrs = { N.geometry.value: point }
+        attrs = {N.geometry.value: point}
         self.graph.add_vertex(**attrs)
         return new_node_id
 
@@ -225,13 +235,19 @@ class GraphHandler:
 
         self.log.duration(time_add_edges, 'loaded new features to graph', unit='ms')
 
-    def get_least_cost_path(self, orig_node: int, dest_node: int, weight: str='length') -> List[int]:
+    def get_least_cost_path(
+        self,
+        orig_node: int,
+        dest_node: int,
+        weight: str = 'length'
+    ) -> List[int]:
         """Calculates a least cost path by the given edge weight.
 
         Args:
             orig_node: The name of the origin node (int).
             dest_node: The name of the destination node (int).
-            weight: The name of the edge attribute to use as cost in the least cost path optimization.
+            weight: The name of the edge attribute to use as cost in the least cost path
+                optimization.
         Returns:
             The least cost path as a sequence of edges (ids).
         """
@@ -245,7 +261,7 @@ class GraphHandler:
                     output='epath'
                 )
                 return s_path[0]
-            except:
+            except Exception:
                 raise Exception(f'Could not find paths by {weight}')
         else:
             raise RoutingException(ErrorKey.OD_SAME_LOCATION.value)
@@ -253,7 +269,7 @@ class GraphHandler:
     def reset_edge_cache(self):
         self.__path_edge_cache = {}
 
-    def drop_nodes_edges(self, node_ids = Tuple) -> None:
+    def drop_nodes_edges(self, node_ids=Tuple) -> None:
         """Removes nodes and connected edges from the graph.
         """
         try:
@@ -264,6 +280,10 @@ class GraphHandler:
 
         # make sure that graph has the expected number of edges and nodes after routing
         if self.graph.ecount() != self.ecount:
-            self.log.error(f'Graph has incorrect number of edges: {self.graph.ecount()} is not {self.ecount}')
+            self.log.error(
+                f'Graph has incorrect number of edges: {self.graph.ecount()} is not {self.ecount}'
+            )
         if self.graph.vcount() != self.vcount:
-            self.log.error(f'Graph has incorrect number of nodes: {self.graph.vcount()} is not {self.vcount}')
+            self.log.error(
+                f'Graph has incorrect number of nodes: {self.graph.vcount()} is not {self.vcount}'
+            )

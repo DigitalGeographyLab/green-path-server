@@ -1,5 +1,4 @@
 from typing import List
-import gp_server.conf as conf
 import gp_server.utils.paths_overlay_filter as path_overlay_filter
 from gp_server.app.constants import RoutingMode, PathType, TravelMode, path_type_by_routing_mode
 from gp_server.app.logger import Logger
@@ -49,7 +48,7 @@ class PathSet:
             raise ValueError('Sort bike paths is for bike paths only')
 
         self.paths.sort(key=lambda p: getattr(p, 'length'))
-    
+
     def drop_slower_shorter_bike_paths(self):
         """After sorting bike paths by length, it is reasonable to drop shorter paths that
         are slower, so that the remaining paths are in order by both legnth and time.
@@ -59,11 +58,13 @@ class PathSet:
 
         if self.travel_mode != TravelMode.BIKE:
             raise ValueError('Drop slower shorter bike paths is for bike paths only')
-        
+
         drop_path_ids = []
         for idx, path in enumerate(self.paths):
             if idx == 0:
-                prev_id, prev_length, prev_bike_time = (path.path_id, path.length, path.bike_time_cost)
+                prev_id, prev_length, prev_bike_time = (
+                    path.path_id, path.length, path.bike_time_cost
+                )
                 continue
             if prev_length < path.length and prev_bike_time > path.bike_time_cost:
                 drop_path_ids.append(prev_id)
@@ -75,7 +76,8 @@ class PathSet:
 
     def reclassify_path_types(self):
         """After sorting paths by lengths and possibly using drop_slower_shorter_bike_paths,
-        the first path of the set needs to be reclassified as fastest and the rest as exposure optimized. 
+        the first path of the set needs to be reclassified as fastest and the rest as
+        exposure optimized.
         """
         exp_path_type = path_type_by_routing_mode[self.routing_mode]
         for idx, path in enumerate(self.paths):
@@ -84,7 +86,7 @@ class PathSet:
                 path.set_path_id(PathType.FASTEST.value)
             elif path.path_type == PathType.FASTEST:
                 path.set_path_type(exp_path_type)
-                path.set_path_id(f'f2')
+                path.set_path_id('f2')
 
     def filter_out_exp_optimized_paths_missing_exp_data(self) -> None:
         path_count = len(self.paths)
@@ -93,12 +95,12 @@ class PathSet:
 
         if self.routing_mode == RoutingMode.GREEN:
             self.paths = [
-                path for path in self.paths 
+                path for path in self.paths
                 if (path.path_type == PathType.FASTEST or not path.missing_gvi)
             ]
         if self.routing_mode == RoutingMode.QUIET:
             self.paths = [
-                path for path in self.paths 
+                path for path in self.paths
                 if (path.path_type == PathType.FASTEST or not path.missing_noises)
             ]
         if self.routing_mode == RoutingMode.CLEAN:
@@ -117,15 +119,16 @@ class PathSet:
             path.set_gvi_attrs()
 
     def filter_out_unique_geom_paths(self, buffer_m=50) -> None:
-        """Filters out fast / green paths with nearly similar geometries (using "greenest" wins policy when paths overlap).
+        """Filters out fast / green paths with nearly similar geometries (using "greenest"
+        wins policy when paths overlap).
         """
         if len(self.paths) <= 1:
             return
         cost_attr = 'aqc_norm' if self.routing_mode == RoutingMode.CLEAN else 'nei_norm'
         keep_path_ids = path_overlay_filter.get_unique_paths_by_geom_overlay(
-            self.log, 
-            self.paths, 
-            buffer_m=buffer_m, 
+            self.log,
+            self.paths,
+            buffer_m=buffer_m,
             cost_attr=cost_attr
         )
         if keep_path_ids:
@@ -140,7 +143,7 @@ class PathSet:
         if PathType.FASTEST.value not in path_ids:
             filtered_paths[0].set_path_type(PathType.FASTEST)
             filtered_paths[0].set_path_id(PathType.FASTEST.value)
-        
+
         self.paths = filtered_paths
 
     def set_compare_to_fastest_attrs(self) -> None:
@@ -154,7 +157,7 @@ class PathSet:
                 path.set_compare_to_fastest_attrs(fastest_path)
 
     def get_paths_as_feature_collection(self) -> dict:
-        """Returns paths of the set as GeoJSON FeatureCollection (dict). 
+        """Returns paths of the set as GeoJSON FeatureCollection (dict).
         """
         return as_geojson_feature_collection([
                 path.get_as_geojson_feature(self.travel_mode) for path in self.paths
@@ -165,7 +168,7 @@ class PathSet:
         edge_grouping_attr = edge_group_attr_by_routing_mode[self.routing_mode]
         for path in self.paths:
             path.aggregate_edge_groups_by_attr(edge_grouping_attr)
-        
+
         feat_lists = [path.get_edge_groups_as_features() for path in self.paths]
 
         return as_geojson_feature_collection([

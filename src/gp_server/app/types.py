@@ -3,7 +3,7 @@ from typing import Dict, Union, List, Tuple
 from dataclasses import dataclass, field
 import common.geometry as geom_utils
 import gp_server.app.noise_exposures as noise_exps
-from shapely.geometry import Point, LineString
+from shapely.geometry import Point
 from common.igraph import Edge as E
 from gp_server.app.constants import RoutingMode, TravelMode
 
@@ -67,6 +67,7 @@ class RoutingConf:
     sensitivities_by_routing_mode: Dict[RoutingMode, List[float]]
     fastest_path_cost_attr_by_travel_mode: Dict[TravelMode, E]
 
+
 @dataclass(frozen=True)
 class OdSettings:
     orig_point: Point
@@ -75,21 +76,25 @@ class OdSettings:
     routing_mode: RoutingMode
     sensitivities: Union[List[float], None]
 
+
 @dataclass
 class NearestEdge:
     attrs: dict
     distance: float
+
 
 @dataclass
 class LinkToEdgeSpec:
     edge: dict
     snap_point: Point
 
+
 @dataclass
 class OdNodeData:
     id: int
     is_temp_node: bool
     link_to_edge_spec: Union[LinkToEdgeSpec, None] = None
+
 
 @dataclass(frozen=True)
 class OdData:
