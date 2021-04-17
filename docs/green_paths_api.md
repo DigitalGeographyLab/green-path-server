@@ -5,7 +5,7 @@ This page contains useful information of the green paths routing API:
 - Status codes
 - Response schema
 
-When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is mainly being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it can be worthwhile to take a look at it when familiarizing with it. 
+When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is mainly being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it can be worthwhile to take a look at it when familiarizing with the API. 
 
 ## Endpoints
 - www.greenpaths.fi/
@@ -25,6 +25,9 @@ When exploring the API and the source codes, please bear in mind that the word "
   - `short` (only shortest route)
   - `safe`  (only safest route, only available for travel mode `bike`)
 - orig/dest_coords: {latitude},{longitude}, e.g. 60.20772,24.96716
+
+## Routing workflow
+For bike, GP finds three types of paths: 1) fastest (one), 2) safest (one) and 3) exposure optimized paths (many - if routing mode is green, quiet or clean). For walking, GP finds the shortest path (which is also the fastest) and one or more exposure optimized paths (if routing mode is `green`, `quiet` or `clean`). The total number of returned paths varies depending on how many of the found paths are distinct by geometry.
 
 ## Status codes
 - Successful routing requests return route data and status code `200`
@@ -86,12 +89,6 @@ When exploring the API and the source codes, please bear in mind that the word "
 | noise_pcts | object | no | Exposures (%) to different noise level ranges. Keys represent noise levels and values percentages. |
 | noises | object | no | Exposures to different noise levels. Keys represent noise levels and values distances (m). |
 
-### Additional path properties in research mode
-| Property | Type | Nullable | Description  |
-| ------------- | ---- | --- | ----------- |
-| edge_ids | list | yes | List of edge IDs of the edges that the path consists of. Note that the first and last edge may not exist in the graph as they can be virtual/temporary edges between O/D location and the nearest "real" vertex. |
-| edge_data | list | yes | Edge data (length, aqi, gvi, mdB, coords_wgs) as list of dictionaries. |
-
 ### Edge_FC
 - Contains edge geometries of both fastest and exposure optimized (green/quiet/clean) paths
 - Edge geometries are aggregated by greenery, noise level or air quality (depending on routing mode)
@@ -104,7 +101,26 @@ When exploring the API and the source codes, please bear in mind that the word "
 | p_length | number | no | The length of the path to which the edge belongs to (m). |
 | p_len_diff | number | no | Difference in length between the fastest path and the path to which the edge belongs to (m). |
 
-### Example Path_FC
+## Research mode
+[src/gp_server/conf.py](../src/gp_server/conf.py)
+
+### Adjusted routing workflow & response
+Routing works as described above in [routing workflow](##Routing-workflow), with the following differences:
+- First path in the response data is labeled as short (type: "short" & id: "short")
+- In travel mode `walk`, paths are sorted by length by default, thus fastest path = shortest path
+- In travel mode `bike`:
+  - Safest path is not routed
+  - Paths are sorted by length (this rarely has any effect)
+  - After sorting, shorter paths that are slower are dropped (this is very rare)
+  - Consequently, returned paths are in order by both length and travel time
+
+### Additional path properties
+| Property | Type | Nullable | Description  |
+| ------------- | ---- | --- | ----------- |
+| edge_ids | list | no | List of edge IDs of the edges that the path consists of. Note that the first and last edge may not exist in the graph as they can be virtual/temporary edges between O/D location and the nearest "real" vertex. |
+| edge_data | list | no | Edge data (length, aqi, gvi, mdB, coords_wgs) as list of dictionaries. |
+
+## Example Path_FC
 ```yaml
 Path_FC: {
   features: [ {
