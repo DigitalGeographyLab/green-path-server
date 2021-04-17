@@ -105,7 +105,7 @@ For bike, GP finds three types of paths: 1) fastest (one), 2) safest (one) and 3
 [src/gp_server/conf.py](../src/gp_server/conf.py)
 
 ### Adjusted routing workflow & response
-Routing works as described above in [routing workflow](##Routing-workflow), with the following differences:
+Routing works as described above in [routing workflow](#Routing-workflow), with the following differences:
 - First path in the response data is labeled as short (type: "short" & id: "short")
 - In travel mode `walk`, paths are sorted by length by default, thus fastest path = shortest path
 - In travel mode `bike`:
