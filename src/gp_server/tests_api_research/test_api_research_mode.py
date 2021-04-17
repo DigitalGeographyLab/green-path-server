@@ -57,10 +57,12 @@ def test_one_shortest_path_is_present_in_paths(feats_1, feats_2):
     types = [feat['properties']['type'] for feat in feats_1]
     assert types.count('short') == 1
     assert feats_1[0]['properties']['type'] == 'short'
+    assert feats_1[0]['properties']['id'] == 'short'
 
     types = [feat['properties']['type'] for feat in feats_2]
     assert types.count('short') == 1
     assert feats_2[0]['properties']['type'] == 'short'
+    assert feats_2[0]['properties']['id'] == 'short'
 
 
 def test_green_paths_are_included_in_paths(feats_1):
@@ -118,6 +120,7 @@ def test_walk_routing_mode_fast_returns_only_one_path(fastest_walk_path_features
 
 def test_walk_routing_mode_fast_returns_path_with_type_short(fastest_walk_path_features):
     assert fastest_walk_path_features[0]['properties']['type'] == 'short'
+    assert fastest_walk_path_features[0]['properties']['id'] == 'short'
 
 
 @pytest.fixture
@@ -134,6 +137,7 @@ def test_bike_routing_mode_fast_returns_only_one_path(fastest_bike_path_features
 
 def test_bike_routing_mode_fast_returns_path_with_type_short(fastest_bike_path_features):
     assert fastest_bike_path_features[0]['properties']['type'] == 'short'
+    assert fastest_bike_path_features[0]['properties']['id'] == 'short'
 
 
 @pytest.fixture
@@ -156,4 +160,6 @@ def test_legacy_routing_mode_short_returns_path_with_type_short(short_bike_path_
     assert len(short_bike_path_features) == 1
     assert len(short_walk_path_features) == 1
     assert short_bike_path_features[0]['properties']['type'] == 'short'
+    assert short_bike_path_features[0]['properties']['id'] == 'short'
     assert short_walk_path_features[0]['properties']['type'] == 'short'
+    assert short_walk_path_features[0]['properties']['id'] == 'short'

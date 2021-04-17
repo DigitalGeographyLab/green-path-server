@@ -22,6 +22,7 @@ When exploring the API and the source codes, please bear in mind that the word "
   - `quiet`
   - `clean` (i.e. fresh air paths)
   - `fast` (only shortest/fastest route)
+  - `short` (only shortest route)
   - `safe`  (only safest route, only available for travel mode `bike`)
 - orig/dest_coords: {latitude},{longitude}, e.g. 60.20772,24.96716
 

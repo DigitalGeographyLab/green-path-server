@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 import gp_server.conf as conf
 import gp_server.utils.paths_overlay_filter as path_overlay_filter
 from gp_server.app.constants import RoutingMode, PathType, TravelMode, path_type_by_routing_mode
@@ -6,11 +6,6 @@ from gp_server.app.logger import Logger
 from gp_server.app.path import Path
 from gp_server.app.types import edge_group_attr_by_routing_mode
 
-
-edge_time_attr_by_travel_mode: Dict[TravelMode, str] = {
-    TravelMode.WALK: 'length',
-    TravelMode.BIKE: 'bike_time_cost'
-}
 
 def as_geojson_feature_collection(features: List[dict]) -> dict:
     return {

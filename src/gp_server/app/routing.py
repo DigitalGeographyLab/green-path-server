@@ -108,7 +108,19 @@ def find_or_create_od_nodes(
         raise RoutingException(ErrorKey.ORIGIN_OR_DEST_NOT_FOUND.value)
 
 
-def find_safest_path(G: GraphHandler, od_nodes: OdData) -> Path:
+def __find_fastest_path(G: GraphHandler, od_nodes: OdData, fastest_path_cost_attr: E) -> Path:
+    return Path(
+        path_id = PathType.FASTEST.value,
+        path_type = PathType.FASTEST,
+        edge_ids = G.get_least_cost_path(
+            od_nodes.orig_node.id,
+            od_nodes.dest_node.id,
+            weight=fastest_path_cost_attr.value
+        )
+    )
+
+
+def __find_safest_path(G: GraphHandler, od_nodes: OdData) -> Path:
     return Path(
         path_id = PathType.SAFEST.value,
         path_type = PathType.SAFEST,
@@ -120,7 +132,7 @@ def find_safest_path(G: GraphHandler, od_nodes: OdData) -> Path:
     )
 
 
-def find_exp_optimized_paths(G: GraphHandler, od_settings: OdSettings, od_nodes: OdData):
+def __find_exp_optimized_paths(G: GraphHandler, od_settings: OdSettings, od_nodes: OdData):
     cost_prefix = cost_prefix_dict[od_settings.travel_mode][od_settings.routing_mode]
     return [
         Path(
@@ -155,25 +167,15 @@ def find_least_cost_paths(
     start_time = time.time()
     try:
         if od_settings.routing_mode != RoutingMode.SAFE:
-            paths.append(
-                Path(
-                    path_id = PathType.FASTEST.value,
-                    path_type = PathType.FASTEST,
-                    edge_ids = G.get_least_cost_path(
-                        od_nodes.orig_node.id,
-                        od_nodes.dest_node.id,
-                        weight=fastest_path_cost_attr.value
-                    )
-                )
-            )
+            paths.append(__find_fastest_path(G, od_nodes, fastest_path_cost_attr))
 
         # add safest path to path set if biking
         if (od_settings.travel_mode == TravelMode.BIKE and
             (not conf.research_mode or od_settings.routing_mode == RoutingMode.SAFE)):
-                paths.append(find_safest_path(G, od_nodes))
+                paths.append(__find_safest_path(G, od_nodes))
 
         if od_settings.routing_mode not in (RoutingMode.FAST, RoutingMode.SAFE):
-            paths.extend(find_exp_optimized_paths(G, od_settings, od_nodes))
+            paths.extend(__find_exp_optimized_paths(G, od_settings, od_nodes))
         
         path_set.set_unique_paths(paths)
         log.duration(start_time, 'routing done', unit='ms', log_level='info')
@@ -235,6 +237,7 @@ def process_paths_to_FC(
 
 def __reclassify_shortest_path(path_FC: dict) -> None:
     path_FC['features'][0]['properties']['type'] = 'short'
+    path_FC['features'][0]['properties']['id'] = 'short'
 
 
 def delete_added_graph_features(G: GraphHandler, od_nodes: OdData):
