@@ -1,9 +1,11 @@
 # Green paths routing API
 This page contains useful information of the green paths routing API:
-- Endpoints
-- Path variables
-- Status codes
-- Response schema
+- [Endpoints](#Endpoints)
+- [Path variables](#Path-variables)
+- [Routing workflow](#Routing-workflow)
+- [Status codes](#Status-codes)
+- [Response schema](#Response-schema)
+- [Research mode](#Research-mode)
 
 When exploring the API and the source codes, please bear in mind that the word "clean" (paths) is used to refer to "fresh air" (paths). As the routing API is mainly being used by [github.com/DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui), it can be worthwhile to take a look at it when familiarizing with the API. 
 
