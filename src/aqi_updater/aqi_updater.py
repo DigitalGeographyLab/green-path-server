@@ -13,9 +13,9 @@ def get_aqi_csv_name(aqi_tif_name: str) -> str:
 
 
 def get_aqi_class(aqi: float):
-    """Returns AQI class identifier, that is in the range from 1 to 9. Returns 0 if the given AQI is invalid.
-    AQI classes represent (9 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0. Class ranges are 
-    1: 1.0-1.5, 2: 1.5-2.0, 3: 2.0-2.5 etc.
+    """Returns AQI class identifier, that is in the range from 1 to 9. Returns 0 if the given AQI
+    is invalid. AQI classes represent (9 x) 0.5 intervals in the original AQI scale from 1.0 to 5.0.
+    Class ranges are 1: 1.0-1.5, 2: 1.5-2.0, 3: 2.0-2.5 etc.
     """
     return floor(aqi * 2) - 1 if np.isfinite(aqi) else 0
 
@@ -33,8 +33,8 @@ class AqiUpdater():
         self.__status = ''
 
     def new_update_available(self, latest_aqi_tif_name: str) -> bool:
-        """Returns False if the expected latest aqi file is either already processed or being processed at the moment, 
-        else returns True.
+        """Returns False if the expected latest aqi file is either already processed or being
+        processed at the moment, else returns True.
         """
         b_available = True
         status = ''
@@ -48,14 +48,14 @@ class AqiUpdater():
         if self.__status != status:
             self.log.info(f'AQI updater status changed to: {status}')
             self.__status = status
-        
+
         return b_available
 
     def create_aqi_update_csv(self, aqi_tif_name: str) -> None:
         self.__wip_aqi_csv = get_aqi_csv_name(aqi_tif_name)
         aqi_tif_file = fr'{self.__aqi_cache}{aqi_tif_name}'
         aqi_sample_df = aq_sampling.sample_aq_to_point_gdf(
-            self.__sampling_gdf, 
+            self.__sampling_gdf,
             aqi_tif_file,
             'aqi'
         )
@@ -83,7 +83,7 @@ class AqiUpdater():
         gdf['aqi_class'] = [get_aqi_class(aqi) for aqi in gdf['aqi']]
         id_aqi_pairs = list(zip(gdf[E.id_way.name].tolist(), gdf['aqi_class'].tolist()))
         with open(self.__aqi_updates_dir + 'aqi_map.json', 'w') as json_file:
-            json.dump({ 'data': id_aqi_pairs }, json_file, separators=(',', ':'))
+            json.dump({'data': id_aqi_pairs}, json_file, separators=(',', ':'))
         self.log.info(f'Exported current AQI for map: {self.__aqi_updates_dir}aqi_map.json')
 
     def __remove_old_update_files(self) -> None:

@@ -68,7 +68,6 @@ For bike, GP finds three types of paths: 1) fastest (one), 2) safest (one) and 3
 | aqc | number | no | Air pollution exposure index. |
 | aqc_diff | number | yes | Difference in the air pollution exposure index compared to the fastest path. |
 | aqc_diff_rat | number | yes | Difference in the air pollution exposure index compared to the fastest path (%). |
-| aqc_diff_score | number | yes | Ratio between the difference in the air pollution exposure index and the length (compared to the fastest path) - i.e. reduction in air pollution exposure index per each additional meter walked. |
 | aqc_norm | number | no | Distance normalized air pollution exposure index. |
 | aqi_m | number | no | Mean AQI. |
 | aqi_m_diff | number | yes | Difference in mean AQI compared to the fastest path. |
@@ -139,7 +138,6 @@ Path_FC: {
       aqc: 160.62,
       aqc_diff: null,
       aqc_diff_rat: null,
-      aqc_diff_score: null,
       aqc_norm: 0.326,
       aqi_cl_exps: {
         2: 492.94
@@ -208,7 +206,6 @@ Path_FC: {
       aqc: 206.76,
       aqc_diff: 46.14,
       aqc_diff_rat: 28.7,
-      aqc_diff_score: -0.3,
       aqc_norm: 0.329,
       aqi_cl_exps: {
         2: 629.31

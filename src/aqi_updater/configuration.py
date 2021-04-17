@@ -15,15 +15,15 @@ path = r'aqi_updater/'
 try:
     found_secrets = False
     for var in glob('/run/secrets/*'):
-        k=var.split('/')[-1]
-        v=open(var).read().rstrip('\n')
+        k = var.split('/')[-1]
+        v = open(var).read().rstrip('\n')
         os.environ[k] = v
-        log.info('Read docker secret: '+ str(k) +' (len: '+ str(len(v))+')')
+        log.info(f'Read docker secret: {k} (len: {len(v)})')
         found_secrets = True
 except Exception:
     traceback.print_exc()
     pass
-if (found_secrets == False):
+if not found_secrets:
     log.warning('No docker secrets found')
 
 try:
