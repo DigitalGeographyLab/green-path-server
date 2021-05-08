@@ -3,7 +3,8 @@ This file provides an easy access to settings of the Green Paths route planner a
 
 The default values can be overridden as necessary, e.g. set research_mode to True if additional
 path properties (such as list of edge IDs) are needed. It is recommended to disable unused
-features (walking_enabled, quiet_paths_enabled etc.) to allow smaller memory usage and faster routing. 
+features (walking_enabled, quiet_paths_enabled etc.) to allow smaller memory usage and faster
+routing.
 
 Configurations:
     graph_subset (bool): use clipped graph or not (used in server)
@@ -13,8 +14,8 @@ Configurations:
 
     research_mode (bool): set to True for additional path properties
 
-    max_od_search_dist_m (float): maximum distance in meters to search for nearest origin or destination,
-        higher values make O/D search slower
+    max_od_search_dist_m (float): maximum distance in meters to search for nearest origin or
+        destination, higher values make O/D search slower
 
     walking_enabled (bool): enables/disables walk cost calculation
     cycling_enabled (bool): enables/disables bike cost calculation

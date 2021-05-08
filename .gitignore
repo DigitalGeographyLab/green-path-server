@@ -117,6 +117,9 @@ src/aqi_updater/tests/test_data/*
 *.graphml
 !src/graphs/kumpula.graphml
 !src/graph_build/tests/graph_export/graph_in/kumpula.graphml
+src/graph_build/graph_import/graph_data_in/*.obj
+src/graph_build/graph_import/graph_data_in/*.pbf
+src/graph_build/graph_import/graph_data_in/*.csv
 
 # other files
 .DS_Store

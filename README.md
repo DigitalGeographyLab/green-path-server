@@ -52,12 +52,17 @@ $ conda env create -f conda-env.yml
 > conda env create -f conda-env-win.yml
 ```
 ## Graph data
+
+### Helsinki Metropolitan Area (HMA)
 To run the server, download one or more of the following graph files to the folder `src/graphs`:
 - [hma.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma.graphml)
 - [hma_r.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma_r.graphml) (for research)
 - [hma_r_hel-clip.graphml](https://a3s.fi/swift/v1/AUTH_c1dfd63531fb4a63a3927b1f237b547f/gp-data/hma_r_hel-clip.graphml) (for research)
 
-The file `hma.graphml` covers the Helsinki Metropolitan Area (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas `kumpula.graphml` is a small subset of the full graph suitable for development and testing (it is included in the repository). 
+The file `hma.graphml` covers the extent of the HMA (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas `kumpula.graphml` is a small subset of the full graph intended for development and testing purposes (it is included in this repository).
+
+### Other geographical extents
+It is possible to construct a routing graph for any area from raw OpenStreetMap data (*.pbf). However, since data on traffic noise, greenery and air quality may not be available in the same format for other areas, some customized data processing and sampling is likely needed. See the module [graph_build](src/graph_build) for more documentation on graph building.
 
 ## Running the server locally (linux/osx)
 ```
