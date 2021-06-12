@@ -5,7 +5,7 @@ from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 from common.igraph import Edge as E
 import gp_server.app.noise_exposures as noise_exps
 import gp_server.app.greenery_exposures as gvi_exps
-import gp_server.conf as conf
+from gp_server.conf import conf
 import gp_server.app.edge_cost_factory_bike as bike_costs
 
 

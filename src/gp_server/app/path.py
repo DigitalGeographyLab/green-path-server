@@ -1,6 +1,6 @@
 from shapely.geometry import LineString
 from typing import List, Tuple
-import gp_server.conf as conf
+from gp_server.conf import conf
 import common.geometry as geom_utils
 from gp_server.app.constants import PathType, TravelMode
 from gp_server.app.logger import Logger

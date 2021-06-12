@@ -7,7 +7,7 @@ import pandas as pd
 from os import listdir
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
-import gp_server.conf as conf
+from gp_server.conf import conf
 from gp_server.app.graph_handler import GraphHandler
 import gp_server.app.aq_exposures as aq_exps
 from gp_server.app.logger import Logger
@@ -120,8 +120,8 @@ class GraphAqiUpdater:
         """Returns the name of the expected latest aqi data csv file based on the current time,
         e.g. aqi_2019-11-11T17.csv.
         """
-        if conf.use_mean_aqi and conf.mean_aqi_file:
-            return conf.mean_aqi_file
+        if conf.use_mean_aqi and conf.mean_aqi_file_name:
+            return conf.mean_aqi_file_name
         elif conf.test_mode:
             return 'aqi_2020-10-25T14.csv'
         else:

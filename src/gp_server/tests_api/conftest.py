@@ -1,4 +1,5 @@
-from typing import Dict, Union, Tuple, Callable
+from gp_server.conf import RoutingConf
+from typing import Dict, Union, Callable
 from unittest.mock import patch
 import pytest
 import json
@@ -7,21 +8,31 @@ from common.geometry import project_geom
 from shapely.geometry import LineString
 
 
-__noise_sensitivities = [ 0.1, 0.4, 1.3, 3.5, 6 ]
-__aq_sensitivities = [ 5, 15, 30 ]
-__gvi_sensitivities = [ 2, 4, 8 ]
+test_conf = RoutingConf(
+    graph_file = r'graphs/kumpula.graphml',
+    test_mode = True,
+    research_mode = False,
+    walk_speed_ms = 1.2,
+    bike_speed_ms = 5.55,
+    max_od_search_dist_m = 650,
+    walking_enabled = True,
+    cycling_enabled = True,
+    quiet_paths_enabled = True,
+    clean_paths_enabled = True,
+    gvi_paths_enabled = True,
+    use_mean_aqi = False,
+    mean_aqi_file_name = None,
+    edge_data = False,
+    noise_sensitivities = [0.1, 0.4, 1.3, 3.5, 6],
+    aq_sensitivities = [5, 15, 30],
+    gvi_sensitivities = [2, 4, 8]
+)
 
 
 @pytest.fixture(scope='module')
 def initial_client():
-    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
-    patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
-    
-    patch_noise_sens = patch('gp_server.app.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
-    patch_aq_sens = patch('gp_server.app.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
-    patch_gvi_sens = patch('gp_server.app.greenery_exposures.get_gvi_sensitivities', return_value=__gvi_sensitivities)
-    
-    with patch_env_test_mode, patch_env_graph_file, patch_noise_sens, patch_aq_sens, patch_gvi_sens:
+    patch_conf = patch('gp_server.conf.conf', test_conf)
+    with patch_conf:
         from gp_server_main import app
         with app.test_client() as gp_client:
             yield gp_client

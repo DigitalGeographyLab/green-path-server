@@ -7,8 +7,7 @@ features (walking_enabled, quiet_paths_enabled etc.) to allow smaller memory usa
 routing.
 
 Configurations:
-    graph_subset (bool): use clipped graph or not (used in server)
-    graph_file (str): name of the graph file to use (overrides graph_subset)
+    graph_file (str): name of the graph file to use
 
     test_mode (bool): only used by pytest (use static AQI layer as real-time AQI data)
 
@@ -24,42 +23,61 @@ Configurations:
     gvi_paths_enabled (bool): enables/disables green view cost calculation
 
     use_mean_aqi (bool): set to True to use mean AQI data instead of real-time data
-    mean_aqi_file (str): file path to mean AQI data as CSV (edge_id & aqi)
+    mean_aqi_file_name (str): name of CSV file containing mean AQI values (edge_id & aqi) 
+        in the path aqi_updates/
     edge_data (bool): return exposure properties and coordinates of paths' edges
 
-    noise_sensitivities (list): if set, overrides the default sensitivities
-    aq_sensitivities (list): if set, overrides the default sensitivities
-    gvi_sensitivities (list): if set, overrides the default sensitivities
+    noise_sensitivities (list): if set, overrides the default sensitivities*
+    aq_sensitivities (list): if set, overrides the default sensitivities*
+    gvi_sensitivities (list): if set, overrides the default sensitivities*
+        * Sensitivities are used to assign higher (or lower) weights to environmentally adjusted costs
+          in environmentally sensitive routing. Lower sensitivities result faster paths whereas higher
+          sensitivities result longer paths but with better exposure. The maximum number of paths for
+          one origin-destination pair is bounded by the number of sensitivities. 
 """
 
 import os
-from typing import List
+from typing import List, Union
+from dataclasses import dataclass
 
 
-graph_subset: bool = os.getenv('GRAPH_SUBSET') == 'True'
-graph_id = 'kumpula' if graph_subset else 'hma'
-graph_file: str = fr'graphs/{graph_id}.graphml'
+@dataclass(frozen=True)
+class RoutingConf:
+    graph_file: str
+    test_mode: bool
+    research_mode: bool
+    walk_speed_ms: float
+    bike_speed_ms: float
+    max_od_search_dist_m: float
+    walking_enabled: bool
+    cycling_enabled: bool
+    quiet_paths_enabled: bool
+    clean_paths_enabled: bool
+    gvi_paths_enabled: bool
+    use_mean_aqi: bool
+    mean_aqi_file_name: Union[str, None]
+    edge_data: bool
+    noise_sensitivities: Union[List[float], None]
+    aq_sensitivities: Union[List[float], None]
+    gvi_sensitivities: Union[List[float], None]
 
-test_mode: bool = False
 
-research_mode: bool = False
-
-walk_speed_ms: float = 1.2
-bike_speed_ms: float = 5.55
-
-max_od_search_dist_m: float = 650
-
-walking_enabled: bool = True
-cycling_enabled: bool = True
-quiet_paths_enabled: bool = True
-clean_paths_enabled: bool = True
-gvi_paths_enabled: bool = True
-
-use_mean_aqi: bool = False
-mean_aqi_file: str = fr'yearly_2019_aqi_avg_sum_{graph_id}.csv'
-edge_data: bool = False
-
-# the default sensitivities for exposure optimized routing can be overridden with these:
-noise_sensitivities: List[float] = []
-aq_sensitivities: List[float] = []
-gvi_sensitivities: List[float] = []
+conf = RoutingConf(
+    graph_file = os.getenv('GP_GRAPH', 'graphs/kumpula.graphml'),
+    test_mode = False,
+    research_mode = False,
+    walk_speed_ms = 1.2,
+    bike_speed_ms = 5.55,
+    max_od_search_dist_m = 650,
+    walking_enabled = True,
+    cycling_enabled = True,
+    quiet_paths_enabled = True,
+    clean_paths_enabled = True,
+    gvi_paths_enabled = True,
+    use_mean_aqi = False,
+    mean_aqi_file_name = None,
+    edge_data = False,
+    noise_sensitivities = [0.1, 0.4, 1.3, 3.5, 6],
+    aq_sensitivities = [5, 15, 30],
+    gvi_sensitivities = [2, 4, 8]
+)

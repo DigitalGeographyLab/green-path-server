@@ -7,7 +7,6 @@ comparing exposures to noise between paths.
 
 from typing import List, Dict, Union
 from collections import defaultdict
-import gp_server.conf as conf
 
 
 def calc_db_cost_v2(db) -> float:
@@ -31,7 +30,7 @@ def calc_db_cost_v3(db) -> float:
 def get_db_costs(version: int = 3) -> Dict[int, float]:
     """Returns a set of dB-specific noise cost coefficients. They can be used in calculating the
     base (noise) cost for edges. Alternative noise costs can be calculated by multiplying the base
-    noise cost with different noise sensitivities from get_noise_sensitivities())
+    noise cost with different noise sensitivities.
 
     Returns:
         A dictionary of noise cost coefficients where the keys refer to the lower boundaries of the
@@ -45,17 +44,6 @@ def get_db_costs(version: int = 3) -> Dict[int, float]:
         return {db: calc_db_cost_v3(db) for db in dbs}
     else:
         raise ValueError('Argument version must be either 2 or 3')
-
-
-def get_noise_sensitivities() -> List[float]:
-    """Returns a set of noise sensitivity coefficients that can be used in adding alternative
-    noise-basedcosts to edges and subsequently calculating alternative quiet paths (using different
-    weights for noise cost in routing).
-    """
-    if conf.noise_sensitivities:
-        return conf.noise_sensitivities
-
-    return [0.1, 0.4, 1.3, 3.5, 6]
 
 
 def get_noise_range(db: float) -> int:

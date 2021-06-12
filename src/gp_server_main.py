@@ -4,7 +4,7 @@ from typing import Tuple, Union, Any
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import gp_server.conf as conf
+from gp_server.conf import conf
 import gp_server.app.routing as routing
 from gp_server.app.aqi_map_data_api import get_aqi_map_data_api
 from gp_server.app.graph_handler import GraphHandler

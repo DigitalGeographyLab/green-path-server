@@ -1,15 +1,6 @@
 from typing import Dict, List, Tuple
 from math import ceil
 from collections import defaultdict
-import gp_server.conf as conf
-
-
-def get_gvi_sensitivities() -> List[float]:
-
-    if conf.gvi_sensitivities:
-        return conf.gvi_sensitivities
-
-    return [2, 4, 8]
 
 
 def get_gvi_adjusted_cost(

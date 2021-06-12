@@ -1,7 +1,7 @@
 from typing import Union, Callable
 from dataclasses import dataclass
 import os
-import gp_server.conf as conf
+from gp_server.conf import conf
 import random
 from functools import partial
 from datetime import datetime, timezone

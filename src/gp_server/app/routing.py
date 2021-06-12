@@ -1,7 +1,7 @@
 from typing import List
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 import time
-import gp_server.conf as conf
+from gp_server.conf import conf
 import common.geometry as geom_utils
 import gp_server.app.noise_exposures as noise_exps
 import gp_server.app.aq_exposures as aq_exps
@@ -20,14 +20,14 @@ from gp_server.app.types import OdData, OdSettings, RoutingConf
 
 def get_routing_conf() -> RoutingConf:
     return RoutingConf(
-        aq_sens=aq_exps.get_aq_sensitivities(),
-        gvi_sens=gvi_exps.get_gvi_sensitivities(),
-        noise_sens=noise_exps.get_noise_sensitivities(),
+        aq_sens=conf.aq_sensitivities,
+        gvi_sens=conf.gvi_sensitivities,
+        noise_sens=conf.noise_sensitivities,
         db_costs=noise_exps.get_db_costs(version=3),
         sensitivities_by_routing_mode={
-            RoutingMode.QUIET: noise_exps.get_noise_sensitivities(),
-            RoutingMode.CLEAN: aq_exps.get_aq_sensitivities(),
-            RoutingMode.GREEN: gvi_exps.get_gvi_sensitivities(),
+            RoutingMode.QUIET: conf.noise_sensitivities,
+            RoutingMode.CLEAN: conf.aq_sensitivities,
+            RoutingMode.GREEN: conf.gvi_sensitivities,
             RoutingMode.FAST: [],
             RoutingMode.SAFE: []
         },

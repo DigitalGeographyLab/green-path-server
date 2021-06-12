@@ -2,7 +2,7 @@ import time
 from typing import List, Dict, Tuple, Union
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
-import gp_server.conf as conf
+from gp_server.conf import conf
 from gp_server.app.types import NearestEdge, PathEdge, RoutingConf
 from common.igraph import Edge as E, Node as N
 import common.igraph as ig_utils
