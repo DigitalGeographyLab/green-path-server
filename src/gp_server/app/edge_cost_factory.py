@@ -24,7 +24,6 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
 
     noises_list = graph.es[E.noises.value]
     length_list = graph.es[E.length.value]
-    bike_time_costs = graph.es[E.bike_time_cost.value]
     has_geom_list = [isinstance(geom, LineString) for geom in list(graph.es[E.geometry.value])]
 
     # update dB 40 lengths to graph (the lowest level in noise data is 45)
@@ -39,7 +38,6 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
 
         if conf.walking_enabled:
             cost_attr = cost_prefix + str(sen)
-
             graph.es[cost_attr] = [
                 noise_exps.get_noise_adjusted_edge_cost(
                     sen, routing_conf.db_costs, noises, length
@@ -49,8 +47,8 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
             ]
 
         if conf.cycling_enabled:
+            bike_time_costs = graph.es[E.bike_time_cost.value]
             cost_attr = cost_prefix_bike + str(sen)
-
             graph.es[cost_attr] = [
                 noise_exps.get_noise_adjusted_edge_cost(
                     sen, routing_conf.db_costs, noises, length, bike_time_cost
@@ -69,7 +67,6 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
     cost_prefix_bike = cost_prefix_dict[TravelMode.BIKE][RoutingMode.GREEN]
 
     lengths = graph.es[E.length.value]
-    bike_time_costs = graph.es[E.bike_time_cost.value]
     gvi_list = graph.es[E.gvi.value]
     has_geom_list = [isinstance(geom, LineString) for geom in list(graph.es[E.geometry.value])]
 
@@ -85,6 +82,7 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
             ]
 
         if conf.cycling_enabled:
+            bike_time_costs = graph.es[E.bike_time_cost.value]
             cost_attr = cost_prefix_bike + str(sen)
             graph.es[cost_attr] = [
                 gvi_exps.get_gvi_adjusted_cost(

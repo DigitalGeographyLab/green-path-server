@@ -134,8 +134,8 @@ class GraphHandler:
         return PathEdge(
             id=edge[E.id_ig.value],
             length=edge[E.length.value],
-            bike_time_cost=edge[E.bike_time_cost.value],
-            bike_safety_cost=edge[E.bike_safety_cost.value],
+            bike_time_cost=edge.get(E.bike_time_cost.value, None),
+            bike_safety_cost=edge.get(E.bike_safety_cost.value, None),
             allows_biking=edge[E.allows_biking.value],
             aqi=edge[E.aqi.value],
             aqi_cl=aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,

@@ -57,10 +57,10 @@ class GraphAqiUpdater:
         self.__start()
 
     def __create_updater_edge_df(self, G: GraphHandler):
-        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length, E.bike_time_cost])
+        attrs = [E.length, E.bike_time_cost] if conf.cycling_enabled else [E.length]
+        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=attrs)
         edge_df[E.id_ig.name] = edge_df.index
-        edge_df = edge_df[[E.id_ig.name, E.length.name, E.bike_time_cost.name]]
-        return edge_df
+        return edge_df[[E.id_ig.name] + [attr.name for attr in attrs]]
 
     def __start(self):
         self.log.info(
@@ -153,7 +153,7 @@ class GraphAqiUpdater:
             self.__aqi_update_status = aqi_update_status
         return new_aqi_csv
 
-    def __get_aq_update_attrs(self, aqi: float, length: float, bike_time_cost: float):
+    def __get_aq_update_attrs(self, aqi: float, length: float, bike_time_cost: Union[float, None]):
         aq_costs = aq_exps.get_aqi_costs(
             aqi, length, self.__sens
         ) if conf.walking_enabled else {}
@@ -222,7 +222,7 @@ class GraphAqiUpdater:
 
         aqi_update_df['aq_updates'] = aqi_update_df.apply(
             lambda x: self.__get_aq_update_attrs(
-                x['aqi'], x[E.length.name], x[E.bike_time_cost.name]
+                x['aqi'], x[E.length.name], x.get(E.bike_time_cost.name, None)
             ), axis=1
         )
         self.__G.update_edge_attrs_from_df_to_graph(aqi_update_df, df_attr='aq_updates')

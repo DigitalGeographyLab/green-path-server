@@ -13,8 +13,8 @@ class PathEdge:
     """Class for handling edge attributes during routing."""
     id: int
     length: float
-    bike_time_cost: float
-    bike_safety_cost: float
+    bike_time_cost: Union[float, None]
+    bike_safety_cost: Union[float, None]
     allows_biking: bool
     aqi: Union[float, None]
     aqi_cl: Union[float, None]

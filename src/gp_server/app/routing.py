@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 import time
 from gp_server.conf import conf
@@ -46,7 +46,7 @@ def parse_od_settings(
     orig_lon,
     dest_lat,
     dest_lon,
-    aqi_updater: GraphAqiUpdater
+    aqi_updater: Union[GraphAqiUpdater, None]
 ) -> OdSettings:
 
     try:
@@ -54,18 +54,32 @@ def parse_od_settings(
     except Exception:
         raise RoutingException(ErrorKey.INVALID_TRAVEL_MODE_PARAM.value)
 
-    try:
-        if path_routing_mode == 'short':
-            # retain support for legacy path variable 'short'
-            routing_mode = RoutingMode.FAST
-        else:
+    if path_routing_mode == 'short':
+        # retain support for legacy path variable 'short'
+        routing_mode = RoutingMode.FAST
+    else:
+        try:
             routing_mode = RoutingMode(path_routing_mode)
-    except Exception:
-        raise RoutingException(ErrorKey.INVALID_ROUTING_MODE_PARAM.value)
+        except Exception:
+            raise RoutingException(ErrorKey.INVALID_ROUTING_MODE_PARAM.value)
 
-    if (routing_mode == RoutingMode.CLEAN and (not conf.clean_paths_enabled
-            or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated'])):
-        raise RoutingException(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE.value)
+    if travel_mode == TravelMode.BIKE and not conf.cycling_enabled:
+        raise RoutingException(ErrorKey.BIKE_ROUTING_NOT_AVAILABLE.value)
+
+    if travel_mode == TravelMode.WALK and not conf.walking_enabled:
+        raise RoutingException(ErrorKey.WALK_ROUTING_NOT_AVAILABLE.value)
+
+    if routing_mode == RoutingMode.GREEN and not conf.gvi_paths_enabled:
+        raise RoutingException(ErrorKey.GREEN_PATH_ROUTING_NOT_AVAILABLE.value)
+
+    if routing_mode == RoutingMode.QUIET and not conf.quiet_paths_enabled:
+        raise RoutingException(ErrorKey.QUIET_PATH_ROUTING_NOT_AVAILABLE.value)
+
+    if routing_mode == RoutingMode.CLEAN:
+        if not conf.clean_paths_enabled:
+            raise RoutingException(ErrorKey.CLEAN_PATH_ROUTING_NOT_AVAILABLE.value)
+        if not aqi_updater or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']:
+            raise RoutingException(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE.value)
 
     if travel_mode == TravelMode.WALK and routing_mode == RoutingMode.SAFE:
         raise RoutingException(ErrorKey.SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE.value)
