@@ -33,10 +33,10 @@ def test_calculates_noise_cost_2():
     assert round(noise_adjusted_cost, 1) == 11.9
 
 
-def test_calculates_zero_noise_cost_for_empty_noises_dict():
+def test_calculates_low_noise_cost_for_only_40_dB():
     length = 8.5
-    noises = {}
-    db_costs = {50: 0.2, 60: 0.8, 70: 1.3}
+    noises = {40: 8.5}
+    db_costs = {40: 0, 50: 0.2, 60: 0.8, 70: 1.3}
     noise_adjusted_cost = noise_exps.get_noise_adjusted_edge_cost(0.5, db_costs, noises, length)
     assert round(noise_adjusted_cost, 1) == length
 
