@@ -7,11 +7,14 @@ features (walking_enabled, quiet_paths_enabled etc.) to allow smaller memory usa
 routing.
 
 Configurations:
-    graph_file (str): name of the graph file to use
+    graph_file (str): file path to graph file (e.g. graphs/hma.graphml)
 
-    test_mode (bool): only used by pytest (use static AQI layer as real-time AQI data)
+    test_mode (bool): set to True to use sample AQI layer during tests runs
 
     research_mode (bool): set to True for additional path properties
+
+    walk_speed_ms (float): walking speed in m/s 
+    bike_speed_ms (float): cycling speed in m/s
 
     max_od_search_dist_m (float): maximum distance in meters to search for nearest origin or
         destination, higher values make O/D search slower
@@ -27,12 +30,12 @@ Configurations:
         in the path aqi_updates/
     edge_data (bool): return exposure properties and coordinates of paths' edges
 
-    noise_sensitivities (list): if set, overrides the default sensitivities*
-    aq_sensitivities (list): if set, overrides the default sensitivities*
-    gvi_sensitivities (list): if set, overrides the default sensitivities*
+    noise_sensitivities (list): list of sensitivities* to use in quiet path routing
+    aq_sensitivities (list): list of sensitivities* to use in fresh air path routing
+    gvi_sensitivities (list): list of sensitivities* to use in green path routing
         * Sensitivities are used to assign higher (or lower) weights to environmentally adjusted costs
           in environmentally sensitive routing. Lower sensitivities result faster paths whereas higher
-          sensitivities result longer paths but with better exposure. The maximum number of paths for
+          sensitivities result longer paths but with better exposures. The maximum number of paths for
           one origin-destination pair is bounded by the number of sensitivities. 
 """
 
@@ -63,7 +66,7 @@ class RoutingConf:
 
 
 conf = RoutingConf(
-    graph_file = os.getenv('GP_GRAPH', 'graphs/kumpula.graphml'),
+    graph_file = os.getenv('GP_GRAPH', r'graphs/kumpula.graphml'),
     test_mode = False,
     research_mode = False,
     walk_speed_ms = 1.2,
