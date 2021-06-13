@@ -8,6 +8,24 @@ The route planner is being developed by Digital Geography Lab, University of Hel
 
 Currently implemented features include calculation of unpolluted, green and quiet paths for walking or cycling (separately) with respect to real-time air quality, street level green view index and typical (day-evening-night) traffic noise levels. The exposure-based routing method (and application) is based on [an MSc thesis](https://github.com/hellej/quiet-paths-msc). 
 
+## Content
+- [Green paths routing API](#Green-paths-routing-API)
+- [Related projects](#Related-projects)
+- [Materials](#Materials)
+- [Tech](#Tech)
+- [Installation](#Installation)
+- [Graph data](#Graph-data)
+  - [Helsinki Metropolitan Area (HMA)](#Helsinki-Metropolitan-Area-HMA)
+  - [Format & attributes](#format--attributes)
+  - [Other geographical extents (graph building)](#Other-geographical-extents-graph-building)
+- [Configuration](#Configuration)
+- [Running the server locally: linux/osx](#Running-the-server-locally-linuxosx)
+- [Running the server locally: win](#Running-the-server-locally-win)
+- [Running the tests](#Running-the-tests)
+- [Links](#Links)
+- [Contributing](#Contributing)
+- [License](#License)
+
 ## Green paths routing API
 See [docs/green_paths_api.md](docs/green_paths_api.md) for documentation of the green paths routing API (endpoints and data types). 
 
@@ -22,14 +40,6 @@ See [docs/green_paths_api.md](docs/green_paths_api.md) for documentation of the 
 * [Traffic noise zones in Helsinki 2017](https://hri.fi/data/en_GB/dataset/helsingin-kaupungin-meluselvitys-2017)
 * [Street-level green view index by Google Street View images](https://www.sciencedirect.com/science/article/pii/S2352340920304959?via%3Dihub)
 * [Land cover data (low & high vegetation)](https://hri.fi/data/en_GB/dataset/paakaupunkiseudun-maanpeiteaineisto)
-
-## Contributing
-* See also [CONTRIBUTING.md](CONTRIBUTING.md)
-* Please bear in mind that the current objective of the project is to develop a proof-of-concept of a green path route planner rather than a production ready service
-* You are most welcome to add feature requests or bug reports in the issue tracker
-* When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change (firstname.lastname@helsinki.fi)
-* Simple typo fixes etc. can be sent as PRs directly, but for features or more complex bug fixes please add a corresponding issue first for discussion
 
 ## Tech
 * Python 3.8
@@ -61,10 +71,16 @@ To run the server, download one or more of the following graph files to the fold
 
 The file `hma.graphml` covers the extent of the HMA (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas `kumpula.graphml` is a small subset of the full graph intended for development and testing purposes (it is included in this repository).
 
-### Other geographical extents
-It is possible to construct a routing graph for any area from raw OpenStreetMap data (*.pbf). However, since data on traffic noise, greenery and air quality may not be available in the same format for other areas, some customized data processing and sampling are likely needed. See the module [graph_build](src/graph_build) for more documentation on graph building.
+### Format & attributes
+To use street network graph data with Green Paths, it needs to be in the GraphML format and feature required node & edge attributes. The format and attributes of the graph data are described in [the documentation of the module graph_build](src/graph_build#Graph-format-and-attributes).
 
-## Running the server locally (linux/osx)
+### Other geographical extents (graph building)
+It is possible to construct a routing graph for any area from raw OpenStreetMap data (*.pbf). However, since data on traffic noise, greenery and air quality may not be available in the same format for other areas, some customized data processing and sampling are likely needed. See the module [graph_build](src/graph_build#Building-a-custom-graph) for more documentation on graph building.
+
+## Configuration
+A number of settings of the routing software can be adjusted from the configuration file: [src/gp_server/conf.py](src/gp_server/conf.py). The routing workflow and response schema are described in [docs/green_paths_api.md](docs/green_paths_api.md), including the differences in research mode. 
+
+## Running the server locally: linux/osx
 ```
 $ cd src
 $ conda activate gp-env
@@ -76,7 +92,7 @@ $ gunicorn --workers=1 --bind=0.0.0.0:5000 --log-level=info --timeout 450 gp_ser
 $ sh start-gp-server.sh
 ```
 
-## Running the server locally (win)
+## Running the server locally: win
 In order to run the app on Windows, you must serve it with Flask as instructed in this chapter (Gunicorn cannot be installed on Windows).
 
 For testing and development purposes, you can set the graph file as `kumpula.graphml` in [conf.py](src/gp_server/conf.py)
@@ -103,6 +119,14 @@ $ python -m pytest aqi_updater/tests -v
 ## Links
 * [Green Paths project website](https://www.helsinki.fi/en/researchgroups/digital-geography-lab/green-paths)
 * [UIA HOPE project](https://ilmanlaatu.eu/briefly-in-english/)
+
+## Contributing
+* See also [CONTRIBUTING.md](CONTRIBUTING.md)
+* Please bear in mind that the current objective of the project is to develop a proof-of-concept of a green path route planner rather than a production ready service
+* You are most welcome to add feature requests or bug reports in the issue tracker
+* When contributing to this repository, please first discuss the change you wish to make via issue,
+email, or any other method with the owners of this repository before making a change (firstname.lastname@helsinki.fi)
+* Simple typo fixes etc. can be sent as PRs directly, but for features or more complex bug fixes please add a corresponding issue first for discussion
 
 ## License
 [MIT](LICENSE)
