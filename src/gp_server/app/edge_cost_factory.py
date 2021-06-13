@@ -28,12 +28,14 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
     has_geom_list = [isinstance(geom, LineString) for geom in list(graph.es[E.geometry.value])]
 
     # update dB 40 lengths to graph (the lowest level in noise data is 45)
-    noises_lengths = zip(noises_list, length_list)
     graph.es[E.noises.value] = [
         noise_exps.add_db_40_exp_to_noises(noises, length)
         for noises, length
-        in noises_lengths
+        in zip(noises_list, length_list)
     ]
+
+    # get noises list again after adding 40 dB lengths
+    noises_list = graph.es[E.noises.value]
 
     for sen in routing_conf.noise_sens:
 

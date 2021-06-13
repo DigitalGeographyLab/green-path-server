@@ -69,7 +69,7 @@ print('\nEdge coordinates: ' + str(eg_edge_geom_list))
 db_costs = noise_exps.get_db_costs()
 
 eg_edge_noise_exposure_index_list: List[float] = [
-    noise_exps.get_noise_cost(edge.noises, db_costs)
+    noise_exps.get_noise_exposure_index(edge.noises, db_costs)
     for edge in eg_path_edges
 ]
 print('\nEdge noise exposure indices: ' + str(eg_edge_noise_exposure_index_list))
