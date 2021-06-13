@@ -22,7 +22,6 @@ def test_removes_linking_edges_after_routing(
     )
     ecount = graph_handler.graph.ecount()
     od_nodes = routing.find_or_create_od_nodes(log, graph_handler, od_settings)
-    path_set = routing.find_least_cost_paths(log, graph_handler, routing_conf, od_settings, od_nodes)
     assert ecount + 4 == graph_handler.graph.ecount()
     routing.delete_added_graph_features(graph_handler, od_nodes)
     graph_handler.reset_edge_cache()

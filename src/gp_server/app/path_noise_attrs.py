@@ -45,7 +45,7 @@ def create_path_noise_attrs(
 ) -> PathNoiseAttrs:
 
     noises = noise_exps.aggregate_exposures(noises_list)
-    nei = round(noise_exps.get_noise_cost(noises, db_costs), 1)
+    nei = round(noise_exps.get_noise_exposure_index(noises, db_costs), 1)
     max_db_cost = max(db_costs.values())
     noise_range_exps = noise_exps.get_noise_range_exps(noises, length)
 

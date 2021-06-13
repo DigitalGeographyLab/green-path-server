@@ -58,6 +58,15 @@ def get_noise_sensitivities() -> List[float]:
     return [0.1, 0.4, 1.3, 3.5, 6]
 
 
+def get_noise_cost_coeff(noises: Dict[int, float], db_costs: Dict[int, float]) -> float:
+    """Returns noise cost coefficient."""
+    if not noises:
+        return 0.0
+    db_distance_cost = sum([db_costs[db] * length for db, length in noises.items()])
+    total_length = sum(noises.values())
+    return round(db_distance_cost / total_length, 3) if total_length else 0.0
+
+
 def get_noise_range(db: float) -> int:
     """Returns the lower limit of one of the six pre-defined dB ranges based on dB.
     """
@@ -149,19 +158,17 @@ def get_mean_noise_level(noises: dict, length: float) -> float:
     return round(mean_db, 1)
 
 
-def get_noise_cost(
+def get_noise_exposure_index(
     noises: Dict[int, float],
-    db_costs: Dict[int, float],
-    sen: float = 1
+    db_costs: Dict[int, float]
 ) -> float:
-    """Returns the total noise cost based on contaminated distances to different noise levels,
-    db_costs and noise sensitivity.
+    """Returns the total noise cost (i.e. noise exposure index) based on exposures to different noise levels
+    and db_costs.
     """
     if not noises:
         return 0.0
     else:
-        noise_cost = sum([db_costs[db] * length for db, length in noises.items()])
-        return round(noise_cost * sen, 2)
+        return round(sum([db_costs[db] * length for db, length in noises.items()]), 2)
 
 
 def get_noise_adjusted_edge_cost(
@@ -174,20 +181,18 @@ def get_noise_adjusted_edge_cost(
     """Returns composite edge cost as 'base_cost' + 'noise_cost', i.e.
     length + noise exposure based cost.
     """
-
-    if noises is None:
-        # set high noise costs for edges outside data coverage
-        noise_cost = 20 * length
-    else:
-        noise_cost = get_noise_cost(noises, db_costs, sensitivity)
+    if noises is not None and abs(length - sum(noises.values())) > 0.5:
+        raise ValueError('Total length of noise exposures is not equal to length, cannot calculate noise cost')
 
     base_cost = bike_time_cost if bike_time_cost else length
 
-    # if bike_time_cost is different than length, let's use that as a cost coefficient
-    # effectively this means that the same base_cost becomes present on both sides of the equation
-    b_cost_coefficient = bike_time_cost/length if bike_time_cost else 1
+    if noises is None:
+        # set high noise costs for edges outside data coverage
+        return round(base_cost + base_cost * 100 * sensitivity, 2)
 
-    return round(base_cost + noise_cost * b_cost_coefficient, 2)
+    noise_cost_coeff = get_noise_cost_coeff(noises, db_costs)
+   
+    return round(base_cost + base_cost * noise_cost_coeff * sensitivity, 2)
 
 
 def add_db_40_exp_to_noises(noises: Union[dict, None], length: float) -> Dict[int, float]:
