@@ -103,7 +103,7 @@ For bike, GP finds three types of paths: 1) fastest (one), 2) safest (one) and 3
 | p_len_diff | number | no | Difference in length between the fastest path and the path to which the edge belongs to (m). |
 
 ## Research mode
-[src/gp_server/conf.py](../src/gp_server/conf.py)
+Research mode can be enabled from the configuration file: [src/gp_server/conf.py](../src/gp_server/conf.py)
 
 ### Adjusted routing workflow & response
 Routing works as described above in [routing workflow](#Routing-workflow), with the following differences:

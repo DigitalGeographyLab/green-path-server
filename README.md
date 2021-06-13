@@ -15,8 +15,8 @@ Currently implemented features include calculation of unpolluted, green and quie
 - [Tech](#Tech)
 - [Installation](#Installation)
 - [Graph data](#Graph-data)
-  - [Format & attributes](#Format-attributes)
   - [Helsinki Metropolitan Area (HMA)](#Helsinki-Metropolitan-Area-HMA)
+  - [Format & attributes](#format--attributes)
   - [Other geographical extents (graph building)](#Other-geographical-extents-graph-building)
 - [Configuration](#Configuration)
 - [Running the server locally: linux/osx](#Running-the-server-locally-linuxosx)
@@ -72,13 +72,13 @@ To run the server, download one or more of the following graph files to the fold
 The file `hma.graphml` covers the extent of the HMA (i.e. Helsinki, Espoo, Vantaa & Kauniainen), whereas `kumpula.graphml` is a small subset of the full graph intended for development and testing purposes (it is included in this repository).
 
 ### Format & attributes
-To use street network graph data with Green Paths, it needs to be in the GraphML format and feature required node & edge attributes. The format and attributes of the graph data are described in [the documentation of the module graph_build](src/graph_build).
+To use street network graph data with Green Paths, it needs to be in the GraphML format and feature required node & edge attributes. The format and attributes of the graph data are described in [the documentation of the module graph_build](src/graph_build#Graph-format-and-attributes).
 
 ### Other geographical extents (graph building)
-It is possible to construct a routing graph for any area from raw OpenStreetMap data (*.pbf). However, since data on traffic noise, greenery and air quality may not be available in the same format for other areas, some customized data processing and sampling are likely needed. See the module [graph_build](src/graph_build) for more documentation on graph building.
+It is possible to construct a routing graph for any area from raw OpenStreetMap data (*.pbf). However, since data on traffic noise, greenery and air quality may not be available in the same format for other areas, some customized data processing and sampling are likely needed. See the module [graph_build](src/graph_build#Building-a-custom-graph) for more documentation on graph building.
 
 ## Configuration
-A number of settings of the routing software can be adjusted from the configuration file: [src/gp_server/conf.py](src/gp_server/conf.py)
+A number of settings of the routing software can be adjusted from the configuration file: [src/gp_server/conf.py](src/gp_server/conf.py). The routing workflow and response schema are described in [docs/green_paths_api.md](docs/green_paths_api.md), including the differences in research mode. 
 
 ## Running the server locally: linux/osx
 ```
