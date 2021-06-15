@@ -9,9 +9,9 @@ routing.
 Configurations:
     graph_file (str): file path to graph file (e.g. graphs/hma.graphml)
 
-    test_mode (bool): set to True to use sample AQI layer during tests runs
-
     research_mode (bool): set to True for additional path properties
+
+    test_mode (bool): set to True to use sample AQI layer during tests runs
 
     walk_speed_ms (float): walking speed in m/s 
     bike_speed_ms (float): cycling speed in m/s
@@ -44,11 +44,16 @@ from typing import List, Union
 from dataclasses import dataclass
 
 
+def __boolean_from_env_or(env_var: str, default: bool) -> bool:
+    val = os.getenv(env_var, default)
+    return val is True or (isinstance(val, str) and val.lower().strip() == 'true')
+
+
 @dataclass(frozen=True)
-class RoutingConf:
+class GpConf:
     graph_file: str
-    test_mode: bool
     research_mode: bool
+    test_mode: bool
     walk_speed_ms: float
     bike_speed_ms: float
     max_od_search_dist_m: float
@@ -65,10 +70,10 @@ class RoutingConf:
     gvi_sensitivities: Union[List[float], None]
 
 
-conf = RoutingConf(
-    graph_file = os.getenv('GP_GRAPH', r'graphs/kumpula.graphml'),
+conf = GpConf(
+    graph_file = os.getenv('GP_GRAPH', r'graphs/hma.graphml'),
+    research_mode = __boolean_from_env_or('GP_RESEARCH_MODE', False),
     test_mode = False,
-    research_mode = False,
     walk_speed_ms = 1.2,
     bike_speed_ms = 5.55,
     max_od_search_dist_m = 650,

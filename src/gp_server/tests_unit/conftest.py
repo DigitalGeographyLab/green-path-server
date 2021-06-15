@@ -1,16 +1,16 @@
 from typing import Callable
 from gp_server.app.logger import Logger
-from gp_server.conf import RoutingConf
+from gp_server.conf import GpConf
 import gp_server.app.routing as routing
 from gp_server.app.graph_handler import GraphHandler
 from unittest.mock import patch
 import pytest
 
 
-test_conf = RoutingConf(
+test_conf = GpConf(
     graph_file = r'graphs/kumpula.graphml',
-    test_mode = True,
     research_mode = False,
+    test_mode = True,
     walk_speed_ms = 1.2,
     bike_speed_ms = 5.55,
     max_od_search_dist_m = 650,
