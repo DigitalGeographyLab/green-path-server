@@ -4,7 +4,7 @@ from typing import Tuple, Union, Any
 from flask import Flask
 from flask_cors import CORS
 from flask import jsonify
-import gp_server.conf as conf
+from gp_server.conf import conf
 import gp_server.app.routing as routing
 from gp_server.app.aqi_map_data_api import get_aqi_map_data_api
 from gp_server.app.graph_handler import GraphHandler
@@ -33,6 +33,8 @@ G = GraphHandler(log, conf.graph_file, routing_conf)
 
 if conf.clean_paths_enabled:
     aqi_updater = GraphAqiUpdater(log, G, r'aqi_updates/', routing_conf)
+else: 
+    aqi_updater = None
 
 # start AQI map data service
 aqi_map_data_api = get_aqi_map_data_api(log, r'aqi_updates/')
@@ -46,7 +48,7 @@ def hello_world():
 
 @app.route('/aqistatus')
 def aqi_status():
-    if conf.clean_paths_enabled:
+    if conf.clean_paths_enabled and aqi_updater:
         return jsonify(aqi_updater.get_aqi_update_status_response())
     else:
         return create_error_response(ErrorKey.AQI_ROUTING_NOT_AVAILABLE)

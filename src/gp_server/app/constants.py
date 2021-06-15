@@ -54,6 +54,11 @@ class ErrorKey(Enum):
     ORIGIN_NOT_FOUND = 'origin_not_found'
     DESTINATION_NOT_FOUND = 'destination_not_found'
     ORIGIN_OR_DEST_NOT_FOUND = 'origin_or_destination_not_found'
+    WALK_ROUTING_NOT_AVAILABLE = 'walk_routing_not_available_by_config'
+    BIKE_ROUTING_NOT_AVAILABLE = 'bike_routing_not_available_by_config'
+    GREEN_PATH_ROUTING_NOT_AVAILABLE = 'green_path_routing_not_available_by_config'
+    QUIET_PATH_ROUTING_NOT_AVAILABLE = 'quiet_path_routing_not_available_by_config'
+    CLEAN_PATH_ROUTING_NOT_AVAILABLE = 'clean_path_routing_not_available_by_config'
     PATHFINDING_ERROR = 'error_in_path_finding'
     PATH_PROCESSING_ERROR = 'error_in_path_processing'
     OD_SAME_LOCATION = 'od_are_same_location'
@@ -69,6 +74,11 @@ status_code_by_error: Dict[ErrorKey, int] = {
     ErrorKey.ORIGIN_NOT_FOUND.value: 404,
     ErrorKey.DESTINATION_NOT_FOUND.value: 404,
     ErrorKey.ORIGIN_OR_DEST_NOT_FOUND.value: 404,
+    ErrorKey.WALK_ROUTING_NOT_AVAILABLE.value: 503,
+    ErrorKey.BIKE_ROUTING_NOT_AVAILABLE.value: 503,
+    ErrorKey.GREEN_PATH_ROUTING_NOT_AVAILABLE.value: 503,
+    ErrorKey.QUIET_PATH_ROUTING_NOT_AVAILABLE.value: 503,
+    ErrorKey.CLEAN_PATH_ROUTING_NOT_AVAILABLE.value: 503,
     ErrorKey.PATHFINDING_ERROR.value: 500,
     ErrorKey.PATH_PROCESSING_ERROR.value: 500,
     ErrorKey.OD_SAME_LOCATION.value: 400,

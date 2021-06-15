@@ -13,8 +13,8 @@ class PathEdge:
     """Class for handling edge attributes during routing."""
     id: int
     length: float
-    bike_time_cost: float
-    bike_safety_cost: float
+    bike_time_cost: Union[float, None]
+    bike_safety_cost: Union[float, None]
     allows_biking: bool
     aqi: Union[float, None]
     aqi_cl: Union[float, None]
@@ -60,9 +60,9 @@ class Bikeability(Enum):
 
 @dataclass(frozen=True)
 class RoutingConf:
-    aq_sens: List[float]
-    gvi_sens: List[float]
-    noise_sens: List[float]
+    aq_sensitivities: List[float]
+    gvi_sensitivities: List[float]
+    noise_sensitivities: List[float]
     db_costs: Dict[int, float]
     sensitivities_by_routing_mode: Dict[RoutingMode, List[float]]
     fastest_path_cost_attr_by_travel_mode: Dict[TravelMode, E]

@@ -10,30 +10,10 @@ from gp_server.app.constants import RoutingMode, TravelMode, cost_prefix_dict
 from typing import List, Dict, Tuple
 from math import floor
 import numpy as np
-import gp_server.conf as conf
 
 
 class InvalidAqiException(Exception):
     pass
-
-
-def get_aq_sensitivities() -> List[float]:
-    """Returns a set of AQ sensitivity coefficients that can be used in calculating AQI based costs
-    to edges and subsequently optimizing green paths that minimize the total exposure to air
-    pollution.
-
-    Args:
-        subset: A boolean variable indicating whether a subset of sensitivities should be returned.
-    Note:
-        The subset should only contain values that are present in the full set as the full set is
-        used to assign the cost attributes to the graph.
-    Returns:
-        A list of AQ sensitivity coefficients.
-    """
-    if conf.aq_sensitivities:
-        return conf.aq_sensitivities
-
-    return [5, 15, 30]
 
 
 def get_aqi_coeff(aqi: float) -> float:

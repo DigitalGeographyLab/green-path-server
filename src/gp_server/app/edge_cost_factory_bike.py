@@ -1,4 +1,4 @@
-from gp_server.conf import walk_speed_ms, bike_speed_ms
+from gp_server.conf import conf
 from common.igraph import Edge as E
 from igraph import Graph
 from typing import Union
@@ -64,10 +64,10 @@ def get_bikeabilities(graph: Graph):
 
 
 def set_biking_costs(graph, log):
-    bike_walk_time_ratio = bike_speed_ms / walk_speed_ms
+    bike_walk_time_ratio = conf.bike_speed_ms / conf.walk_speed_ms
 
     log.info(
-        f'Using walk speed: {walk_speed_ms}, bike speed: {bike_speed_ms}'
+        f'Using walk speed: {conf.walk_speed_ms}, bike speed: {conf.bike_speed_ms}'
         f' and bike_walk_time_ratio: {round(bike_walk_time_ratio, 2)}'
     )
 

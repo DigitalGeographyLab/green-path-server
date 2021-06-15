@@ -7,7 +7,7 @@ import pandas as pd
 from os import listdir
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
-import gp_server.conf as conf
+from gp_server.conf import conf
 from gp_server.app.graph_handler import GraphHandler
 import gp_server.app.aq_exposures as aq_exps
 from gp_server.app.logger import Logger
@@ -43,7 +43,7 @@ class GraphAqiUpdater:
         self.__aqi_data_latest = ''
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
-        self.__sens = routing_conf.aq_sens
+        self.__sens = routing_conf.aq_sensitivities
         self.__aqi_dir = aqi_dir if not conf.test_mode else 'aqi_updates/test_data/'
         self.__scheduler = BackgroundScheduler()
         self.__check_interval = 5 + random.randint(1, 15)
@@ -57,10 +57,10 @@ class GraphAqiUpdater:
         self.__start()
 
     def __create_updater_edge_df(self, G: GraphHandler):
-        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=[E.length, E.bike_time_cost])
+        attrs = [E.length, E.bike_time_cost] if conf.cycling_enabled else [E.length]
+        edge_df = ig_utils.get_edge_gdf(G.graph, attrs=attrs)
         edge_df[E.id_ig.name] = edge_df.index
-        edge_df = edge_df[[E.id_ig.name, E.length.name, E.bike_time_cost.name]]
-        return edge_df
+        return edge_df[[E.id_ig.name] + [attr.name for attr in attrs]]
 
     def __start(self):
         self.log.info(
@@ -120,8 +120,8 @@ class GraphAqiUpdater:
         """Returns the name of the expected latest aqi data csv file based on the current time,
         e.g. aqi_2019-11-11T17.csv.
         """
-        if conf.use_mean_aqi and conf.mean_aqi_file:
-            return conf.mean_aqi_file
+        if conf.use_mean_aqi and conf.mean_aqi_file_name:
+            return conf.mean_aqi_file_name
         elif conf.test_mode:
             return 'aqi_2020-10-25T14.csv'
         else:
@@ -153,7 +153,7 @@ class GraphAqiUpdater:
             self.__aqi_update_status = aqi_update_status
         return new_aqi_csv
 
-    def __get_aq_update_attrs(self, aqi: float, length: float, bike_time_cost: float):
+    def __get_aq_update_attrs(self, aqi: float, length: float, bike_time_cost: Union[float, None]):
         aq_costs = aq_exps.get_aqi_costs(
             aqi, length, self.__sens
         ) if conf.walking_enabled else {}
@@ -222,7 +222,7 @@ class GraphAqiUpdater:
 
         aqi_update_df['aq_updates'] = aqi_update_df.apply(
             lambda x: self.__get_aq_update_attrs(
-                x['aqi'], x[E.length.name], x[E.bike_time_cost.name]
+                x['aqi'], x[E.length.name], x.get(E.bike_time_cost.name, None)
             ), axis=1
         )
         self.__G.update_edge_attrs_from_df_to_graph(aqi_update_df, df_attr='aq_updates')

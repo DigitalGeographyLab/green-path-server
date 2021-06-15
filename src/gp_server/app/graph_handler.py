@@ -2,7 +2,7 @@ import time
 from typing import List, Dict, Tuple, Union
 from shapely.ops import nearest_points
 from shapely.geometry import Point, LineString
-import gp_server.conf as conf
+from gp_server.conf import conf
 from gp_server.app.types import NearestEdge, PathEdge, RoutingConf
 from common.igraph import Edge as E, Node as N
 import common.igraph as ig_utils
@@ -134,8 +134,8 @@ class GraphHandler:
         return PathEdge(
             id=edge[E.id_ig.value],
             length=edge[E.length.value],
-            bike_time_cost=edge[E.bike_time_cost.value],
-            bike_safety_cost=edge[E.bike_safety_cost.value],
+            bike_time_cost=edge.get(E.bike_time_cost.value, None),
+            bike_safety_cost=edge.get(E.bike_safety_cost.value, None),
             allows_biking=edge[E.allows_biking.value],
             aqi=edge[E.aqi.value],
             aqi_cl=aq_exps.get_aqi_class(edge[E.aqi.value]) if edge[E.aqi.value] else None,

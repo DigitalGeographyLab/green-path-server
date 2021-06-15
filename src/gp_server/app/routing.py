@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Union
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 import time
-import gp_server.conf as conf
+from gp_server.conf import conf
 import common.geometry as geom_utils
 import gp_server.app.noise_exposures as noise_exps
 import gp_server.app.aq_exposures as aq_exps
@@ -20,14 +20,14 @@ from gp_server.app.types import OdData, OdSettings, RoutingConf
 
 def get_routing_conf() -> RoutingConf:
     return RoutingConf(
-        aq_sens=aq_exps.get_aq_sensitivities(),
-        gvi_sens=gvi_exps.get_gvi_sensitivities(),
-        noise_sens=noise_exps.get_noise_sensitivities(),
+        aq_sensitivities=conf.aq_sensitivities,
+        gvi_sensitivities=conf.gvi_sensitivities,
+        noise_sensitivities=conf.noise_sensitivities,
         db_costs=noise_exps.get_db_costs(version=3),
         sensitivities_by_routing_mode={
-            RoutingMode.QUIET: noise_exps.get_noise_sensitivities(),
-            RoutingMode.CLEAN: aq_exps.get_aq_sensitivities(),
-            RoutingMode.GREEN: gvi_exps.get_gvi_sensitivities(),
+            RoutingMode.QUIET: conf.noise_sensitivities,
+            RoutingMode.CLEAN: conf.aq_sensitivities,
+            RoutingMode.GREEN: conf.gvi_sensitivities,
             RoutingMode.FAST: [],
             RoutingMode.SAFE: []
         },
@@ -46,7 +46,7 @@ def parse_od_settings(
     orig_lon,
     dest_lat,
     dest_lon,
-    aqi_updater: GraphAqiUpdater
+    aqi_updater: Union[GraphAqiUpdater, None]
 ) -> OdSettings:
 
     try:
@@ -54,18 +54,32 @@ def parse_od_settings(
     except Exception:
         raise RoutingException(ErrorKey.INVALID_TRAVEL_MODE_PARAM.value)
 
-    try:
-        if path_routing_mode == 'short':
-            # retain support for legacy path variable 'short'
-            routing_mode = RoutingMode.FAST
-        else:
+    if path_routing_mode == 'short':
+        # retain support for legacy path variable 'short'
+        routing_mode = RoutingMode.FAST
+    else:
+        try:
             routing_mode = RoutingMode(path_routing_mode)
-    except Exception:
-        raise RoutingException(ErrorKey.INVALID_ROUTING_MODE_PARAM.value)
+        except Exception:
+            raise RoutingException(ErrorKey.INVALID_ROUTING_MODE_PARAM.value)
 
-    if (routing_mode == RoutingMode.CLEAN and (not conf.clean_paths_enabled
-            or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated'])):
-        raise RoutingException(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE.value)
+    if travel_mode == TravelMode.BIKE and not conf.cycling_enabled:
+        raise RoutingException(ErrorKey.BIKE_ROUTING_NOT_AVAILABLE.value)
+
+    if travel_mode == TravelMode.WALK and not conf.walking_enabled:
+        raise RoutingException(ErrorKey.WALK_ROUTING_NOT_AVAILABLE.value)
+
+    if routing_mode == RoutingMode.GREEN and not conf.gvi_paths_enabled:
+        raise RoutingException(ErrorKey.GREEN_PATH_ROUTING_NOT_AVAILABLE.value)
+
+    if routing_mode == RoutingMode.QUIET and not conf.quiet_paths_enabled:
+        raise RoutingException(ErrorKey.QUIET_PATH_ROUTING_NOT_AVAILABLE.value)
+
+    if routing_mode == RoutingMode.CLEAN:
+        if not conf.clean_paths_enabled:
+            raise RoutingException(ErrorKey.CLEAN_PATH_ROUTING_NOT_AVAILABLE.value)
+        if not aqi_updater or not aqi_updater.get_aqi_update_status_response()['aqi_data_updated']:
+            raise RoutingException(ErrorKey.NO_REAL_TIME_AQI_AVAILABLE.value)
 
     if travel_mode == TravelMode.WALK and routing_mode == RoutingMode.SAFE:
         raise RoutingException(ErrorKey.SAFE_PATHS_ONLY_AVAILABLE_FOR_BIKE.value)

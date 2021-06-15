@@ -1,51 +1,25 @@
 import pytest
-import gp_server.conf as conf
 from shapely.geometry import LineString
 from common.igraph import Edge as E
-from collections import Counter
-import gp_server.app.greenery_exposures as gvi_exps
-import gp_server.app.noise_exposures as noise_exps
-import gp_server.app.edge_cost_factory_bike as bike_costs
-from gp_server.app.logger import Logger
+from gp_server.tests_unit.conftest import test_conf
 from gp_server.app.graph_handler import GraphHandler
 from gp_server.app.graph_aqi_updater import GraphAqiUpdater
 from gp_server.app.constants import cost_prefix_dict, TravelMode, RoutingMode
 from unittest.mock import patch
-from gp_server.app.types import Bikeability
 import gp_server.app.routing as routing
 
 
-__noise_sensitivities = [ 0.1, 0.4, 1.3, 3.5, 6 ]
-__aq_sensitivities = [ 5, 15, 30 ]
-__gvi_sensitivities = [ 2, 4, 8 ]
-
-
 @pytest.fixture(scope='module')
-def log():
-    yield Logger(b_printing=False)
-
-
-@pytest.fixture(scope='module')
-def routing_conf():
-    patch_noise_sens = patch('gp_server.app.noise_exposures.get_noise_sensitivities', return_value=__noise_sensitivities)
-    patch_aq_sens = patch('gp_server.app.aq_exposures.get_aq_sensitivities', return_value=__aq_sensitivities)
-    patch_gvi_sens = patch('gp_server.app.greenery_exposures.get_gvi_sensitivities', return_value=__gvi_sensitivities)
-    with patch_noise_sens, patch_aq_sens, patch_gvi_sens:
-        yield routing.get_routing_conf()
-
-
-@pytest.fixture(scope='module')
-def graph_handler(log, routing_conf):
-    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
-    patch_env_graph_file = patch('gp_server.conf.graph_file', r'graphs/kumpula.graphml')
-    with patch_env_test_mode, patch_env_graph_file:
-        yield GraphHandler(log, conf.graph_file, routing_conf)
+def graph_handler(log):
+    patch_conf = patch('gp_server.conf.conf', test_conf)
+    with patch_conf:
+        yield GraphHandler(log, test_conf.graph_file, routing.get_routing_conf())
 
 
 @pytest.fixture(scope='module')
 def aqi_updater(log, graph_handler, routing_conf):
-    patch_env_test_mode = patch('gp_server.conf.test_mode', True)
-    with patch_env_test_mode:
+    patch_conf = patch('gp_server.conf.conf', test_conf)
+    with patch_conf:
         return GraphAqiUpdater(log, graph_handler, r'aqi_updates/test_data/', routing_conf)
 
 
@@ -77,7 +51,7 @@ def test_noise_cost_edge_attributes(graph_handler):
 
     for e in graph_handler.graph.es:
         attrs = e.attributes()
-        eg_noise_cost = f'{cost_prefix}{noise_exps.get_noise_sensitivities()[1]}'
+        eg_noise_cost = f'{cost_prefix}{test_conf.noise_sensitivities[1]}'
         assert eg_noise_cost in attrs
 
         if isinstance(attrs[E.geometry.value], LineString) and isinstance(attrs[E.noises.value], dict):
@@ -119,7 +93,7 @@ def test_gvi_cost_edge_attributes(graph_handler):
     cost_prefix = cost_prefix_dict[TravelMode.WALK][RoutingMode.GREEN]
     for e in graph_handler.graph.es:
         attrs = e.attributes()
-        eg_gvi_cost = f'{cost_prefix}{gvi_exps.get_gvi_sensitivities()[1]}'
+        eg_gvi_cost = f'{cost_prefix}{test_conf.gvi_sensitivities[1]}'
         assert eg_gvi_cost in attrs
 
         if not isinstance(attrs[E.geometry.value], LineString):

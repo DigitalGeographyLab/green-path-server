@@ -1,6 +1,6 @@
 from shapely.geometry import LineString
 from typing import List, Tuple
-import gp_server.conf as conf
+from gp_server.conf import conf
 import common.geometry as geom_utils
 from gp_server.app.constants import PathType, TravelMode
 from gp_server.app.logger import Logger
@@ -64,8 +64,12 @@ class Path:
         self.length_no_bike_allowed = round(
             sum(edge.length for edge in self.edges if not edge.allows_biking), 2
         )
-        self.bike_time_cost = round(sum(edge.bike_time_cost for edge in self.edges), 2)
-        self.bike_safety_cost = round(sum(edge.bike_safety_cost for edge in self.edges), 2)
+        if conf.cycling_enabled:
+            self.bike_time_cost = round(sum(edge.bike_time_cost for edge in self.edges), 2)
+            self.bike_safety_cost = round(sum(edge.bike_safety_cost for edge in self.edges), 2)
+        else:
+            self.bike_time_cost = None
+            self.bike_safety_cost = None
         self.missing_noises = True if (None in [edge.noises for edge in self.edges]) else False
         self.missing_aqi = True if (None in [edge.aqi for edge in self.edges]) else False
         self.missing_gvi = True if (None in [edge.gvi for edge in self.edges]) else False
