@@ -7,7 +7,7 @@ def get_gvi_adjusted_cost(
     length: float,
     gvi: float,
     bike_time_cost: float = None,
-    sen: float = 1.0
+    sensitivity: float = 1.0
 ) -> float:
     """Calculates GVI adjusted edge cost for GVI optimized routing.
     To find high GVI paths, we have to assign lower costs for edges with high GVI and
@@ -30,7 +30,7 @@ def get_gvi_adjusted_cost(
 
     base_cost = bike_time_cost if bike_time_cost else length
 
-    return round(base_cost + (1 - gvi) * base_cost * sen, 2)
+    return round(base_cost + (1 - gvi) * base_cost * sensitivity, 2)
 
 
 def get_mean_gvi(gvi_exps: List[Tuple[float, float]]) -> float:

@@ -32,19 +32,19 @@ def calc_aqi_cost(
     length: float,
     aqi_coeff: float,
     bike_time_cost: float = None,
-    sen: float = 1.0
+    sensitivity: float = 1.0
 ) -> float:
     """Returns AQI based cost based on exposure (distance) to certain AQI.
     If sensitivity value is specified, the AQI based part of the cost is multiplied by it.
     """
     base_cost = length if not bike_time_cost else bike_time_cost
-    return round(base_cost + base_cost * aqi_coeff * sen, 2)
+    return round(base_cost + base_cost * aqi_coeff * sensitivity, 2)
 
 
 def get_aqi_costs(
     aqi: float,
     length: float,
-    sens: List[float],
+    sensitivities: List[float],
     bike_time_cost: float = None,
     travel_mode: TravelMode = TravelMode.WALK
 ) -> Dict[str, float]:
@@ -71,31 +71,31 @@ def get_aqi_costs(
             length,
             aqi_coeff,
             bike_time_cost=bike_time_cost,
-            sen=sen
+            sensitivity=sen
         )
-        for sen in sens
+        for sen in sensitivities
     }
     return aq_costs
 
 
 def get_aqi_cost_from_exp(
     aqi_exp: Tuple[float, float],
-    sen: float = 1.0
+    sensitivity: float = 1.0
 ) -> float:
     """Returns an AQI cost for a single AQI exposure (aqi, exposure as meters).
     Length is not included in the cost as base cost.
     """
-    return round(aqi_exp[1] * get_aqi_coeff(aqi_exp[0]) * sen, 2)
+    return round(aqi_exp[1] * get_aqi_coeff(aqi_exp[0]) * sensitivity, 2)
 
 
 def get_total_aqi_cost_from_exps(
     aqi_exp_list: List[Tuple[float, float]],
-    sen: float = 1
+    sensitivity: float = 1
 ) -> float:
     """Returns the total AQI cost from a list of AQI exposures (with sensitivity of 1.0).
     Length is not included in the costs as base cost.
     """
-    costs = [get_aqi_cost_from_exp(aqi_exp, sen) for aqi_exp in aqi_exp_list]
+    costs = [get_aqi_cost_from_exp(aqi_exp, sensitivity) for aqi_exp in aqi_exp_list]
     return sum(costs)
 
 
