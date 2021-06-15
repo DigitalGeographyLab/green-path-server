@@ -36,7 +36,7 @@ def set_noise_costs_to_edges(graph: Graph, routing_conf: RoutingConf):
     # get noises list again after adding 40 dB lengths
     noises_list = graph.es[E.noises.value]
 
-    for sen in routing_conf.noise_sens:
+    for sen in routing_conf.noise_sensitivities:
 
         if conf.walking_enabled:
             cost_attr = cost_prefix + str(sen)
@@ -72,7 +72,7 @@ def set_gvi_costs_to_graph(graph: Graph, routing_conf: RoutingConf):
     gvi_list = graph.es[E.gvi.value]
     has_geom_list = [isinstance(geom, LineString) for geom in list(graph.es[E.geometry.value])]
 
-    for sen in routing_conf.gvi_sens:
+    for sen in routing_conf.gvi_sensitivities:
 
         if conf.walking_enabled:
             cost_attr = cost_prefix + str(sen)

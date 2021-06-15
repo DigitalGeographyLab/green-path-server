@@ -20,9 +20,9 @@ from gp_server.app.types import OdData, OdSettings, RoutingConf
 
 def get_routing_conf() -> RoutingConf:
     return RoutingConf(
-        aq_sens=conf.aq_sensitivities,
-        gvi_sens=conf.gvi_sensitivities,
-        noise_sens=conf.noise_sensitivities,
+        aq_sensitivities=conf.aq_sensitivities,
+        gvi_sensitivities=conf.gvi_sensitivities,
+        noise_sensitivities=conf.noise_sensitivities,
         db_costs=noise_exps.get_db_costs(version=3),
         sensitivities_by_routing_mode={
             RoutingMode.QUIET: conf.noise_sensitivities,

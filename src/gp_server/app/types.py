@@ -60,9 +60,9 @@ class Bikeability(Enum):
 
 @dataclass(frozen=True)
 class RoutingConf:
-    aq_sens: List[float]
-    gvi_sens: List[float]
-    noise_sens: List[float]
+    aq_sensitivities: List[float]
+    gvi_sensitivities: List[float]
+    noise_sensitivities: List[float]
     db_costs: Dict[int, float]
     sensitivities_by_routing_mode: Dict[RoutingMode, List[float]]
     fastest_path_cost_attr_by_travel_mode: Dict[TravelMode, E]

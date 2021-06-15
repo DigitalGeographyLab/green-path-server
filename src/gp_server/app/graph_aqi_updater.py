@@ -43,7 +43,7 @@ class GraphAqiUpdater:
         self.__aqi_data_latest = ''
         self.__G = G
         self.__edge_df = self.__create_updater_edge_df(G)
-        self.__sens = routing_conf.aq_sens
+        self.__sens = routing_conf.aq_sensitivities
         self.__aqi_dir = aqi_dir if not conf.test_mode else 'aqi_updates/test_data/'
         self.__scheduler = BackgroundScheduler()
         self.__check_interval = 5 + random.randint(1, 15)
