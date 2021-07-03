@@ -18,7 +18,7 @@ For a graph file to be usable in Green Paths, it needs to be in the GraphML file
 | geom_wgs | geom_wgs | Shapely LineString geometry / WKT | yes | GEOMETRYCOLLECTION EMPTY | Geometry of the edge in WGS (EPSG:4326) coordinates (e.g. LINESTRING (24.967528 60.208895, 24.967381 60.208826)). |
 | length | l | float | no | | Length of the edge in meters. |
 | is_stairs | b_st | boolean | no | | A boolean variable indicating whether the edge represents stairs. |
-| allows_walking | b_aw | boolean | no | | A boolean variable indicating whether the edge allows biking. |
+| allows_biking | b_aw | boolean | no | | A boolean variable indicating whether the edge allows biking. |
 | bike_safety_factor | bsf | float | no | | Biking safety factor of the edge (calculated by OTP based on OpenStreetMap tags of the edge) |
 | noises | n | dictionary | yes | None | Exposures to different noise levels on the edge. Keys of the dictionary represent the lower boundaries of 5-dB noise level ranges (45-70 dB) and values exposures as meters. This attribute is not needed if quiet path routing is disabled from the configuration. |
 | gvi | g | float | yes | None | Green view index  (GVI) of the edge (0-1). This attribute is not needed if green path routing is disabled from the configuration. |
