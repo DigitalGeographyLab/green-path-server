@@ -40,19 +40,19 @@ def test_fillna_in_aqi_raster():
     aq_tif = 'aqi_2021-02-26T14.tif'
     aqi_filepath = test_data_dir + aq_tif
 
-    aqi_raster = rasterio.open(aqi_filepath)
+    aqi_raster = rasterio.open(aqi_filepath, driver='GTiff', dtype='float64')
     aqi_band = aqi_raster.read(1)
-    nodata_count = np.sum(aqi_band <= 1.0)
+    nodata_count_before = np.sum(aqi_band <= 1.0, dtype='float64')
     aqi_raster.close()
-    assert nodata_count >= 297150
+    assert nodata_count_before >= 297150
 
     assert aq_processing.fillna_in_raster(test_data_dir, aq_tif, na_val=1.0)
 
-    aqi_raster = rasterio.open(aqi_filepath)
+    aqi_raster = rasterio.open(aqi_filepath, driver='GTiff', dtype='float64')
     aqi_band = aqi_raster.read(1)
-    nodata_count = np.sum(aqi_band <= 1.0)
+    nodata_count_after = np.sum(aqi_band <= 1.0, dtype='float64')
     aqi_raster.close()
-    assert nodata_count == 0
+    assert nodata_count_after == 0
 
 
 def test_create_aqi_update_csv(aqi_updater):
