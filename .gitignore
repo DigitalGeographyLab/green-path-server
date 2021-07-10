@@ -121,6 +121,13 @@ src/graph_build/graph_import/graph_data_in/*.obj
 src/graph_build/graph_import/graph_data_in/*.pbf
 src/graph_build/graph_import/graph_data_in/*.csv
 
+# graph_noise_join data
+!src/graph_build/tests/graph_noise_join/data/test_graph.graphml
+src/graph_build/tests/graph_noise_join/data/noise_data_processed.gpkg
+src/graph_build/graph_noise_join/data/*
+src/graph_build/graph_noise_join/debug/*
+src/graph_build/graph_noise_join/out_csv/*
+
 # other files
 .DS_Store
 .vscode/

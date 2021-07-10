@@ -49,6 +49,13 @@ For a graph file to be usable in Green Paths, it needs to be in the GraphML file
 ## Building a custom graph
 This is an incomplete guide for building a custom routing graph for any geographical extent. 
 
+### Running the tests
+```
+$ cd src
+$ python -m pytest graph_build/tests/graph_export/ -vv
+$ python -m pytest graph_build/tests/graph_noise_join/ -vv
+```
+
 ### Prerequisites
 - Java Development Kit, preferably version 8 (AKA version 1.8)
 - OpenStreetMap (OSM) data file for the area of interest in pbf file format

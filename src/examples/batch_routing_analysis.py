@@ -27,10 +27,10 @@ G = GraphHandler(Logger(), 'graphs/kumpula.graphml')
 
 # define example ODs
 od_list = [
-    ( (60.21743, 24.96996), (60.2123,24.95978) ),
-    ( (60.21743, 24.96996), (60.2118,24.95952) ),
-    ( (60.20151, 24.96206), (60.2102,24.96887) ),
-    ( (60.21495, 24.97971), (60.20166,24.968) )
+    ((60.21743, 24.96996), (60.2123, 24.95978)),
+    ((60.21743, 24.96996), (60.2118, 24.95952)),
+    ((60.20151, 24.96206), (60.2102, 24.96887)),
+    ((60.21495, 24.97971), (60.20166, 24.968))
 ]
 
 
@@ -52,10 +52,10 @@ od_paths: List[List[dict]] = [get_od_paths(od) for od in od_list]
 
 
 # for example, we can fetch all edge data for one of the paths like this:
-eg_path: dict =  od_paths[0][0]
+eg_path: dict = od_paths[0][0]
 edge_ids: List[int] = eg_path['properties']['edge_ids']
 eg_path_edges: List[PathEdge] = [G.get_edge_object_by_id(edge_id) for edge_id in edge_ids]
-eg_path_edges = [edge for edge in eg_path_edges if edge] # filter out null edges
+eg_path_edges = [edge for edge in eg_path_edges if edge]  # filter out null edges
 
 # since we now know that the edges are PathEdge objects, we can access their attributes like this:
 eg_edge_gvi_list: List[float] = [edge.gvi for edge in eg_path_edges]
