@@ -36,18 +36,49 @@ def test_convert_aqi_nc_to_tif():
     assert aq_tif == 'aqi_2021-02-26T14.tif'
 
 
+def test_reads_scaled_aqi_tif():
+    aqi_raster = rasterio.open(test_data_dir + 'aqi_2020-10-10T08.tif')
+    assert not aq_processing._has_unscaled_aqi(aqi_raster)
+
+
+def test_converted_aqi_tif_has_valid_aqi():
+    aq_tif = 'aqi_2021-02-26T14.tif'
+    aqi_filepath = test_data_dir + aq_tif
+    aqi_raster = rasterio.open(aqi_filepath)
+    assert aq_processing._has_unscaled_aqi(aqi_raster)
+    aqi_band = aqi_raster.read(1)
+    scale = aq_processing._get_scale(aqi_raster)
+    offset = aq_processing._get_offset(aqi_raster)
+    aqi_band_scaled = aqi_band * scale + offset
+    assert round(float(np.min(aqi_band_scaled)), 2) == 1.0
+    assert round(float(np.max(aqi_band_scaled)), 2) == 2.89
+    assert round(float(np.median(aqi_band_scaled)), 2) == 1.72
+
+
+def test_scales_and_offsets_raw_aqi_values():
+    aq_tif = 'aqi_2021-02-26T14.tif'
+    aqi_filepath = test_data_dir + aq_tif
+    aqi_raster = rasterio.open(aqi_filepath)
+    assert aq_processing._has_unscaled_aqi(aqi_raster)
+    assert aq_processing.fix_aqi_tiff_scale_offset(aqi_filepath)
+    aqi_raster = rasterio.open(aqi_filepath)
+    assert not aq_processing._has_unscaled_aqi(aqi_raster)
+    aqi_band = aqi_raster.read(1)
+    assert round(float(np.min(aqi_band)), 2) == 1.0
+    assert round(float(np.max(aqi_band)), 2) == 2.89
+
+
 def test_fillna_in_aqi_raster():
     aq_tif = 'aqi_2021-02-26T14.tif'
     aqi_filepath = test_data_dir + aq_tif
-
+    aq_processing.fix_aqi_tiff_scale_offset(aqi_filepath)
     aqi_raster = rasterio.open(aqi_filepath)
     aqi_band = aqi_raster.read(1)
     nodata_count = np.sum(aqi_band <= 1.0)
     aqi_raster.close()
-    assert nodata_count >= 297150
+    assert nodata_count == 297150
 
     assert aq_processing.fillna_in_raster(test_data_dir, aq_tif, na_val=1.0)
-
     aqi_raster = rasterio.open(aqi_filepath)
     aqi_band = aqi_raster.read(1)
     nodata_count = np.sum(aqi_band <= 1.0)

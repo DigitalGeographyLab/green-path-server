@@ -105,6 +105,9 @@ class AqiFetcher:
         self.log.info(f'Extracted aqi_nc: {aqi_nc_name}')
         aqi_tif_name = aq_processing.convert_aq_nc_to_tif(self.__aqi_dir, aqi_nc_name)
         self.log.info(f'Extracted aqi_tif: {aqi_tif_name}')
+        scaled = aq_processing.fix_aqi_tiff_scale_offset(self.__aqi_dir + aqi_tif_name)
+        if scaled:
+            self.log.info(f'Scaled AQI values to real AQI range')
         na_fill_success = aq_processing.fillna_in_raster(self.__aqi_dir, aqi_tif_name, na_val=1.0)
         if na_fill_success:
             self.latest_aqi_tif = aqi_tif_name
