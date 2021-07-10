@@ -52,7 +52,7 @@ def sample_aq_to_point_gdf(
         The name of the exported csv file (e.g. aqi_2019-11-08T14.csv).
     """
     gdf = sampling_gdf.copy()
-    aqi_raster = rasterio.open(aq_tif_file, dtype='float64')
+    aqi_raster = rasterio.open(aq_tif_file)
     # get coordinates of edge centers as list of tuples
     coords = [
         (x, y) for x, y
