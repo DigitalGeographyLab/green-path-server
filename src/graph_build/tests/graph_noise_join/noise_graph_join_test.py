@@ -52,7 +52,7 @@ def test_adds_sampling_points_to_edge_gdf():
     for edge in gdf.itertuples():
         if (edge.sampling_points != None):
             edge_sps = sps_by_edge.get_group(edge.Index)
-            sampling_length_sum = edge_sps['sample_len'].sum()            
+            sampling_length_sum = edge_sps['sample_len'].sum()
             assert round(sampling_length_sum, 2) == round(edge.geometry.length, 2)
 
 
