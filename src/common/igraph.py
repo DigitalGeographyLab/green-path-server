@@ -12,6 +12,7 @@ data is read to pandas DataFrame object.
 """
 
 from typing import Any, List, Dict
+from conf import gp_conf
 import ast
 from enum import Enum
 import geopandas as gpd
@@ -173,7 +174,7 @@ def get_edge_gdf(
     attrs: List[Enum] = [],
     ig_attrs: List[str] = [],
     geom_attr: Enum = Edge.geometry,
-    epsg: int = 3879,
+    epsg: int = gp_conf.proj_crs_epsg,
     drop_na_geoms: bool = False
 ) -> gpd.GeoDataFrame:
     """Returns all edges of a graph as GeoPandas GeoDataFrame. The default is to load the projected
@@ -215,7 +216,7 @@ def get_node_gdf(
     attrs: List[Enum] = [],
     ig_attrs: List[str] = [],
     geom_attr: Enum = Node.geometry,
-    epsg: int = 3879,
+    epsg: int = gp_conf.proj_crs_epsg,
     drop_na_geoms: bool = False
 ) -> gpd.GeoDataFrame:
     """Returns all nodes of a graph as pandas GeoDataFrame. The default is to load the projected

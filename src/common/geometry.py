@@ -6,6 +6,7 @@ geometries.
 """
 
 from typing import List, Dict
+from conf import gp_conf
 import pyproj
 from pyproj import CRS
 from shapely.geometry import Point, LineString
@@ -25,18 +26,18 @@ def round_coordinates(coords_list: List[tuple], digits=6) -> List[tuple]:
 
 
 __projections = {
-    (4326, 3879): pyproj.Transformer.from_crs(
+    (4326, gp_conf.proj_crs_epsg): pyproj.Transformer.from_crs(
         crs_from=CRS('epsg:4326'),
-        crs_to=CRS('epsg:3879'),
+        crs_to=CRS(f'epsg:{gp_conf.proj_crs_epsg}'),
         always_xy=True),
-    (3879, 4326): pyproj.Transformer.from_crs(
-        crs_from=CRS('epsg:3879'),
+    (gp_conf.proj_crs_epsg, 4326): pyproj.Transformer.from_crs(
+        crs_from=CRS(f'epsg:{gp_conf.proj_crs_epsg}'),
         crs_to=CRS('epsg:4326'),
         always_xy=True)
 }
 
 
-def project_geom(geom, geom_epsg: int = 4326, to_epsg: int = 3879):
+def project_geom(geom, geom_epsg: int = 4326, to_epsg: int = gp_conf.proj_crs_epsg):
     """Projects Shapely geometry object (e.g. Point or LineString) to another CRS.
     The default conversion is from EPSG 4326 to 3879.
     """

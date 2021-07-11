@@ -10,11 +10,15 @@ log = logging.getLogger('graph_export.main')
 
 
 def set_uv(graph, edge_gdf):
+    """Updates IDs of origin and destination nodes of each edge as a tuple to attribute 'uv'. 
+    """
     edge_gdf['uv'] = edge_gdf.apply(lambda x: (x['source'], x['target']), axis=1)
     graph.es[E.uv.value] = list(edge_gdf['uv'])
 
 
 def set_way_ids(graph, edge_gdf):
+    """Sets identifiers for (pseudo) unique edge geometries by edge lengths and O/D nodes.
+    """
     edge_gdf['way_id'] = edge_gdf.apply(
         lambda x: str(round(x['length'], 1))+str(sorted(x['uv'])), axis=1
     )
