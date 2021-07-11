@@ -50,7 +50,7 @@ For a graph file to be usable in Green Paths, it needs to be in the GraphML file
 The scripts for building a custom graph are not generic enough to work for any geographical extent without modifications.
 Localization is needed for adapting to available data sources, file types, nodata areas, projections etc.
 
-However, it should be possible to construct a graph without noise and greenery data with considerably smaller effort by running just steps 1, 2 and 5. The package-level configurations (`config.py` files) need to be adjusted to match the local programming environment and data files/directories. Also the scripts may need some minor adjustments (such as setting an appropriate EPSG code for a local projected coordinate reference system).
+However, it should be possible to construct a graph without noise and greenery data with considerably smaller effort by running just steps 1, 2 and 5. The package-level configurations (`config.py` files) need to be adjusted to match the local programming environment and data files/directories. Also the scripts may need some minor adjustments, such as setting an appropriate EPSG code for a local projected coordinate reference system.
 
 ### Running the tests
 ```
@@ -64,6 +64,7 @@ $ python -m pytest graph_build/tests/graph_export/ -vv
 ### Prerequisites
 - Java Development Kit, preferably version 8 (AKA version 1.8)
 - OpenStreetMap (OSM) data file for the area of interest in pbf file format
+- Python environment defined in [env/conda-env.yml](../env/conda-env.yml)
 
 ### 1. Create initial street network graph from OSM with OpenTripPlanner
 
