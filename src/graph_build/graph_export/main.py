@@ -1,9 +1,9 @@
+from graph_build.graph_export.conf import GraphExportConf
 import logging
 import geopandas as gpd
 import common.igraph as ig_utils
 import graph_build.graph_export.utils as utils
 import numpy as np
-from geopandas import GeoDataFrame
 from common.igraph import Edge as E, Node as N
 
 log = logging.getLogger('graph_export.main')
@@ -25,17 +25,16 @@ def set_way_ids(graph, edge_gdf):
 
 
 def graph_export(
-    base_dir: str,
-    graph_name: str,
-    hel_extent: GeoDataFrame
+    conf: GraphExportConf,
 ):
-    in_graph = fr'{base_dir}graph_in/{graph_name}.graphml'
+    in_graph = fr'{conf.base_dir}/graph_in/{conf.graph_id}.graphml'
+    out_graph = fr'{conf.base_dir}/graph_out/{conf.graph_id}.graphml'
+    out_graph_research = fr'{conf.base_dir}/graph_out/{conf.graph_id}_r.graphml'
+    out_graph_research_hel = fr'{conf.base_dir}/graph_out/{conf.graph_id}_r_hel-clip.graphml'
+    out_geojson_noise_gvi = fr'{conf.base_dir}/graph_out/{conf.graph_id}_noise_gvi.geojson'
+    out_geojson = fr'{conf.base_dir}/graph_out/{conf.graph_id}.geojson'
 
-    out_graph = fr'{base_dir}graph_out/{graph_name}.graphml'
-    out_graph_research = fr'{base_dir}graph_out/{graph_name}_r.graphml'
-    out_graph_research_hel = fr'{base_dir}graph_out/{graph_name}_r_hel-clip.graphml'
-    out_geojson_noise_gvi = fr'{base_dir}graph_out/{graph_name}_noise_gvi.geojson'
-    out_geojson = fr'{base_dir}graph_out/{graph_name}.geojson'
+    hel_extent = gpd.read_file(conf.hel_extent_fp)
 
     out_node_attrs = [N.geometry]
     out_edge_attrs = [

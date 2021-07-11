@@ -117,16 +117,38 @@ src/aqi_updater/tests/test_data/*
 *.graphml
 !src/graphs/kumpula.graphml
 !src/graph_build/tests/graph_export/graph_in/kumpula.graphml
-src/graph_build/graph_import/graph_data_in/*.obj
-src/graph_build/graph_import/graph_data_in/*.pbf
-src/graph_build/graph_import/graph_data_in/*.csv
+src/graph_build/otp_graph_build/graph_data_in/*.obj
+src/graph_build/otp_graph_build/graph_data_in/*.pbf
+src/graph_build/otp_graph_build/graph_data_in/*.csv
+
+# otp_graph_import
+src/otp_graph_import/debug/
+src/otp_graph_import/test_graph.graphml
+src/otp_graph_import/hma.graphml
+src/graph_build/otp_graph_import/otp_graph_data/otp_edges.csv
+src/graph_build/otp_graph_import/otp_graph_data/otp_nodes.csv
+src/graph_build/otp_graph_import/debug/
+
 
 # graph_noise_join data
+src/graph_build/noise_data_preprocessing/noise_data/noise_data_raw.gpkg*
+src/graph_build/noise_data_preprocessing/noise_data/noise_data_processed.gpkg*
+src/graph_build/noise_data_preprocessing/noise_data/syke/
+src/graph_build/noise_data_preprocessing/noise_data/espoo/
 !src/graph_build/tests/graph_noise_join/data/test_graph.graphml
 src/graph_build/tests/graph_noise_join/data/noise_data_processed.gpkg
 src/graph_build/graph_noise_join/data/*
 src/graph_build/graph_noise_join/debug/*
 src/graph_build/graph_noise_join/out_csv/*
+
+# graph_green_view_join data
+src/graph_build/graph_green_view_join/graph_in/
+src/graph_build/graph_green_view_join/data/land_cover_wfs_cache.gpkg
+src/graph_build/graph_green_view_join/data/greenery_points.gpkg
+src/graph_build/graph_green_view_join/graph_out/
+
+# common test files
+!src/graph_build/tests/common/*
 
 # other files
 .DS_Store

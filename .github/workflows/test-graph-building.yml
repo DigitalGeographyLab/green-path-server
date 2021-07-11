@@ -4,7 +4,6 @@ on:
     paths:
       - 'src/common/**'
       - 'src/graph_build/**'
-      - '.github/workflows/test-graph-building.yml'
 
 jobs:
   linux-conda-pytest:
@@ -14,6 +13,10 @@ jobs:
       image: hellej/green-path-server-base:latest
     steps:
     - uses: actions/checkout@v2
+    - name: Test OTP graph import
+      run: |
+          cd src/
+          python -m pytest graph_build/tests/otp_graph_import/ -vv
     - name: Test graph export
       run: |
           cd src/
@@ -22,3 +25,7 @@ jobs:
       run: |
           cd src/
           python -m pytest graph_build/tests/graph_noise_join/ -vv
+    - name: Test graph greenery join
+      run: |
+          cd src/
+          python -m pytest graph_build/tests/graph_green_view_join/ -vv

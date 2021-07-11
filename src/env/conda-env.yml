@@ -6,10 +6,6 @@ dependencies:
   - python=3.8
   - pylint
   - pytest
-  - rasterio
-  - rioxarray
-  - xarray
-  - boto3
   - apscheduler
   - geopandas
   - python-igraph
@@ -17,3 +13,14 @@ dependencies:
   - flask-cors
   - flask-testing
   - gunicorn
+  # aqi_updater
+  - rasterio
+  - rioxarray
+  - xarray
+  - boto3
+  # graph_build
+  - requests
+  - owslib
+  - sqlalchemy
+  - psycopg2
+  - geoalchemy2

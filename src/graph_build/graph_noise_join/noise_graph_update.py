@@ -1,3 +1,4 @@
+from graph_build.graph_noise_join.conf import GraphNoiseJoinConf
 import logging
 import os
 import numpy as np
@@ -38,12 +39,23 @@ def set_default_and_na_edge_noises(graph: ig.Graph, data_extent: Polygon) -> Non
     graph.es[E.noise_source.value] = None
 
     edge_gdf = ig_utils.get_edge_gdf(graph, attrs=[E.id_ig])
-    data_extent_gdf = gpd.GeoDataFrame(data=[{'has_noise_data': 1}], geometry=[data_extent], crs=CRS.from_epsg(3879))
-    joined = gpd.sjoin(edge_gdf, data_extent_gdf, how='left', op='within').drop(['index_right'], axis=1)
+    data_extent_gdf = gpd.GeoDataFrame(
+        data=[{'has_noise_data': 1}], geometry=[data_extent], crs=CRS.from_epsg(3879)
+    )
+
+    joined = gpd.sjoin(
+        edge_gdf, data_extent_gdf, how='left', op='within'
+    ).drop(['index_right'], axis=1)
+
     edges_within = joined[joined['has_noise_data'] == 1]
 
-    real_edge_count = len([geom for geom in list(edge_gdf['geometry']) if isinstance(geom, LineString)])
-    log.info(f'found {real_edge_count - len(edges_within)} edges of {real_edge_count} outside noise data extent')
+    real_edge_count = len(
+        [geom for geom in list(edge_gdf['geometry']) if isinstance(geom, LineString)]
+    )
+
+    log.info(
+        f'found {real_edge_count - len(edges_within)} edges of {real_edge_count} outside noise data extent'
+    )
 
     # set noise attributes of edges within the data extent to default values (no noise)
     for edge in edges_within.itertuples():
@@ -51,19 +63,16 @@ def set_default_and_na_edge_noises(graph: ig.Graph, data_extent: Polygon) -> Non
         graph.es[getattr(edge, E.id_ig.name)][E.noise_source.value] = ''
 
 
-if __name__ == '__main__':
-    in_graph_file = 'data/hma.graphml'
-    out_graph_file = 'out_graph/hma.graphml'
-    data_extent_file = 'data/HMA.geojson'
-    noise_csv_dir = 'out_csv/'
-
-    data_extent: Polygon = geom_utils.project_geom(gpd.read_file(data_extent_file)['geometry'][0])
-    graph = ig_utils.read_graphml(in_graph_file, log)
+def main(conf: GraphNoiseJoinConf):
+    data_extent: Polygon = geom_utils.project_geom(
+        gpd.read_file(conf.noise_data_extent_fp)['geometry'][0]
+    )
+    graph = ig_utils.read_graphml(conf.graph_in_fp, log)
 
     set_default_and_na_edge_noises(graph, data_extent)
 
-    noise_graph_update(graph, noise_csv_dir)
+    noise_graph_update(graph, conf.noise_data_csv_dir)
 
-    ig_utils.export_to_graphml(graph, out_graph_file)
+    ig_utils.export_to_graphml(graph, conf.graph_out_fp)
     log.info(f'exported graph of {graph.ecount()} edges')
     log.info('all done')

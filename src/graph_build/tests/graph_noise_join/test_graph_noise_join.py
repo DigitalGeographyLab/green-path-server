@@ -5,7 +5,7 @@ import fiona
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-import graph_build.graph_noise_join.utils as utils
+import graph_build.graph_noise_join.utils as noise_join_utils
 import common.igraph as ig_utils
 from graph_build.graph_noise_join import noise_graph_join, noise_graph_update
 from common.igraph import Edge as E
@@ -17,12 +17,12 @@ base_dir = r'graph_build/tests/graph_noise_join'
 
 
 def test_calculates_point_sampling_distances():
-    sampling_points = utils.get_point_sampling_distances(5)
+    sampling_points = noise_join_utils.get_point_sampling_distances(5)
     assert len(sampling_points) == 5
     assert sampling_points[0] == (1/5)/2
     assert sampling_points[1] == (1/5)/2 + 1/5
     assert sampling_points[4] == (1/5)/2 + 4 * (1/5)
-    sampling_points = utils.get_point_sampling_distances(1)
+    sampling_points = noise_join_utils.get_point_sampling_distances(1)
     assert sampling_points[0] == 0.5
 
 
@@ -30,7 +30,7 @@ def test_adds_sampling_points_to_edge_gdf():
     graph = ig_utils.read_graphml(f'{base_dir}/data/test_graph.graphml')
     gdf = ig_utils.get_edge_gdf(graph)
     # start_time = time.time()
-    gdf = utils.add_sampling_points_to_gdf(gdf, 2)
+    gdf = noise_join_utils.add_sampling_points_to_gdf(gdf, 2)
     # log.duration(start_time, 'added sampling points')
     sampling_points_list = list(gdf['sampling_points'])
     assert len([sps for sps in sampling_points_list if sps != None]) == 3522
@@ -45,7 +45,7 @@ def test_adds_sampling_points_to_edge_gdf():
             assert round(sp.distance(line_geom), 1) == 0, 5
 
     # validate sampling point gdf (exploaded from edge gdf with sampling points)
-    sampling_gdf = utils.explode_sampling_point_gdf(gdf, 'sampling_points')
+    sampling_gdf = noise_join_utils.explode_sampling_point_gdf(gdf, 'sampling_points')
     assert len(sampling_gdf) > len(gdf)
     assert len(sampling_gdf) == 58554
     # check that the total representative length of each set of sampling points equals the length of the respective edge
@@ -59,7 +59,7 @@ def test_adds_sampling_points_to_edge_gdf():
 
 def test_creates_distributed_sampling_points_around_point():
     point = Point(25501668.9, 6684943.1)
-    sps = utils.get_sampling_points_around(point, 40, count=20)
+    sps = noise_join_utils.get_sampling_points_around(point, 40, count=20)
     assert len(sps) == 20
     for sp in sps:
         assert round(sp.distance(point), 1) == 40

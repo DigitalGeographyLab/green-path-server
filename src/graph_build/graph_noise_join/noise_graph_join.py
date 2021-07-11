@@ -1,3 +1,4 @@
+from graph_build.graph_noise_join.conf import GraphNoiseJoinConf
 import logging
 import os
 import fiona
@@ -140,7 +141,7 @@ def noise_graph_join(
 
 
 def get_previously_processed_max_id(csv_dir: str):
-    csv_files = os.listdir(csv_dir)
+    csv_files = os.listdir(csv_dir + '/')
     max_ids = [int(name.split('_')[0]) for name in csv_files]
     return max(max_ids) if max_ids else 0
 
@@ -148,23 +149,23 @@ def get_previously_processed_max_id(csv_dir: str):
 def export_edge_noise_csv(edge_noises: pd.DataFrame, out_dir: str):
     max_id = edge_noises[E.id_ig.name].max()
     csv_name = f'{max_id}_edge_noises.csv'
-    edge_noises.to_csv(out_dir + csv_name)
+    edge_noises.to_csv(fr'{out_dir}/{csv_name}')
 
 
-if __name__ == '__main__':
-    graph = ig_utils.read_graphml('data/hma.graphml')
+def main(conf: GraphNoiseJoinConf):
+    graph = ig_utils.read_graphml(conf.graph_in_fp)
     log.info(f'read graph of {graph.ecount()} edges')
     edge_gdf = ig_utils.get_edge_gdf(graph, attrs=[E.id_ig])
     edge_gdf = edge_gdf.sort_values(E.id_ig.name)
 
     # read noise data
-    noise_layer_names = [layer for layer in fiona.listlayers('data/noise_data_processed.gpkg')]
-    noise_layers = {name: gpd.read_file('data/noise_data_processed.gpkg', layer=name) for name in noise_layer_names}
+    noise_layer_names = [layer for layer in fiona.listlayers(conf.noise_data_fp)]
+    noise_layers = {name: gpd.read_file(conf.noise_data_fp, layer=name) for name in noise_layer_names}
     noise_layers = {name: gdf.rename(columns={'db_low': name}) for name, gdf in noise_layers.items()}
     log.info(f'read {len(noise_layers)} noise layers')
 
     # read nodata zone: narrow area between noise surfaces of different municipalities
-    nodata_layer = gpd.read_file('data/extents.gpkg', layer='municipal_boundaries')
+    nodata_layer = gpd.read_file(conf.nodata_fp, layer=conf.nodata_layer_name)
 
     # process chunks of edges together by dividing gdf to parts
     processing_size = 50000
@@ -172,7 +173,7 @@ if __name__ == '__main__':
     gdfs = np.array_split(edge_gdf, split_gdf_count)
 
     # get max id of previously processed edges
-    max_processed_id = get_previously_processed_max_id('out_csv/')
+    max_processed_id = get_previously_processed_max_id(conf.noise_data_csv_dir)
     if max_processed_id > 0:
         log.info(f'found previously processed edges up to edge id {max_processed_id}')
 
@@ -192,4 +193,4 @@ if __name__ == '__main__':
             b_debug = False,
             debug_gpkg = 'debug/noise_join_debug.gpkg'
         )
-        export_edge_noise_csv(edge_noises, 'out_csv/')
+        export_edge_noise_csv(edge_noises, conf.noise_data_csv_dir)
