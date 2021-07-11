@@ -44,7 +44,7 @@ class GraphHandler:
         self.log.info(f'Graph of {self.graph.ecount()} edges read')
         self.__edge_gdf = self.__get_edge_gdf()
         self.__edge_sindex = self.__edge_gdf.sindex
-        self.__node_gdf = ig_utils.get_node_gdf(self.graph)
+        self.__node_gdf = ig_utils.get_node_gdf(self.graph, drop_na_geoms=True)
         self.__nodes_sind = self.__node_gdf.sindex
         if conf.cycling_enabled:
             edge_cost_factory.set_biking_costs(self.graph, self.log)
@@ -59,13 +59,9 @@ class GraphHandler:
         self.__path_edge_cache: Dict[int, PathEdge] = {}
 
     def __get_edge_gdf(self):
-        edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[E.id_way])
+        edge_gdf = ig_utils.get_edge_gdf(self.graph, attrs=[E.id_way], drop_na_geoms=True)
         # drop edges with identical geometry
         edge_gdf = edge_gdf.drop_duplicates(E.id_way.name)
-        # drop edges without geometry
-        edge_gdf = edge_gdf[
-            edge_gdf[E.geometry.name].apply(lambda geom: isinstance(geom, LineString))
-        ]
         edge_gdf = edge_gdf[[E.geometry.name]]
         self.log.info(f'Added {len(edge_gdf)} edges to edge_gdf')
         return edge_gdf
