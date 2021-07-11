@@ -46,14 +46,20 @@ For a graph file to be usable in Green Paths, it needs to be in the GraphML file
 ...
 ```
 
-## Building a custom graph
-This is an incomplete guide for building a custom routing graph for any geographical extent. 
+## Building a custom graph: overview / demo
+The scripts for building a custom graph are not generic enough to work for any geographical extent out of the box.
+Localization is needed for adapting to available data sources, file types, nodata areas, projections etc.
+
+However, it should be possible to construct a simple graph without environmental data (noise and greenery) by running just steps 1, 2 and 5.
+
 
 ### Running the tests
 ```
 $ cd src
-$ python -m pytest graph_build/tests/graph_export/ -vv
+$ python -m pytest graph_build/tests/otp_graph_import/ -vv
 $ python -m pytest graph_build/tests/graph_noise_join/ -vv
+$ python -m pytest graph_build/tests/graph_green_view_join/ -vv
+$ python -m pytest graph_build/tests/graph_export/ -vv
 ```
 
 ### Prerequisites
@@ -69,16 +75,18 @@ $ python -m pytest graph_build/tests/graph_noise_join/ -vv
 This should produce two files to the folder graph_import/graph_data_in: `edges.csv` and `nodes.csv`.
 
 ### 2. Import & re-build street network graph for Green Paths from CSV files
-WIP
+Demo: [otp_graph_import/otp_graph_import.py](./otp_graph_import/otp_graph_import.py)
 
 ### 3. Join noise data to street network graph (optional)
-WIP
+Demo: [graph_noise_join/noise_graph_join.py](./graph_noise_join/noise_graph_join.py)
+(uses traffic noise data for HMA)
 
 ### 4. Join greenery data to street network graph (optional)
-WIP
+Demo: [graph_green_view_join/graph_green_view_join.py](./graph_green_view_join/graph_green_view_join.py)
+(uses PostGIS and land cover data for HMA)
 
 ### 5. Export graph to GraphML file with only required attributes
-WIP
+Demo: [graph_export/main.py](./graph_export/main.py)
 
 ## Environmental data for Helsinki Metropolitan Area (HMA)
 * [SYKE - Traffic noise modelling data from Helsinki urban region](https://www.syke.fi/en-US/Open_information/Spatial_datasets/Downloadable_spatial_dataset#E)

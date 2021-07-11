@@ -4,7 +4,6 @@ import geopandas as gpd
 import common.igraph as ig_utils
 import graph_build.graph_export.utils as utils
 import numpy as np
-from geopandas import GeoDataFrame
 from common.igraph import Edge as E, Node as N
 
 log = logging.getLogger('graph_export.main')
