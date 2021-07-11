@@ -14,6 +14,10 @@ jobs:
       image: hellej/green-path-server-base:latest
     steps:
     - uses: actions/checkout@v2
+    - name: Test OTP graph import
+      run: |
+          cd src/
+          python -m pytest graph_build/tests/otp_graph_import/ -vv
     - name: Test graph export
       run: |
           cd src/

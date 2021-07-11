@@ -121,6 +121,15 @@ src/graph_build/graph_import/graph_data_in/*.obj
 src/graph_build/graph_import/graph_data_in/*.pbf
 src/graph_build/graph_import/graph_data_in/*.csv
 
+# otp_graph_import
+src/otp_graph_import/debug/
+src/otp_graph_import/test_graph.graphml
+src/otp_graph_import/hma.graphml
+src/graph_build/otp_graph_import/otp_graph_data/otp_edges.csv
+src/graph_build/otp_graph_import/otp_graph_data/otp_nodes.csv
+src/graph_build/otp_graph_import/debug/
+
+
 # graph_noise_join data
 src/graph_build/noise_data_preprocessing/noise_data/noise_data_raw.gpkg*
 src/graph_build/noise_data_preprocessing/noise_data/noise_data_processed.gpkg*

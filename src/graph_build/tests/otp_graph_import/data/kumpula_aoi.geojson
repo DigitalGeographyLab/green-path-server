@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "kumpula_aoi",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 24.952398, 60.220247 ], [ 24.952911, 60.196511 ], [ 24.989745, 60.196757 ], [ 24.989099, 60.220414 ], [ 24.952398, 60.220247 ] ] ] } }
+]
+}

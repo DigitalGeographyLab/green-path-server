@@ -1,3 +1,5 @@
+from graph_build.otp_graph_import.conf import conf as otp_graph_import_conf
+import graph_build.otp_graph_import.otp_graph_import as otp_graph_import
 from graph_build.noise_data_preprocessing.conf import conf as noise_data_conf
 import graph_build.noise_data_preprocessing.noise_data_preprocessing as noise_data_preprocessing
 from graph_build.graph_export.conf import conf as graph_export_conf
@@ -18,6 +20,7 @@ log = logging.getLogger('graph_build.main')
 selected_script = utils.read_user_selection(
     'Which script?',
     [
+        'otp_graph_import',
         'noise_data_preprocessing',
         'noise_graph_join',
         'graph_noise_update',
@@ -29,6 +32,11 @@ selected_script = utils.read_user_selection(
 
 if selected_script:
     log.info(f'Running script: {selected_script}')
+
+
+if selected_script == 'otp_graph_import':
+    if utils.confirm_config(otp_graph_import_conf):
+        otp_graph_import.main(otp_graph_import_conf)
 
 
 if selected_script == 'noise_data_preprocessing':
