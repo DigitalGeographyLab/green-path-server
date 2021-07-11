@@ -1,31 +1,29 @@
 from collections import Counter
+from graph_build.graph_export.conf import GraphExportConf
 from gp_server.app.types import Bikeability
 import gp_server.app.edge_cost_factory_bike as bike_costs
 from common.igraph import Edge as E
-import geopandas as gpd
 import pytest
 import graph_build.graph_export.main as graph_export
 import common.igraph as ig_utils
 
 
-graph_name = r'kumpula'
-base_dir = r'graph_build/tests/graph_export/'
-hel_extent = gpd.read_file(fr'graph_build/tests/common/hel.geojson')
+conf = GraphExportConf(
+    r'kumpula',
+    r'graph_build/tests/graph_export',
+    r'graph_build/tests/common/hel.geojson'
+)
 
 
 @pytest.fixture()
 def graph_in():
-    yield ig_utils.read_graphml(fr'{base_dir}graph_in/{graph_name}.graphml')
+    yield ig_utils.read_graphml(fr'{conf.base_dir}/graph_in/{conf.graph_id}.graphml')
 
 
 @pytest.fixture(scope='session')
 def graph():
-    graph_export.graph_export(
-        base_dir,
-        graph_name,
-        hel_extent
-    )
-    yield ig_utils.read_graphml(fr'{base_dir}graph_out/{graph_name}.graphml')
+    graph_export.graph_export(conf)
+    yield ig_utils.read_graphml(fr'{conf.base_dir}/graph_out/{conf.graph_id}.graphml')
 
 
 def test_feature_counts(graph):

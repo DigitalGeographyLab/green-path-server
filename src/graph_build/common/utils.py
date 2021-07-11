@@ -1,4 +1,17 @@
 from typing import List, Union
+from dataclasses import asdict
+
+
+def confirm_config(config):
+    conf_dict = asdict(config)
+    print('Read configuration:')
+    for key, value in conf_dict.items():
+        print(f'{key}: {value}')
+    print('Proceed? (y/n)')
+    print(':', end='')
+    answer = input()
+    answer = answer.strip()
+    return answer == 'y'
 
 
 def read_user_input(
