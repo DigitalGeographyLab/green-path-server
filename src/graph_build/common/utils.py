@@ -17,7 +17,7 @@ def confirm_config(config):
 def read_user_selection(
     text: str,
     options: List[Union[str, int]],
-    as_number: bool = False,
+    as_number: bool = True,
 ) -> Union[str, None]:
 
     option_idx = list(range(1, len(options)+1))

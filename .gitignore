@@ -141,6 +141,12 @@ src/graph_build/graph_noise_join/data/*
 src/graph_build/graph_noise_join/debug/*
 src/graph_build/graph_noise_join/out_csv/*
 
+# graph_green_view_join data
+src/graph_build/graph_green_view_join/graph_in/
+src/graph_build/graph_green_view_join/data/land_cover_wfs_cache.gpkg
+src/graph_build/graph_green_view_join/data/greenery_points.gpkg
+src/graph_build/graph_green_view_join/graph_out/
+
 # other files
 .DS_Store
 .vscode/
