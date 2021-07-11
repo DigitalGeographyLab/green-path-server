@@ -5,7 +5,6 @@ on:
       - 'master'
     paths:
       - 'src/env/conda-env.yml'
-      - '.github/workflows/pr-build-base-img.yml'
 
 jobs:
   docker-build-push-gp-base-image:
