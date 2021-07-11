@@ -1,0 +1,15 @@
+source,data_type,name,noise_type,noise_model,export_name,noise_attr
+hel,wfs,Meluselvitys_2017_alue_11_tieliikenne_L_den,road,Lden,hel_road,db_lo
+hel,wfs,Meluselvitys_2017_alue_13_maantiet_L_den,hway,Lden,hel_hway,db_lo
+hel,wfs,Meluselvitys_2017_alue_15_raitioliikenne_L_den,tram,Lden,hel_tram,db_lo
+hel,wfs,Meluselvitys_2017_alue_17_metro_L_den,metro,Lden,hel_metro,db_lo
+hel,wfs,Meluselvitys_2017_alue_19_rautatiet_L_den,train,Lden,hel_train,db_lo
+syke,shp,noise_data/syke/EUMeluselvitykset2017/KaupKadutLden17.shp,road,Lden,syke_road,Melu_db
+syke,shp,noise_data/syke/EUMeluselvitykset2017/MaantieLden17.shp,road,Lden,syke_hway,Melu_db
+syke,shp,noise_data/syke/EUMeluselvitykset2017/KaupRaideLden17.shp,road,Lden,syke_tram,Melu_db
+syke,shp,noise_data/syke/EUMeluselvitykset2017/KaupMetroLden17.shp,road,Lden,syke_metro,Melu_db
+syke,shp,noise_data/syke/EUMeluselvitykset2017/RautatieLden17.shp,road,Lden,syke_train,Melu_db
+syke,shp,noise_data/syke/EUMeluselvitykset2017/LentoLden17.shp,road,Lden,syke_air,Melu_db
+espoo,shp,noise_data/espoo/01_CNOSSOS_Lden_Ly/GK25/kadut_maantiet_Espoo_Kauniainen_LdenGK25.shp,road,Lden,espoo_road,DB_LO
+espoo,shp,noise_data/espoo/01_CNOSSOS_Lden_Ly/GK25/maantiet_Espoo_Kauniainen_LdenGK25.shp,hway,Lden,espoo_hway,DB_LO
+espoo,shp,noise_data/espoo/01_CNOSSOS_Lden_Ly/GK25/rautatiet_Espoo_Kauniainen_LdenGK25.shp,train,Lden,espoo_train,DB_LO

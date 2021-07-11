@@ -14,7 +14,7 @@ def confirm_config(config):
     return answer == 'y'
 
 
-def read_user_input(
+def read_user_selection(
     text: str,
     options: List[Union[str, int]],
     as_number: bool = False,

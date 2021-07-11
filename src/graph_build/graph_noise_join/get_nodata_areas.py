@@ -24,8 +24,9 @@ def get_wfs_feature(
 
 
 def get_nodata_zones(wfs_hsy_url: str, layer: str, hma_mask: str, export_gpkg: str):
-    """1) Downloads polygon layer of municipalities of Helsinki Metropolitan Area, 2) Creates buffered polygons from the boundary lines of these polygons,
-    3) Exports the boundary-buffers to geopackage. 
+    """1) Downloads polygon layer of municipalities of Helsinki Metropolitan Area, 2)
+    Creates buffered polygons from the boundary lines of these polygons,
+    3) Exports the boundary-buffers to geopackage.
     """
     mask_poly: Polygon = geom_utils.project_geom(gpd.read_file(hma_mask)['geometry'][0]).buffer(500)
 
@@ -40,7 +41,9 @@ def get_nodata_zones(wfs_hsy_url: str, layer: str, hma_mask: str, export_gpkg: s
     dissolved_buffer: Polygon = unary_union(boundaries)
     intersected_buffer = dissolved_buffer.intersection(mask_poly)
 
-    boundary_gdf = gpd.GeoDataFrame(data=[{'nodata_zone': 1}], geometry=[intersected_buffer], crs=CRS.from_epsg(3879))
+    boundary_gdf = gpd.GeoDataFrame(
+        data=[{'nodata_zone': 1}], geometry=[intersected_buffer], crs=CRS.from_epsg(3879)
+    )
     boundary_gdf.to_file(export_gpkg, layer='municipal_boundaries', driver='GPKG')
 
 

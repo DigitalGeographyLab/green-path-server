@@ -1,3 +1,5 @@
+from graph_build.noise_data_preprocessing.conf import conf as noise_data_conf
+import graph_build.noise_data_preprocessing.noise_data_preprocessing as noise_data_preprocessing
 from graph_build.graph_export.conf import conf as graph_export_conf
 import graph_build.graph_export.main as graph_export
 from graph_build.graph_noise_join.conf import conf as noise_graph_join_conf
@@ -13,12 +15,25 @@ logging.config.dictConfig(logging_conf)
 log = logging.getLogger('graph_build.main')
 
 
-script_options = ['noise_graph_join', 'graph_noise_update', 'graph_export']
-selected_script = utils.read_user_input('Which script?', script_options, True)
+selected_script = utils.read_user_selection(
+    'Which script?',
+    [
+        'noise_data_preprocessing',
+        'noise_graph_join',
+        'graph_noise_update',
+        'graph_export'
+    ],
+    True
+)
 
 
 if selected_script:
     log.info(f'Running script: {selected_script}')
+
+
+if selected_script == 'noise_data_preprocessing':
+    if utils.confirm_config(noise_data_conf):
+        noise_data_preprocessing.main(noise_data_conf)
 
 
 if selected_script == 'noise_graph_join':
