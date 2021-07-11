@@ -81,7 +81,7 @@ class GraphHandler:
         Args:
             point: A point location as Shapely Point object.
         Note:
-            Point should be in projected coordinate system (EPSG:3879).
+            Point should be in projected coordinate system.
         Returns:
             The name (id) of the nearest node. None if no nearest node is found.
         """

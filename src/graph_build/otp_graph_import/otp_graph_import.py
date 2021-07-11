@@ -1,3 +1,5 @@
+import logging
+from conf import gp_conf
 from typing import Union
 from graph_build.otp_graph_import.conf import OtpGraphImportConf
 from shapely.geometry import Point, LineString
@@ -10,7 +12,6 @@ from pyproj import CRS
 from common.igraph import Node, Edge
 import common.igraph as ig_utils
 import common.geometry as geom_utils
-import logging
 
 
 log = logging.getLogger('otp_graph_import')
@@ -42,7 +43,7 @@ def convert_otp_graph_to_igraph(
     n[Node.geom_wgs.name] = n[Node.geometry.name]
     n = gpd.GeoDataFrame(n, geometry=Node.geometry.name, crs=CRS.from_epsg(4326))
     log.info('reprojecting nodes to etrs')
-    n = n.to_crs(epsg=3879)
+    n = n.to_crs(epsg=gp_conf.proj_crs_epsg)
     log.debug(f'nodes head: {n.head()}')
 
     # 2) read edges from CSV
@@ -57,7 +58,7 @@ def convert_otp_graph_to_igraph(
     e[Edge.geom_wgs.name] = e[Edge.geometry.name]
     e = gpd.GeoDataFrame(e, geometry=Edge.geometry.name, crs=CRS.from_epsg(4326))
     log.info('reprojecting edges to etrs')
-    e = e.to_crs(epsg=3879)
+    e = e.to_crs(epsg=gp_conf.proj_crs_epsg)
     log.debug(f'edges head: {e.head()}')
 
     # 3) export graph data to gpkg
@@ -192,15 +193,15 @@ def convert_otp_graph_to_igraph(
     if b_export_decomposed_igraphs_to_gpkg:
         log.info('exporting subgraphs to gpkg')
         # graphs with <= 15 edges
-        small_graph_edges_gdf = gpd.GeoDataFrame(small_graph_edges, crs=CRS.from_epsg(3879))
+        small_graph_edges_gdf = gpd.GeoDataFrame(small_graph_edges, crs=CRS.from_epsg(gp_conf.proj_crs_epsg))
         small_graph_edges_gdf.to_file(debug_igraph_gpkg, layer='small_graph_edges', driver='GPKG')
         # graphs with  15–500 edges
-        medium_graph_edges_gdf = gpd.GeoDataFrame(medium_graph_edges, crs=CRS.from_epsg(3879))
+        medium_graph_edges_gdf = gpd.GeoDataFrame(medium_graph_edges, crs=CRS.from_epsg(gp_conf.proj_crs_epsg))
         medium_graph_edges_gdf.to_file(debug_igraph_gpkg, layer='medium_graph_edges', driver='GPKG')
         # graphs with > 500 edges
-        big_graph_edges_gdf = gpd.GeoDataFrame(big_graph_edges, crs=CRS.from_epsg(3879))
+        big_graph_edges_gdf = gpd.GeoDataFrame(big_graph_edges, crs=CRS.from_epsg(gp_conf.proj_crs_epsg))
         big_graph_edges_gdf.to_file(debug_igraph_gpkg, layer='big_graph_edges', driver='GPKG')
-        log.info(f'graphs exported')
+        log.info('graphs exported')
 
     # 10) delete smallest subgraphs from the graph
     del_edge_ids = [edge[Edge.id_ig.name] for edge in small_graph_edges]

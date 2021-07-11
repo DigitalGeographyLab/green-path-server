@@ -1,3 +1,4 @@
+from conf import gp_conf
 import common.geometry as geom_utils
 from gp_server.app.types import LinkToEdgeSpec, NearestEdge, OdNodeData, OdData
 from typing import Dict, Tuple, Union
@@ -87,7 +88,9 @@ def get_link_edge_data(
         link_to_edge_spec.snap_point
     )
     link1_wgs, link2_wgs = tuple(
-        geom_utils.project_geom(link, geom_epsg=3879, to_epsg=4326) for link in (link1, link2)
+        geom_utils.project_geom(
+            link, geom_epsg=gp_conf.proj_crs_epsg, to_epsg=4326
+        ) for link in (link1, link2)
     )
     link1_rev, link1_wgs_rev, link2_rev, link2_wgs_rev = (
         LineString(link.coords[::-1]) for link in (link1, link1_wgs, link2, link2_wgs)
