@@ -38,7 +38,8 @@ def test_adds_sampling_points_to_edge_gdf():
     # test that all sample points are on the line geometries
     for edge in gdf.itertuples():
         sampling_points = getattr(edge, 'sampling_points')
-        if (sampling_points == None): continue
+        if not sampling_points:
+            continue
         line_geom = getattr(edge, 'geometry')
         for sp in sampling_points:
             assert round(sp.distance(line_geom), 1) == 0, 5
@@ -66,7 +67,7 @@ def test_creates_distributed_sampling_points_around_point():
     assert round(np.std(distances_between), 3) == 24.812
 
 
-@pytest.mark.skip(reason="run before and slow")
+@pytest.mark.skip(reason="run before, slow")
 def test_joins_noises_to_graph_edges():
     graph = ig_utils.read_graphml(f'{base_dir}/data/test_graph.graphml')
     edge_gdf = ig_utils.get_edge_gdf(graph, attrs=[E.id_ig, E.length])

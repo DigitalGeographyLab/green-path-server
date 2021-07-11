@@ -18,7 +18,7 @@ import geopandas as gpd
 import igraph as ig
 from pyproj import CRS
 from shapely import wkt
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
 import logging
 
 
@@ -173,10 +173,12 @@ def get_edge_gdf(
     attrs: List[Enum] = [],
     ig_attrs: List[str] = [],
     geom_attr: Enum = Edge.geometry,
-    epsg: int = 3879
+    epsg: int = 3879,
+    drop_na_geoms: bool = False
 ) -> gpd.GeoDataFrame:
     """Returns all edges of a graph as GeoPandas GeoDataFrame. The default is to load the projected
     geometry, but it can be overridden by defining another geom_attr and the corresponding epsg.
+    Edges without geometry can be omitted.
     """
 
     edge_dicts = []
@@ -185,19 +187,26 @@ def get_edge_gdf(
         edge_dict = {}
         edge_attrs = edge.attributes()
         ids.append(edge_attrs[id_attr.value] if id_attr else edge.index)
-        edge_dict[geom_attr.name] = edge_attrs[geom_attr.value]
+        if isinstance(edge_attrs[geom_attr.value], LineString):
+            edge_dict[geom_attr.name] = edge_attrs[geom_attr.value]
+        else:
+            edge_dict[geom_attr.name] = None
 
         for attr in attrs:
             if attr.value in edge_attrs:
                 edge_dict[attr.name] = edge_attrs[attr.value]
 
         for attr in ig_attrs:
-            if (hasattr(edge, attr)):
+            if hasattr(edge, attr):
                 edge_dict[attr] = getattr(edge, attr)
 
         edge_dicts.append(edge_dict)
 
-    return gpd.GeoDataFrame(edge_dicts, geometry=geom_attr.name, index=ids, crs=CRS.from_epsg(epsg))
+    gdf = gpd.GeoDataFrame(edge_dicts, geometry=geom_attr.name, index=ids, crs=CRS.from_epsg(epsg))
+    if drop_na_geoms:
+        return gdf[gdf[geom_attr.name].apply(lambda geom: isinstance(geom, LineString))]
+    else:
+        return gdf
 
 
 def get_node_gdf(
@@ -206,10 +215,12 @@ def get_node_gdf(
     attrs: List[Enum] = [],
     ig_attrs: List[str] = [],
     geom_attr: Enum = Node.geometry,
-    epsg: int = 3879
+    epsg: int = 3879,
+    drop_na_geoms: bool = False
 ) -> gpd.GeoDataFrame:
     """Returns all nodes of a graph as pandas GeoDataFrame. The default is to load the projected
     geometry, but it can be overridden by defining another geom_attr and a corresponding epsg.
+    Nodes without geometry can be omitted.
     """
 
     node_dicts = []
@@ -218,19 +229,27 @@ def get_node_gdf(
         node_dict = {}
         node_attrs = node.attributes()
         ids.append(node_attrs[id_attr.value] if id_attr else node.index)
-        node_dict[geom_attr.name] = node_attrs[geom_attr.value]
+
+        if isinstance(node_attrs[geom_attr.value], Point):
+            node_dict[geom_attr.name] = node_attrs[geom_attr.value]
+        else:
+            node_dict[geom_attr.name] = None
 
         for attr in attrs:
             if attr.value in node_attrs:
                 node_dict[attr.name] = node_attrs[attr.value]
 
         for attr in ig_attrs:
-            if (hasattr(node, attr)):
+            if hasattr(node, attr):
                 node_dict[attr] = getattr(node, attr)
 
         node_dicts.append(node_dict)
 
-    return gpd.GeoDataFrame(node_dicts, geometry=geom_attr.name, index=ids, crs=CRS.from_epsg(epsg))
+    gdf = gpd.GeoDataFrame(node_dicts, geometry=geom_attr.name, index=ids, crs=CRS.from_epsg(epsg))
+    if drop_na_geoms:
+        return gdf[gdf[geom_attr.name].apply(lambda geom: isinstance(geom, Point))]
+    else:
+        return gdf
 
 
 def read_graphml(graph_file: str, log=None) -> ig.Graph:
@@ -281,26 +300,26 @@ def export_to_graphml(
 
     if not n_attrs:
         for attr in Node:
-            if (attr.value in Gc.vs[0].attributes()):
+            if attr.value in Gc.vs[0].attributes():
                 Gc.vs[attr.value] = [as_string(value) for value in list(Gc.vs[attr.value])]
     else:
         for attr in n_attrs:
             Gc.vs[attr.value] = [as_string(value) for value in list(Gc.vs[attr.value])]
         # delete unspecified attributes
         for node_attr in G.vs.attribute_names():
-            if (node_attr not in [attr.value for attr in n_attrs]):
+            if node_attr not in [attr.value for attr in n_attrs]:
                 del(Gc.vs[node_attr])
 
     if not e_attrs:
         for attr in Edge:
-            if (attr.value in Gc.es[0].attributes()):
+            if attr.value in Gc.es[0].attributes():
                 Gc.es[attr.value] = [as_string(value) for value in list(Gc.es[attr.value])]
     else:
         for attr in e_attrs:
             Gc.es[attr.value] = [as_string(value) for value in list(Gc.es[attr.value])]
         # delete unspecified attributes
         for edge_attr in G.es.attribute_names():
-            if (edge_attr not in [attr.value for attr in e_attrs]):
+            if edge_attr not in [attr.value for attr in e_attrs]:
                 del(Gc.es[edge_attr])
 
     Gc.save(graph_file, format='graphml')
