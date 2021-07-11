@@ -147,6 +147,9 @@ src/graph_build/graph_green_view_join/data/land_cover_wfs_cache.gpkg
 src/graph_build/graph_green_view_join/data/greenery_points.gpkg
 src/graph_build/graph_green_view_join/graph_out/
 
+# common test files
+!src/graph_build/tests/common/*
+
 # other files
 .DS_Store
 .vscode/
