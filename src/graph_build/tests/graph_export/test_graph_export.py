@@ -11,7 +11,9 @@ import common.igraph as ig_utils
 conf = GraphExportConf(
     r'kumpula',
     r'graph_build/tests/graph_export',
-    r'graph_build/tests/common/hel.geojson'
+    r'graph_build/tests/common/hel.geojson',
+    True,
+    True
 )
 
 

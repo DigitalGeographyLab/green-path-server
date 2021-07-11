@@ -47,6 +47,12 @@ def graph_export(
         E.bike_safety_factor, E.noises, E.gvi
     ]
 
+    if not conf.with_noise_data:
+        out_edge_attrs.remove(E.noises)
+
+    if not conf.with_greenery_data:
+        out_edge_attrs.remove(E.gvi)
+
     log.info(f'Reading graph file: {in_graph}')
     graph = ig_utils.read_graphml(in_graph)
 
