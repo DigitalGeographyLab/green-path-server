@@ -7,8 +7,8 @@ from graph_build.noise_data_preprocessing.noise_data.schema import Layer as L
 import common.geometry as geom_utils
 import pandas as pd
 import geopandas as gpd
-# from owslib.wfs import WebFeatureService
-# from requests import Request
+from owslib.wfs import WebFeatureService
+from requests import Request
 
 
 log = logging.getLogger('noise_data_preprocessing')
