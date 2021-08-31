@@ -11,6 +11,7 @@ python -m aq_data_import.import_static_aq_data
 
 import common.igraph as ig_utils
 import aqi_updater.aq_sampling as aq_sampling
+import aqi_updater.aq_processing as aq_processing
 from common.igraph import Edge as E
 import logging
 import logging.config
@@ -19,12 +20,21 @@ logging.config.dictConfig(logging_conf)
 log = logging.getLogger('main')
 
 
-graph_id = 'hma_r_hel-clip' # 'hma'
-mean_aqi_tif = r'aq_data_import/data/yearly_2019_aqi_avg_sum.tiff'
+graph_id = 'hma_r_hel-clip'  # 'hma'
+aqi_tif_name = r'yearly_2019_aqi_avg_sum.tiff'
+mean_aqi_tif = fr'aq_data_import/data/{aqi_tif_name}'
+fillna_aqi = False
 graph_file = fr'graphs/{graph_id}.graphml'
 aq_update_out_file = fr'aqi_updates/yearly_2019_aqi_avg_sum_{graph_id}.csv'
 aq_attr_name = 'aqi'
 
+if fillna_aqi:
+    aq_processing.fillna_in_raster(
+        r'aq_data_import/data/',
+        aqi_tif_name,
+        na_val=1.001,
+        log=log
+    )
 
 graph = ig_utils.read_graphml(graph_file)
 edge_point_gdf = aq_sampling.get_sampling_point_gdf_from_graph(graph)
