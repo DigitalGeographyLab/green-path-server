@@ -154,3 +154,4 @@ src/graph_build/graph_green_view_join/graph_out/
 .DS_Store
 .vscode/
 src/.vscode/
+src/examples/hma_r_hel-clip_edges.csv
