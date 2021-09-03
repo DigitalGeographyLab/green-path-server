@@ -1,4 +1,5 @@
-[![tests & build status](https://github.com/DigitalGeographyLab/hope-green-path-server/workflows/Tests%20%26%20Build/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions) [![Graph building](https://github.com/DigitalGeographyLab/hope-green-path-server/actions/workflows/test-graph-building.yml/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions/workflows/test-graph-building.yml)
+[![tests & build status](https://github.com/DigitalGeographyLab/hope-green-path-server/workflows/Tests%20%26%20Build/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions) [![Graph building](https://github.com/DigitalGeographyLab/hope-green-path-server/actions/workflows/test-graph-building.yml/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions/workflows/test-graph-building.yml) [![DOI](https://zenodo.org/badge/209780028.svg)](https://zenodo.org/badge/latestdoi/209780028)
+
 
 # green-path-server
 
