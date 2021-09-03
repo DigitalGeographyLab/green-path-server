@@ -1,6 +1,6 @@
 [![tests & build status](https://github.com/DigitalGeographyLab/hope-green-path-server/workflows/Tests%20%26%20Build/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions) [![Graph building](https://github.com/DigitalGeographyLab/hope-green-path-server/actions/workflows/test-graph-building.yml/badge.svg)](https://github.com/DigitalGeographyLab/hope-green-path-server/actions/workflows/test-graph-building.yml)
 
-# hope-green-path-server
+# green-path-server
 
 Green path server is the routing service of the Green Paths route planner: [green-paths.web.app](https://green-paths.web.app/) / [DigitalGeographyLab/hope-green-path-ui](https://github.com/DigitalGeographyLab/hope-green-path-ui). Its goal is to help people find routes of fresh air, less noise and more greenery for walking and cycling in the Helsinki capital region. Also, it provides means for researchers to study citizens travel-time exposure to environmental qualities and to assess presence of healthier routes in different areas. 
 
